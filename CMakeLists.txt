@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 enable_testing()
 
-project (sandia_hand)
+project (sandia-hand)
 
 set (SANDIA_HAND_MAJOR_VERSION 5)
 set (SANDIA_HAND_MINOR_VERSION 0)

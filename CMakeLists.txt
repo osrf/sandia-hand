@@ -33,7 +33,4 @@ if (NOT CMAKE_BUILD_TYPE)
 endif (NOT CMAKE_BUILD_TYPE)
 string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE)
 
-#####################################
-# Configure the setup script
-
 add_subdirectory(ros)

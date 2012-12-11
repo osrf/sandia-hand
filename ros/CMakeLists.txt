@@ -1,0 +1,1 @@
+add_subdirectory(sandia_hand_description)

@@ -3,4 +3,4 @@ set (files
   sandia_hand_empty_world.launch
   upload.launch
   visualize.launch)
-install(FILES ${files} DESTINATION ${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}-${SANDIA_HAND_VERSION}/ros/${ROS_PACKAGE_NAME}/launch/)
+install(FILES ${files} DESTINATION ${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/ros/${ROS_PACKAGE_NAME}/launch/)

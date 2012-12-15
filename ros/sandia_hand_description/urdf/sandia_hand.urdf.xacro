@@ -30,12 +30,61 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
       </inertial>
+      <!-- begin simple shape approximation of f0 -->
+      <collision>
+        <pose>0 0 0.003 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.015</radius>
+            <length>0.023</length>
+          </cylinder>
+        </geometry>
+      </collision>
+      <collision>
+        <pose>0.011 0 0.003 1.57 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.01</radius>
+            <length>0.023</length>
+          </cylinder>
+        </geometry>
+      </collision>
+      <!--   end simple shape approximation of f0 -->
+      <!-- begin visual shape approximation of f0 -->
+      <visual>
+        <pose>0 0 0.003 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.015</radius>
+            <length>0.023</length>
+          </cylinder>
+        </geometry>
+        <material name="${side}_sandia_hand_skin_suntan">
+          <color rgba="0.7 0.4 0.2 1.0"/>
+        </material>
+      </visual>
+      <visual>
+        <pose>0.011 0 0.003 1.57 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.01</radius>
+            <length>0.023</length>
+          </cylinder>
+        </geometry>
+        <material name="${side}_sandia_hand_skin_suntan">
+          <color rgba="0.7 0.4 0.2 1.0"/>
+        </material>
+      </visual>
+      <!--   end visual shape approximation of f0 -->
+      <!-- begin collision mesh of f0 ->
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
           <mesh filename="package://sandia_hand_description/meshes/f0.stl"/>
         </geometry>
       </collision>
+      <!-   end collision mesh of f0 -->
+      <!-- begin visual mesh of f0 ->
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
@@ -45,6 +94,7 @@
           <color rgba="0.7 0.4 0.2 1.0"/>
         </material>
       </visual>
+      <!-   end visual mesh of f0 -->
     </link>
     <link name="${side}_f${idx}_1">
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -53,12 +103,40 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
       </inertial>
+      <!-- begin simple shape approximation of f1 -->
+      <collision>
+        <pose>0.024 0 0 0 1.57 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.01</radius>
+            <length>0.067</length>
+          </cylinder>
+        </geometry>
+      </collision>
+      <!--   end simple shape approximation of f1 -->
+      <!-- begin visual shape approximation of f1 -->
+      <visual>
+        <pose>0.024 0 0 0 1.57 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.01</radius>
+            <length>0.067</length>
+          </cylinder>
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <!--   end visual shape approximation of f1 -->
+      <!-- begin collision mesh of f1 ->
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
           <mesh filename="package://sandia_hand_description/meshes/f1.stl"/>
         </geometry>
       </collision>
+      <!-   end collision mesh of f1 -->
+      <!-- begin visual mesh of f1 ->
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
@@ -68,6 +146,7 @@
           <color rgba="0.835 0.655 0.345 1.0"/>
         </material>
       </visual>
+      <!-   end visual mesh of f1 -->
     </link>
     <link name="${side}_f${idx}_1_accel">
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -84,12 +163,58 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
       </inertial>
+      <!-- begin simple shape approximation of f2 -->
+      <collision>
+        <pose>0.024 0 0 0 1.57 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.009</radius>
+            <length>0.057</length>
+          </cylinder>
+        </geometry>
+      </collision>
+      <collision>
+        <pose>0.052 0 0 0 0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.009</radius>
+          </sphere>
+        </geometry>
+      </collision>
+      <!--   end simple shape approximation of f2 -->
+      <!-- begin visual shape approximation of f2 -->
+      <visual>
+        <pose>0.024 0 0 0 1.57 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.009</radius>
+            <length>0.057</length>
+          </cylinder>
+        </geometry>
+        <material name="${side}_sandia_hand_skin_suntan">
+          <color rgba="0.8 0.6 0.3 1.0"/>
+        </material>
+      </visual>
+      <visual>
+        <pose>0.052 0 0 0 0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>0.009</radius>
+          </sphere>
+        </geometry>
+        <material name="${side}_sandia_hand_skin_suntan">
+          <color rgba="0.8 0.6 0.3 1.0"/>
+        </material>
+      </visual>
+      <!-- begin collision mesh of f2    ->
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
           <mesh filename="package://sandia_hand_description/meshes/f2.stl"/>
         </geometry>
       </collision>
+      <!-   end collision mesh of f2 -->
+      <!-- begin visual mesh of f2    ->
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
@@ -99,6 +224,7 @@
           <color rgba="0.8 0.6 0.3 1.0"/>
         </material>
       </visual>
+      <!-   end visual mesh of f2 -->
     </link>
     <link name="${side}_f${idx}_2_accel">
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -169,12 +295,156 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
       </inertial>
+      <!-- begin simple shape approximation of palm -->
+      <collision>
+        <pose>0.069 0.016 0.038 0 1.57 -0.9</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.013</radius>
+            <length>0.100</length>
+          </cylinder>
+        </geometry>
+      </collision>
+      <collision>
+        <pose>0.064 0.008 0.021 0.41 0 -0.9</pose>
+        <geometry>
+          <box>
+            <size>0.09 .035 .05</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision>
+        <pose>0.02 0 -0.005 0 1.57 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.038</radius>
+            <length>0.05</length>
+          </cylinder>
+        </geometry>
+      </collision>
+      <collision>
+        <pose>0.11 -0.01 -0.005 0 0 0.37</pose>
+        <geometry>
+          <box>
+            <size>0.09 .03 .06</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision>
+        <pose>0.09 0.02 -0.005 0 0 0.37</pose>
+        <geometry>
+          <box>
+            <size>0.09 .03 .06</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision>
+        <pose>0.060 0.050 -0.005 0 0 0.37</pose>
+        <geometry>
+          <box>
+            <size>0.09 .03 .06</size>
+          </box>
+        </geometry>
+      </collision>
+      <collision>
+        <pose>0.044 -0.04 -0.005 0 0 0.79</pose>
+        <geometry>
+          <box>
+            <size>0.09 .03 .06</size>
+          </box>
+        </geometry>
+      </collision>
+      <!--   end simple shape approximation of palm -->
+      <!-- begin visual shape approximation of palm -->
+      <visual>
+        <pose>0.069 0.016 0.038 0 1.57 -0.9</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.013</radius>
+            <length>0.100</length>
+          </cylinder>
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <visual>
+        <pose>0.064 0.008 0.021 0.41 0 -0.9</pose>
+        <geometry>
+          <box>
+            <size>0.09 .035 .05</size>
+          </box>
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <visual>
+        <pose>0.02 0 -0.005 0 1.57 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.038</radius>
+            <length>0.05</length>
+          </cylinder>
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <visual>
+        <pose>0.11 -0.01 -0.005 0 0 0.37</pose>
+        <geometry>
+          <box>
+            <size>0.09 .03 .06</size>
+          </box>
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <visual>
+        <pose>0.09 0.02 -0.005 0 0 0.37</pose>
+        <geometry>
+          <box>
+            <size>0.09 .03 .06</size>
+          </box>
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <visual>
+        <pose>0.060 0.050 -0.005 0 0 0.37</pose>
+        <geometry>
+          <box>
+            <size>0.09 .03 .06</size>
+          </box>
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <visual>
+        <pose>0.044 -0.04 -0.005 0 0 0.79</pose>
+        <geometry>
+          <box>
+            <size>0.09 .03 .06</size>
+          </box>
+        </geometry>
+        <material name="${side}_sandia_hand_skin">
+          <color rgba="0.835 0.655 0.345 1.0"/>
+        </material>
+      </visual>
+      <!--   end visual shape approximation of palm -->
+      <!-- begin collision mesh of f2 ->
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
           <mesh filename="package://sandia_hand_description/meshes/palm.stl"/>
         </geometry>
       </collision>
+      <!-   end collision mesh of f2 -->
+      <!-- begin visual mesh of f2    ->
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
@@ -184,6 +454,7 @@
           <color rgba="0.835 0.655 0.345 1.0"/>
         </material>
       </visual>
+      <!-   end visual mesh of f2 -->
     </link>
 
     <joint name="${side}_sandia_hand_joint" type="fixed">

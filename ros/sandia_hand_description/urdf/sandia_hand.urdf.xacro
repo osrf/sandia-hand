@@ -32,7 +32,7 @@
       </inertial>
       <!-- begin simple shape approximation of f0 -->
       <collision>
-        <pose>0 0 0.003 0 0 0</pose>
+        <origin xyz="0 0 0.003" rpy="0 0 0"/>
         <geometry>
           <cylinder>
             <radius>0.015</radius>
@@ -41,7 +41,7 @@
         </geometry>
       </collision>
       <collision>
-        <pose>0.011 0 0.003 1.57 0 0</pose>
+        <origin xyz="0.011 0 0.003" rpy="1.57 0 0"/>
         <geometry>
           <cylinder>
             <radius>0.01</radius>
@@ -52,7 +52,7 @@
       <!--   end simple shape approximation of f0 -->
       <!-- begin visual shape approximation of f0 -->
       <visual>
-        <pose>0 0 0.003 0 0 0</pose>
+        <origin xyz="0 0 0.003" rpy="0 0 0"/>
         <geometry>
           <cylinder>
             <radius>0.015</radius>
@@ -64,7 +64,7 @@
         </material>
       </visual>
       <visual>
-        <pose>0.011 0 0.003 1.57 0 0</pose>
+        <origin xyz="0.011 0 0.003" rpy="1.57 0 0"/>
         <geometry>
           <cylinder>
             <radius>0.01</radius>
@@ -105,7 +105,7 @@
       </inertial>
       <!-- begin simple shape approximation of f1 -->
       <collision>
-        <pose>0.024 0 0 0 1.57 0</pose>
+        <origin xyz="0.024 0 0" rpy="0 1.57 0"/>
         <geometry>
           <cylinder>
             <radius>0.01</radius>
@@ -116,7 +116,7 @@
       <!--   end simple shape approximation of f1 -->
       <!-- begin visual shape approximation of f1 -->
       <visual>
-        <pose>0.024 0 0 0 1.57 0</pose>
+        <origin xyz="0.024 0 0" rpy="0 1.57 0"/>
         <geometry>
           <cylinder>
             <radius>0.01</radius>
@@ -165,7 +165,7 @@
       </inertial>
       <!-- begin simple shape approximation of f2 -->
       <collision>
-        <pose>0.024 0 0 0 1.57 0</pose>
+        <origin xyz="0.024 0 0" rpy="0 1.57 0"/>
         <geometry>
           <cylinder>
             <radius>0.009</radius>
@@ -174,7 +174,7 @@
         </geometry>
       </collision>
       <collision>
-        <pose>0.052 0 0 0 0 0</pose>
+        <origin xyz="0.052 0 0" rpy="0 0 0"/>
         <geometry>
           <sphere>
             <radius>0.009</radius>
@@ -184,7 +184,7 @@
       <!--   end simple shape approximation of f2 -->
       <!-- begin visual shape approximation of f2 -->
       <visual>
-        <pose>0.024 0 0 0 1.57 0</pose>
+        <origin xyz="0.024 0 0" rpy="0 1.57 0"/>
         <geometry>
           <cylinder>
             <radius>0.009</radius>
@@ -196,7 +196,7 @@
         </material>
       </visual>
       <visual>
-        <pose>0.052 0 0 0 0 0</pose>
+        <origin xyz="0.052 0 0" rpy="0 0 0"/>
         <geometry>
           <sphere>
             <radius>0.009</radius>
@@ -297,7 +297,7 @@
       </inertial>
       <!-- begin simple shape approximation of palm -->
       <collision>
-        <pose>0.069 0.016 0.038 0 1.57 -0.9</pose>
+        <origin xyz="0.069 0.016 0.038" rpy="0 1.57 -0.9"/>
         <geometry>
           <cylinder>
             <radius>0.013</radius>
@@ -306,7 +306,7 @@
         </geometry>
       </collision>
       <collision>
-        <pose>0.064 0.008 0.021 0.41 0 -0.9</pose>
+        <origin xyz="0.064 0.008 0.021" rpy="0.41 0 -0.9"/>
         <geometry>
           <box>
             <size>0.09 .035 .05</size>
@@ -314,7 +314,7 @@
         </geometry>
       </collision>
       <collision>
-        <pose>0.02 0 -0.005 0 1.57 0</pose>
+        <origin xyz="0.02 0 -0.005" rpy="0 1.57 0"/>
         <geometry>
           <cylinder>
             <radius>0.038</radius>
@@ -323,7 +323,7 @@
         </geometry>
       </collision>
       <collision>
-        <pose>0.11 -0.01 -0.005 0 0 0.37</pose>
+        <origin xyz="0.11 -0.01 -0.005" rpy="0 0 0.37"/>
         <geometry>
           <box>
             <size>0.09 .03 .06</size>
@@ -331,7 +331,7 @@
         </geometry>
       </collision>
       <collision>
-        <pose>0.09 0.02 -0.005 0 0 0.37</pose>
+        <origin xyz="0.09 0.02 -0.005" rpy="0 0 0.37"/>
         <geometry>
           <box>
             <size>0.09 .03 .06</size>
@@ -339,7 +339,7 @@
         </geometry>
       </collision>
       <collision>
-        <pose>0.060 0.050 -0.005 0 0 0.37</pose>
+        <origin xyz="0.060 0.050 -0.005" rpy="0 0 0.37"/>
         <geometry>
           <box>
             <size>0.09 .03 .06</size>
@@ -347,7 +347,7 @@
         </geometry>
       </collision>
       <collision>
-        <pose>0.044 -0.04 -0.005 0 0 0.79</pose>
+        <origin xyz="0.044 -0.04 -0.005" rpy="0 0 0.79"/>
         <geometry>
           <box>
             <size>0.09 .03 .06</size>
@@ -357,7 +357,7 @@
       <!--   end simple shape approximation of palm -->
       <!-- begin visual shape approximation of palm -->
       <visual>
-        <pose>0.069 0.016 0.038 0 1.57 -0.9</pose>
+        <origin xyz="0.069 0.016 0.038" rpy="0 1.57 -0.9"/>
         <geometry>
           <cylinder>
             <radius>0.013</radius>
@@ -369,7 +369,7 @@
         </material>
       </visual>
       <visual>
-        <pose>0.064 0.008 0.021 0.41 0 -0.9</pose>
+        <origin xyz="0.064 0.008 0.021" rpy="0.41 0 -0.9"/>
         <geometry>
           <box>
             <size>0.09 .035 .05</size>
@@ -380,7 +380,7 @@
         </material>
       </visual>
       <visual>
-        <pose>0.02 0 -0.005 0 1.57 0</pose>
+        <origin xyz="0.02 0 -0.005" rpy="0 1.57 0"/>
         <geometry>
           <cylinder>
             <radius>0.038</radius>
@@ -392,7 +392,7 @@
         </material>
       </visual>
       <visual>
-        <pose>0.11 -0.01 -0.005 0 0 0.37</pose>
+        <origin xyz="0.11 -0.01 -0.005" rpy="0 0 0.37"/>
         <geometry>
           <box>
             <size>0.09 .03 .06</size>
@@ -403,7 +403,7 @@
         </material>
       </visual>
       <visual>
-        <pose>0.09 0.02 -0.005 0 0 0.37</pose>
+        <origin xyz="0.09 0.02 -0.005" rpy="0 0 0.37"/>
         <geometry>
           <box>
             <size>0.09 .03 .06</size>
@@ -414,7 +414,7 @@
         </material>
       </visual>
       <visual>
-        <pose>0.060 0.050 -0.005 0 0 0.37</pose>
+        <origin xyz="0.060 0.050 -0.005" rpy="0 0 0.37"/>
         <geometry>
           <box>
             <size>0.09 .03 .06</size>
@@ -425,7 +425,7 @@
         </material>
       </visual>
       <visual>
-        <pose>0.044 -0.04 -0.005 0 0 0.79</pose>
+        <origin xyz="0.044 -0.04 -0.005" rpy="0 0 0.79"/>
         <geometry>
           <box>
             <size>0.09 .03 .06</size>

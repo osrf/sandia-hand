@@ -34,19 +34,13 @@
       <collision>
         <origin xyz="0 0 0.003" rpy="0 0 0"/>
         <geometry>
-          <cylinder 
-            radius="0.015" 
-            length="0.023"
-          />
+          <cylinder radius="0.015" length="0.023" />
         </geometry>
       </collision>
       <collision>
         <origin xyz="0.011 0 0.003" rpy="1.57 0 0"/>
         <geometry>
-          <cylinder 
-            radius="0.01" 
-            length="0.023"
-          />
+          <cylinder radius="0.01" length="0.023" />
         </geometry>
       </collision>
       <!--   end simple shape approximation of f0 -->
@@ -54,10 +48,7 @@
       <visual>
         <origin xyz="0 0 0.003" rpy="0 0 0"/>
         <geometry>
-          <cylinder 
-            radius="0.015" 
-            length="0.023"
-          />
+          <cylinder radius="0.015" length="0.023" />
         </geometry>
         <material name="${side}_sandia_hand_skin_suntan">
           <color rgba="0.7 0.4 0.2 1.0"/>
@@ -66,10 +57,7 @@
       <visual>
         <origin xyz="0.011 0 0.003" rpy="1.57 0 0"/>
         <geometry>
-          <cylinder 
-            radius="0.01" 
-            length="0.023"
-          />
+          <cylinder radius="0.01" length="0.023" />
         </geometry>
         <material name="${side}_sandia_hand_skin_suntan">
           <color rgba="0.7 0.4 0.2 1.0"/>
@@ -107,10 +95,7 @@
       <collision>
         <origin xyz="0.024 0 0" rpy="0 1.57 0"/>
         <geometry>
-          <cylinder 
-            radius="0.01" 
-            length="0.067"
-          />
+          <cylinder radius="0.01" length="0.067" />
         </geometry>
       </collision>
       <!--   end simple shape approximation of f1 -->
@@ -118,10 +103,7 @@
       <visual>
         <origin xyz="0.024 0 0" rpy="0 1.57 0"/>
         <geometry>
-          <cylinder 
-            radius="0.01" 
-            length="0.067"
-          />
+          <cylinder radius="0.01" length="0.067" />
         </geometry>
         <material name="${side}_sandia_hand_skin">
           <color rgba="0.835 0.655 0.345 1.0"/>
@@ -167,10 +149,7 @@
       <collision>
         <origin xyz="0.024 0 0" rpy="0 1.57 0"/>
         <geometry>
-          <cylinder 
-            radius="0.009" 
-            length="0.057"
-          />
+          <cylinder radius="0.009" length="0.057" />
         </geometry>
       </collision>
       <collision>
@@ -184,10 +163,7 @@
       <visual>
         <origin xyz="0.024 0 0" rpy="0 1.57 0"/>
         <geometry>
-          <cylinder 
-            radius="0.009" 
-            length="0.057"
-          />
+          <cylinder radius="0.009" length="0.057" />
         </geometry>
         <material name="${side}_sandia_hand_skin_suntan">
           <color rgba="0.8 0.6 0.3 1.0"/>
@@ -295,10 +271,7 @@
       <collision>
         <origin xyz="0.069 0.016 0.038" rpy="0 1.57 -0.9"/>
         <geometry>
-          <cylinder 
-            radius="0.013" 
-            length="0.100"
-          />
+          <cylinder radius="0.013" length="0.100" />
         </geometry>
       </collision>
       <collision>
@@ -310,10 +283,7 @@
       <collision>
         <origin xyz="0.02 0 -0.005" rpy="0 1.57 0"/>
         <geometry>
-          <cylinder 
-            radius="0.038" 
-            length="0.05"
-          />
+          <cylinder radius="0.038" length="0.05" />
         </geometry>
       </collision>
       <collision>
@@ -345,10 +315,7 @@
       <visual>
         <origin xyz="0.069 0.016 0.038" rpy="0 1.57 -0.9"/>
         <geometry>
-          <cylinder 
-            radius="0.013" 
-            length="0.100"
-          />
+          <cylinder radius="0.013" length="0.100" />
         </geometry>
         <material name="${side}_sandia_hand_skin">
           <color rgba="0.835 0.655 0.345 1.0"/>
@@ -366,10 +333,7 @@
       <visual>
         <origin xyz="0.02 0 -0.005" rpy="0 1.57 0"/>
         <geometry>
-          <cylinder 
-            radius="0.038" 
-            length="0.05"
-          />
+          <cylinder radius="0.038" length="0.05" />
         </geometry>
         <material name="${side}_sandia_hand_skin">
           <color rgba="0.835 0.655 0.345 1.0"/>

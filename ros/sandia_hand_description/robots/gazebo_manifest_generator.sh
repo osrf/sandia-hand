@@ -1,13 +1,15 @@
+#!/bin/bash
+cat <<END
 <?xml version='1.0'?>
 <model>
-  <name>Sandia Hand Both Hands with Mesh Resources</name>
-  <description>
-    Sandia Hand.
-  </description>
+  <name>$1</name>
+  <description>$1</description>
   <version>5.0.0</version>
-  <sdf>sandia_hand.urdf</sdf>
+  <sdf>model.urdf</sdf>
   <author>
     <name>Morgan Quigley</name>
     <email>morgan@osrfoundation.org</email>
   </author>
 </model>
+END
+

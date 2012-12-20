@@ -6,7 +6,8 @@
   <include filename="$(find sandia_hand_description)/urdf/sandia_hand.gazebo.xacro" />
   <include filename="$(find sandia_hand_description)/urdf/sandia_hand.transmission.xacro" />
 
-  <xacro:macro name="finger" params="idx x y z r p yaw side">
+  <xacro:property name="M_pi" value="3.1415926535897931" />
+  <xacro:macro name="finger" params="idx x y z r p yaw side reflect">
     <link name="${side}_f${idx}_base">
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <inertial>
@@ -38,7 +39,7 @@
         </geometry>
       </collision>
       <collision>
-        <origin xyz="0.011 0 0.003" rpy="1.57 0 0"/>
+        <origin xyz="0.011 0 0.003" rpy="${M_pi/2} 0 0"/>
         <geometry>
           <cylinder radius="0.01" length="0.023" />
         </geometry>
@@ -55,7 +56,7 @@
         </material>
       </visual>
       <visual>
-        <origin xyz="0.011 0 0.003" rpy="1.57 0 0"/>
+        <origin xyz="0.011 0 0.003" rpy="${M_pi/2} 0 0"/>
         <geometry>
           <cylinder radius="0.01" length="0.023" />
         </geometry>
@@ -93,7 +94,7 @@
       </inertial>
       <!-- begin simple shape approximation of f1 -->
       <collision>
-        <origin xyz="0.024 0 0" rpy="0 1.57 0"/>
+        <origin xyz="0.024 0 0" rpy="0 ${M_pi/2} 0"/>
         <geometry>
           <cylinder radius="0.01" length="0.067" />
         </geometry>
@@ -101,7 +102,7 @@
       <!--   end simple shape approximation of f1 -->
       <!-- begin visual shape approximation of f1 -->
       <visual>
-        <origin xyz="0.024 0 0" rpy="0 1.57 0"/>
+        <origin xyz="0.024 0 0" rpy="0 ${M_pi/2} 0"/>
         <geometry>
           <cylinder radius="0.01" length="0.067" />
         </geometry>
@@ -147,7 +148,7 @@
       </inertial>
       <!-- begin simple shape approximation of f2 -->
       <collision>
-        <origin xyz="0.024 0 0" rpy="0 1.57 0"/>
+        <origin xyz="0.024 0 0" rpy="0 ${M_pi/2} 0"/>
         <geometry>
           <cylinder radius="0.009" length="0.057" />
         </geometry>
@@ -161,7 +162,7 @@
       <!--   end simple shape approximation of f2 -->
       <!-- begin visual shape approximation of f2 -->
       <visual>
-        <origin xyz="0.024 0 0" rpy="0 1.57 0"/>
+        <origin xyz="0.024 0 0" rpy="0 ${M_pi/2} 0"/>
         <geometry>
           <cylinder radius="0.009" length="0.057" />
         </geometry>
@@ -213,10 +214,10 @@
       <origin xyz="${x} ${y} ${z}" rpy="${r} ${p} ${yaw}"/>
     </joint>
     <joint name="${side}_f${idx}_j0" type="revolute">
-      <axis xyz="0 0 1"/>
+      <axis xyz="0 0 ${reflect}"/>
       <parent link="${side}_f${idx}_base"/>
       <child link="${side}_f${idx}_0"/>
-      <limit lower="-1.57079" upper="1.57079" effort="1" velocity="1"/>
+      <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="1" velocity="1"/>
       <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
       <dynamics damping="0.1"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -225,10 +226,10 @@
       <axis xyz="0 0 1"/>
       <parent link="${side}_f${idx}_0"/>
       <child link="${side}_f${idx}_1"/>
-      <limit lower="-1.57079" upper="1.57079" effort="1" velocity="1"/>
+      <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="1" velocity="1"/>
       <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
       <dynamics damping="0.1"/>
-      <origin xyz="0.028 0 0" rpy="1.57079 0 0"/>
+      <origin xyz="0.028 0 0" rpy="${M_pi/2} 0 0"/>
     </joint>
     <joint name="${side}_f${idx}_j2" type="revolute">
       <axis xyz="0 0 1"/>
@@ -237,7 +238,7 @@
       <origin xyz="0.05 0 0" rpy="0 0 0"/>
       <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
       <dynamics damping="0.1"/>
-      <limit lower="-1.57079" upper="1.57079" effort="1" velocity="1"/>
+      <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="1" velocity="1"/>
     </joint>
 
     <joint name="${side}_f${idx}_fixed_accel" type="fixed">
@@ -248,18 +249,18 @@
     <joint name="${side}_f${idx}_1_accel" type="fixed">
       <parent link="${side}_f${idx}_1"/>
       <child link="${side}_f${idx}_1_accel"/>
-      <origin xyz="0.03 0 0" rpy="-1.5709 0 0"/>
+      <origin xyz="0.03 0 0" rpy="-${M_pi/2} 0 0"/>
     </joint>
     <joint name="${side}_f${idx}_2_accel" type="fixed">
       <parent link="${side}_f${idx}_2"/>
       <child link="${side}_f${idx}_2_accel"/>
-      <origin xyz="0.04 0 0" rpy="-1.5709 0 0"/>
+      <origin xyz="0.04 0 0" rpy="-${M_pi/2} 0 0"/>
     </joint>
 
     <xacro:finger_transmission side="${side}" idx="${idx}" x="${x}" y="${y}" z="${z}" r="${r}" p="${p}" yaw="${yaw}"/>
   </xacro:macro>
 
-  <xacro:macro name="sandia_hand" params="side parent *origin">
+  <xacro:macro name="sandia_hand" params="side parent reflect *origin">
     <link name="${side}_palm">
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <inertial>
@@ -269,43 +270,43 @@
       </inertial>
       <!-- begin simple shape approximation of palm -->
       <collision>
-        <origin xyz="0.069 0.016 0.038" rpy="0 1.57 -0.9"/>
+        <origin xyz="0.069 ${0.016 * reflect} 0.038" rpy="0 ${M_pi/2} ${-0.9 * reflect}"/>
         <geometry>
           <cylinder radius="0.013" length="0.100" />
         </geometry>
       </collision>
       <collision>
-        <origin xyz="0.064 0.008 0.021" rpy="0.41 0 -0.9"/>
+        <origin xyz="0.064 $(0.008 * reflect} 0.021" rpy="0.41 0 ${-0.9 * reflect}"/>
         <geometry>
           <box size="0.09 .035 .05" />
         </geometry>
       </collision>
       <collision>
-        <origin xyz="0.02 0 -0.005" rpy="0 1.57 0"/>
+        <origin xyz="0.02 0 -0.005" rpy="0 ${M_pi/2} 0"/>
         <geometry>
           <cylinder radius="0.038" length="0.05" />
         </geometry>
       </collision>
       <collision>
-        <origin xyz="0.11 -0.01 -0.005" rpy="0 0 0.37"/>
+        <origin xyz="0.11 ${-0.01*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
         <geometry>
           <box size="0.09 .03 .06" />
         </geometry>
       </collision>
       <collision>
-        <origin xyz="0.09 0.02 -0.005" rpy="0 0 0.37"/>
+        <origin xyz="0.09 ${0.02*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
         <geometry>
           <box size="0.09 .03 .06" />
         </geometry>
       </collision>
       <collision>
-        <origin xyz="0.060 0.050 -0.005" rpy="0 0 0.37"/>
+        <origin xyz="0.060 ${0.050*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
         <geometry>
           <box size="0.09 .03 .06" />
         </geometry>
       </collision>
       <collision>
-        <origin xyz="0.044 -0.04 -0.005" rpy="0 0 0.79"/>
+        <origin xyz="0.044 ${-0.04*reflect} -0.005" rpy="0 0 ${0.79*reflect}"/>
         <geometry>
           <box size="0.09 .03 .06" />
         </geometry>
@@ -313,7 +314,7 @@
       <!--   end simple shape approximation of palm -->
       <!-- begin visual shape approximation of palm -->
       <visual>
-        <origin xyz="0.069 0.016 0.038" rpy="0 1.57 -0.9"/>
+        <origin xyz="0.069 ${0.016*reflect} 0.038" rpy="0 ${M_pi/2} ${-0.9*reflect}"/>
         <geometry>
           <cylinder radius="0.013" length="0.100" />
         </geometry>
@@ -322,7 +323,7 @@
         </material>
       </visual>
       <visual>
-        <origin xyz="0.064 0.008 0.021" rpy="0.41 0 -0.9"/>
+        <origin xyz="0.064 ${0.008*reflect} 0.021" rpy="0.41 0 ${-0.9*reflect}"/>
         <geometry>
           <box size="0.09 .035 .05" />
         </geometry>
@@ -331,7 +332,7 @@
         </material>
       </visual>
       <visual>
-        <origin xyz="0.02 0 -0.005" rpy="0 1.57 0"/>
+        <origin xyz="0.02 0 -0.005" rpy="0 ${M_pi/2} 0"/>
         <geometry>
           <cylinder radius="0.038" length="0.05" />
         </geometry>
@@ -340,7 +341,7 @@
         </material>
       </visual>
       <visual>
-        <origin xyz="0.11 -0.01 -0.005" rpy="0 0 0.37"/>
+        <origin xyz="0.11 ${-0.01*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
         <geometry>
           <box size="0.09 .03 .06" />
         </geometry>
@@ -349,7 +350,7 @@
         </material>
       </visual>
       <visual>
-        <origin xyz="0.09 0.02 -0.005" rpy="0 0 0.37"/>
+        <origin xyz="0.09 ${0.02*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
         <geometry>
           <box size="0.09 .03 .06" />
         </geometry>
@@ -358,7 +359,7 @@
         </material>
       </visual>
       <visual>
-        <origin xyz="0.060 0.050 -0.005" rpy="0 0 0.37"/>
+        <origin xyz="0.060 ${0.050*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
         <geometry>
           <box size="0.09 .03 .06" />
         </geometry>
@@ -367,7 +368,7 @@
         </material>
       </visual>
       <visual>
-        <origin xyz="0.044 -0.04 -0.005" rpy="0 0 0.79"/>
+        <origin xyz="0.044 ${-0.04*reflect} -0.005" rpy="0 0 ${0.79*reflect}"/>
         <geometry>
           <box size="0.09 .03 .06" />
         </geometry>
@@ -403,10 +404,10 @@
       <insert_block name="origin" />
     </joint>
 
-    <xacro:finger side="${side}" idx="0" x="0.140" y="0.00000" z="0" r="0" p="0" yaw="0.3"/>
-    <xacro:finger side="${side}" idx="1" x="0.115" y="0.03122" z="0" r="0" p="0" yaw="0.3"/>
-    <xacro:finger side="${side}" idx="2" x="0.090" y="0.06245" z="0" r="0" p="0" yaw="0.3"/>
-    <xacro:finger side="${side}" idx="3" x="0.03995" y="-0.04383" z="0.014" r="0" p="-1.57079" yaw="-2.3562"/>
+    <xacro:finger side="${side}" idx="0" x="0.140" y="0.00000" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" />
+    <xacro:finger side="${side}" idx="1" x="0.115" y="${0.03122*reflect}" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" />
+    <xacro:finger side="${side}" idx="2" x="0.090" y="${0.06245*reflect}" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" />
+    <xacro:finger side="${side}" idx="3" x="0.03995" y="${-0.04383*reflect}" z="0.014" r="0" p="-${M_pi/2}" yaw="${-2.3562*reflect}" reflect="${reflect}" />
 
     <!-- not needed unless simulating the hand by itself
     <xacro:sandia_hand_gazebo side="${side}" />

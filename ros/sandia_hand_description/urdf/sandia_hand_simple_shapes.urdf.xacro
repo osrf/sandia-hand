@@ -276,7 +276,7 @@
         </geometry>
       </collision>
       <collision>
-        <origin xyz="0.064 $(0.008 * reflect} 0.021" rpy="0.41 0 ${-0.9 * reflect}"/>
+        <origin xyz="0.064 ${0.008 * reflect} 0.021" rpy="0.41 0 ${-0.9 * reflect}"/>
         <geometry>
           <box size="0.09 .035 .05" />
         </geometry>

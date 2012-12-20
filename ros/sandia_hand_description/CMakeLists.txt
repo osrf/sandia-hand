@@ -8,4 +8,4 @@ add_subdirectory(launch)
 add_subdirectory(meshes)
 add_subdirectory(robots)
 add_subdirectory(urdf)
-
+add_subdirectory(gazebo)

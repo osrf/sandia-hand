@@ -4,7 +4,9 @@
        xmlns:xacro="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
        name="humanoid" >
   
-  <include filename="$(find sandia_hand_description)/urdf/sandia_hand.urdf.xacro" />
+  <!-- Commenting out urdf with meshes, using simple collision shapes instead -->
+  <!--<include filename="$(find sandia_hand_description)/urdf/sandia_hand.urdf.xacro" />-->
+  <include filename="$(find sandia_hand_description)/urdf/sandia_hand_simple_shapes.urdf.xacro" />
 
   <link name="base">
     <inertial>
@@ -25,11 +27,11 @@
         </geometry>
     </collision>
   </link>
-  <xacro:sandia_hand side="right" parent="base">
+  <xacro:sandia_hand side="right" parent="base" reflect="1">
     <origin xyz="0 0.2 0.5" rpy="0 -1.57079 0"/>
   </xacro:sandia_hand>
 
-  <xacro:sandia_hand side="left" parent="base">
+  <xacro:sandia_hand side="left" parent="base" reflect="-1">
     <origin xyz="0 -0.2 0.5" rpy="0 -1.57079 0"/>
   </xacro:sandia_hand>
 </robot>

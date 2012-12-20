@@ -1,17 +1,11 @@
 <package>
   <description brief="sandia_hand_description">
-
      sandia_hand_description
-
   </description>
   <author>Morgan Quigley and John Hsu</author>
   <license>BSD</license>
-  <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/sandia_hand_description</url>
   <depend package="urdf"/>
   <depend package="xacro"/>
   <depend package="gazebo"/>
-
 </package>
-
 

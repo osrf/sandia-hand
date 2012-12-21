@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(sandia-hand-firmware)
+enable_language(ASM)
 
 # first, set up the cross-compiler and JTAG tool (openocd).
 # i'm doing this in the cmake step instead of the "make" step so that 
@@ -53,11 +54,12 @@ endif()
 set(CMAKE_SYSTEM_NAME arm_baremetal)
 set(CMAKE_SYSTEM_VERSION 1)
 set(CMAKE_C_COMPILER ${ARM_GCC_ROOT}/bin/arm-none-eabi-gcc)
+set(CMAKE_ASM_COMPILER ${ARM_GCC_ROOT}/bin/arm-none-eabi-gcc)
 set(CMAKE_FIND_ROOT_PATH ${ARM_GCC_ROOT})
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER) # search only host
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)  # search only target
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)  # search only target
-set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
+set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "-Wl,-Map=memory.map -Wl,--cref --entry=ResetException")
 
 add_subdirectory(common_sam3x)
 add_subdirectory(mobo_mcu)

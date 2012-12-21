@@ -1,0 +1,4 @@
+void clock_init()
+{
+
+}

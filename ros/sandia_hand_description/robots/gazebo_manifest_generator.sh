@@ -5,7 +5,7 @@ cat <<END
   <name>$1</name>
   <description>$1</description>
   <version>5.0.0</version>
-  <sdf>model.urdf</sdf>
+  <sdf>$1.urdf</sdf>
   <author>
     <name>Morgan Quigley</name>
     <email>morgan@osrfoundation.org</email>

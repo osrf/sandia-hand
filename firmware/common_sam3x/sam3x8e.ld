@@ -3,8 +3,8 @@ OUTPUT_ARCH(arm)
 
 MEMORY
 {
-	rom (rx)  : ORIGIN = 0x00080000, LENGTH = 0x00040000 /* flash 0, 256k */
-	ram (rwx) : ORIGIN = 0x20000000, LENGTH = 0x00010000 /* sram  0,  64k */
+	rom (rx)  : ORIGIN = 0x00080000, LENGTH = 0x00080000 /* flash  , 512k */
+	ram (rwx) : ORIGIN = 0x20000000, LENGTH = 0x00010000 /* sram   ,  64k */
 }
 
 /* Section Definitions */ 

@@ -60,6 +60,9 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER) # search only host
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)  # search only target
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)  # search only target
 set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "-Wl,-Map=memory.map -Wl,--cref --entry=ResetException")
+set(CMAKE_C_FLAGS "-std=c99 -mcpu=cortex-m3 -mthumb -Dprintf=iprintf")
+set(CMAKE_AS_FLAGS "-mcpu=cortex-m3 -mthumb -g")
 
+add_definitions(-DDONT_USE_CMSIS_INIT)
 add_subdirectory(common_sam3x)
 add_subdirectory(mobo_mcu)

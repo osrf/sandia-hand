@@ -13,9 +13,9 @@ _bootloader_vectors:
   .word(0) @ reserved
   .word(0) @ reserved
   .word(_bootloader_unhandled+1) @ svc
-  .word(0)                     @ reserved for debug (?)
+  .word(0)                       @ debugmon
+  .word(_bootloader_unhandled+1) @ reserved
   .word(_bootloader_unhandled+1) @ pendsv
-  .word(_bootloader_unhandled+1) @ systick
   .word(_bootloader_unhandled+1) @ systick
   # SAM3S interrupts begin...
   .word(_bootloader_unhandled+1) @ SUPC
@@ -24,22 +24,26 @@ _bootloader_vectors:
   .word(_bootloader_unhandled+1) @ RTT
   .word(_bootloader_unhandled+1) @ WDT
   .word(_bootloader_unhandled+1) @ PMC
-  .word(_bootloader_unhandled+1) @ EEFC
-  .word(_bootloader_unhandled+1) @ reserved
+  .word(_bootloader_unhandled+1) @ EEFC0
+  .word(_bootloader_unhandled+1) @ EEFC1
   .word(_bootloader_unhandled+1) @ UART0
-  .word(_bootloader_unhandled+1) @ UART1
   .word(_bootloader_unhandled+1) @ SMC
+  .word(_bootloader_unhandled+1) @ reserved
   .word(_bootloader_unhandled+1) @ PIOA
   .word(_bootloader_unhandled+1) @ PIOB
   .word(_bootloader_unhandled+1) @ PIOC
+  .word(_bootloader_unhandled+1) @ PIOD
+  .word(_bootloader_unhandled+1) @ reserved
+  .word(_bootloader_unhandled+1) @ reserved
   .word(_bootloader_unhandled+1) @ USART0
   .word(_bootloader_unhandled+1) @ USART1
-  .word(_bootloader_unhandled+1) @ reserved
-  .word(_bootloader_unhandled+1) @ reserved
-  .word(_bootloader_unhandled+1) @ MCI
+  .word(_bootloader_unhandled+1) @ USART2
+  .word(_bootloader_unhandled+1) @ USART3
+  .word(_bootloader_unhandled+1) @ HSMCI
   .word(_bootloader_unhandled+1) @ TWI 0
   .word(_bootloader_unhandled+1) @ TWI 1
   .word(_bootloader_unhandled+1) @ SPI
+  .word(_bootloader_unhandled+1) @ reserved
   .word(_bootloader_unhandled+1) @ SSC
   .word(_bootloader_unhandled+1) @ TC0
   .word(_bootloader_unhandled+1) @ TC1
@@ -47,15 +51,21 @@ _bootloader_vectors:
   .word(_bootloader_unhandled+1) @ TC3
   .word(_bootloader_unhandled+1) @ TC4
   .word(_bootloader_unhandled+1) @ TC5
-  .word(_bootloader_unhandled+1) @ ADC
-  .word(_bootloader_unhandled+1) @ DAC
+  .word(_bootloader_unhandled+1) @ TC6
+  .word(_bootloader_unhandled+1) @ TC7
+  .word(_bootloader_unhandled+1) @ TC8
   .word(_bootloader_unhandled+1) @ PWM
-  .word(_bootloader_unhandled+1) @ CRCCU
-  .word(_bootloader_unhandled+1) @ ACC
-  .word(_bootloader_unhandled+1) @ USB
-  .word(_bootloader_unhandled+1) @ unused
+  .word(_bootloader_unhandled+1) @ ADC
+  .word(_bootloader_unhandled+1) @ DACC
+  .word(_bootloader_unhandled+1) @ DMAC
+  .word(_bootloader_unhandled+1) @ UOTGHS
+  .word(_bootloader_unhandled+1) @ TRNG
+  .word(_bootloader_unhandled+1) @ EMAC
+  .word(_bootloader_unhandled+1) @ CAN0
+  .word(_bootloader_unhandled+1) @ CAN1
+.thumb
 _bootloader_start:
-  bl bl_main 
+  bl bl_main
   ldr r0,=0x00082000 @ look up the stack pointer of the application code
   ldr r1,[r0]
   mov sp,r1

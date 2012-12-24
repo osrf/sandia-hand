@@ -67,6 +67,7 @@ void bl_main()
   EFC0->EEFC_FMR = EEFC_FMR_FWS(4); // set flash wait states so it can handle 
   EFC1->EEFC_FMR = EEFC_FMR_FWS(4); // our blazing speed. otherwise we fail...
   WDT->WDT_MR = WDT_MR_WDDIS; // buh bye watchdog
+  //for (volatile uint32_t i = 0; i < 10000000; i++) { }
   // wipe out our BSS
   for (volatile uint32_t *p_bl_zero = &_bl_szero; p_bl_zero < &_bl_ezero;)
     *p_bl_zero++ = 0;
@@ -84,7 +85,7 @@ void bl_main()
   BL_LED_PIO->PIO_CODR = BL_LED_PIO->PIO_OER = BL_LED_PIO->PIO_PER = 
                                                              1 << BL_LED_PIN;
   BL_LED_PIO->PIO_SODR = 1 << BL_LED_PIN;
-  for (volatile uint32_t i = 0; i < 10000000; i++) { }
+  //for (volatile uint32_t i = 0; i < 10000000; i++) { }
   // switch to the slow internal RC oscillator so we can monkey
   // around with the main crystal oscillator and PLL
   PMC->PMC_MCKR = (PMC->PMC_MCKR & ~(uint32_t)PMC_MCKR_CSS_Msk) |

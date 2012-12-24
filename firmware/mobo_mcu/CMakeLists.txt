@@ -26,3 +26,10 @@ add_custom_target(set_boot_vector
 add_custom_target(query 
                   COMMAND ${OPENOCD_INIT} -c scan_chain -c targets sam3.cpu -c "at91sam3 info" -c reset -c shutdown)
  
+add_custom_target(gdb_server
+                  COMMAND ${OPENOCD_INIT} -c halt)
+
+add_custom_target(gdb
+                  COMMAND ${ARM_GCC_ROOT}/bin/arm-none-eabi-gdb ${CMAKE_CURRENT_BINARY_DIR}/mobo_mcu.elf)
+
+

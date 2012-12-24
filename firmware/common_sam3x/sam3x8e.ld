@@ -14,7 +14,7 @@ SECTIONS
     {
       . = ALIGN(4);
       _bl_sfixed = .;
-      KEEP(*bootloader_startup.o(*.text))
+      KEEP(*bootloader_startup.S.o(*.text))
       KEEP(*(.bl_text))  /**bootloader.o(.bl_text))*/
       /*KEEP(*bl_text .bl_text.*)*/
       /*KEEP(*(.bl_id))*/

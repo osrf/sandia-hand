@@ -58,7 +58,8 @@ set(CMAKE_FIND_ROOT_PATH ${ARM_GCC_ROOT})
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER) # search only host
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)  # search only target
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)  # search only target
-set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "-Wl,-Map=memory.map -Wl,--cref --entry=reset_vector")
+set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
+set(CMAKE_C_LINK_FLAGS "-T\"${CMAKE_CURRENT_SOURCE_DIR}/common_sam3x/sam3x8e.ld\" -Wl,-Map=memory.map -Wl,--cref --entry=_bootloader_start -Wl,--no-gc-sections -Wl,--warn-common -Wl,--unresolved-symbols=report-all -Wl,--no-undefined")
 set(CMAKE_C_FLAGS "-std=c99 -mcpu=cortex-m3 -mthumb -Dprintf=iprintf")
 set(CMAKE_AS_FLAGS "-mcpu=cortex-m3 -mthumb -g")
 

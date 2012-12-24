@@ -83,6 +83,8 @@ void bl_main()
                    (1 << ID_USART1);
   BL_LED_PIO->PIO_CODR = BL_LED_PIO->PIO_OER = BL_LED_PIO->PIO_PER = 
                                                              1 << BL_LED_PIN;
+  BL_LED_PIO->PIO_SODR = 1 << BL_LED_PIN;
+  for (volatile uint32_t i = 0; i < 10000000; i++) { }
   // switch to the slow internal RC oscillator so we can monkey
   // around with the main crystal oscillator and PLL
   PMC->PMC_MCKR = (PMC->PMC_MCKR & ~(uint32_t)PMC_MCKR_CSS_Msk) |

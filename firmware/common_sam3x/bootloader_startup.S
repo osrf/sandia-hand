@@ -1,3 +1,5 @@
+.global _bootloader_start
+
 _bootloader_vectors:
   .word(0x2000bffc)
   .word(_bootloader_start+1)

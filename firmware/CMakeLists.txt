@@ -25,8 +25,8 @@ if (NOT EXISTS ${OPENOCD_PATH}_source)
   execute_process(COMMAND git clone git://openocd.git.sourceforge.net/gitroot/openocd/openocd ${OPENOCD_PATH}_source)
 endif()
 
-if (NOT EXISTS ${OPENOCD_PATH}/bin/openocd)
-  # this is so terrible
+set(OPENOCD ${OPENOCD_PATH}/bin/openocd)
+if (NOT EXISTS ${OPENOCD})  # this is so terrible
   message("building openocd...")
   execute_process(COMMAND bash -c "cd ${OPENOCD_PATH}_source && ./bootstrap && ./configure --enable-maintainer-mode --enable-ft2232_libftdi --prefix=${OPENOCD_PATH} && make install" RESULT_VARIABLE rv)
   message("build result: ${rv}")
@@ -37,7 +37,6 @@ endif()
 #                   DEPENDS ${ARM_GCC_ROOT}.tar.bz2)
 #add_custom_target(arm-gcc_extraction
 #                  ALL DEPENDS ${ARM_GCC_ROOT})
-
 
 # now clone openocd repo and get it up and running
 #add_custom_command(OUTPUT ${OPENOCD_PATH}_source
@@ -59,9 +58,14 @@ set(CMAKE_FIND_ROOT_PATH ${ARM_GCC_ROOT})
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER) # search only host
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)  # search only target
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)  # search only target
-set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "-Wl,-Map=memory.map -Wl,--cref --entry=ResetException")
+set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "-Wl,-Map=memory.map -Wl,--cref --entry=reset_vector")
 set(CMAKE_C_FLAGS "-std=c99 -mcpu=cortex-m3 -mthumb -Dprintf=iprintf")
 set(CMAKE_AS_FLAGS "-mcpu=cortex-m3 -mthumb -g")
+
+include_directories(asf-3.5.1_partial/sam/utils/cmsis/sam3x/include)
+include_directories(asf-3.5.1_partial/thirdparty/CMSIS/Include)
+include_directories(.)
+add_definitions(-DF_CPU=64000000) # todo: figure out a better system
 
 add_definitions(-DDONT_USE_CMSIS_INIT)
 add_subdirectory(common_sam3x)

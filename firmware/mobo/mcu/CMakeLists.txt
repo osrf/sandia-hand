@@ -1,0 +1,33 @@
+add_executable(mobo-mcu.elf mobo_mcu.c startup.c)
+#set_target_properties(mobo_mcu.elf PROPERTIES LINK_FLAGS "-T\"${CMAKE_CURRENT_SOURCE_DIR}/../common_sam3x/sam3x8e.ld\"")
+target_link_libraries(mobo-mcu.elf common_sam3x)
+
+add_custom_target(mobo-mcu-size
+                  COMMAND ${ARM_GCC_ROOT}/bin/arm-none-eabi-size -A ${CMAKE_CURRENT_BINARY_DIR}/mobo-mcu.elf
+                  DEPENDS mobo-mcu.elf)
+
+add_custom_target(mobo-mcu-names
+                  COMMAND ${ARM_GCC_ROOT}/bin/arm-none-eabi-nm ${CMAKE_CURRENT_BINARY_DIR}/mobo-mcu.elf >mobo-mcu.elf.nm.txt
+                  DEPENDS mobo-mcu.elf)
+
+add_custom_target(mobo-mcu-disassemble
+                  COMMAND ${ARM_GCC_ROOT}/bin/arm-none-eabi-objdump -S -d ${CMAKE_CURRENT_BINARY_DIR}/mobo-mcu.elf >disassembly.txt && vim disassembly.txt
+                  DEPENDS mobo-mcu.elf)
+          
+add_custom_target(mobo-mcu-program
+                  COMMAND ${OPENOCD_INIT} -c "flash banks" -c "flash list" -c "flash write_image ${CMAKE_CURRENT_BINARY_DIR}/mobo-mcu.elf" -c reset -c shutdown
+                  DEPENDS mobo-mcu.elf)
+
+add_custom_target(mobo-mcu-set_boot_vector
+                  COMMAND ${OPENOCD_INIT} -c "at91sam3 gpnvm set 1" -c shutdown)
+
+add_custom_target(mobo-query 
+                  COMMAND ${OPENOCD_INIT} -c scan_chain -c targets sam3.cpu -c "at91sam3 info" -c reset -c shutdown)
+ 
+add_custom_target(mobo-gdb-server
+                  COMMAND ${OPENOCD_INIT} -c halt)
+
+add_custom_target(mobo-gdb
+                  COMMAND ${ARM_GCC_ROOT}/bin/arm-none-eabi-gdb ${CMAKE_CURRENT_BINARY_DIR}/mobo-mcu.elf)
+
+

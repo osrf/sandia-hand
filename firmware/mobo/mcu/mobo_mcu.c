@@ -32,12 +32,89 @@ void main()
   console_init();
   fpga_spi_init();
   printf("hello, world!\r\n");
-  for (int i = 0; i < 32; i++)
+  for (int i = 0; i < 4; i++)
   {
     //printf("%d\r\n", i);
-    printf("fpga register %d: 0x%04x\r\n", i, fpga_spi_txrx(0x80 | i, 0));
+    printf("fpga register %d: 0x%04x\r\n", i, fpga_spi_txrx(i, 0));
     for (volatile int j = 0; j < 100000; j++) { }
   }
+  // blink the LED a few times
+  for (int i = 0; i < 4; i++)
+  {
+    for (volatile int j = 0; j < 200000; j++) { }
+    fpga_spi_txrx(0x80, 0);
+    for (volatile int j = 0; j < 200000; j++) { }
+    fpga_spi_txrx(0x80, 1);
+  }
+  // reset the PHY via hardware reset pin
+  fpga_spi_txrx(0x81, 4); // assert PHY_RESET_N
+  for (volatile int j = 0; j < 400000; j++) { } // wait a while
+  fpga_spi_txrx(0x81, 0); // de-assert PHY_RESET_N
+  for (volatile int j = 0; j < 1000000; j++) { } // wait a longer while
+  // now reset the PHY via software reset register
+  fpga_spi_txrx(0x82, 0x9000); // set reset bit and auto-negotiate bit
+  fpga_spi_txrx(0x81, 0x0001); // start write of register zero
+  for (volatile int j = 0; j < 1000000; j++) { } // wait a longer while
+  // poll the PHY register file
+  for (int i = 0; i < 32; i++)
+  {
+    fpga_spi_txrx(0x81, (uint16_t)((i << 8) | 0x1)); // start read of phy reg
+    for (volatile int j = 0; j < 400000; j++) { } // wait a while
+    uint16_t reg_val = fpga_spi_txrx(0x02, 0); // read out data
+    printf("phy reg %d: 0x%04x\r\n", i, reg_val);
+  }
+  // poll the extended register file
+  for (int i = 256; i < 264; i++)
+  {
+    for (volatile int j = 0; j < 200000; j++) { }
+    fpga_spi_txrx(0x82, 0x0000 | i); // address of extended register
+    for (volatile int j = 0; j < 200000; j++) { }
+    fpga_spi_txrx(0x81, 0x0b03); // start write of extended register addr
+    for (volatile int j = 0; j < 200000; j++) { }
+    fpga_spi_txrx(0x81, 0x0d01); // request read of extended register data
+    for (volatile int j = 0; j < 200000; j++) { }
+    uint16_t reg_val = fpga_spi_txrx(0x02, 0); // read out extended data
+    printf("phy ext reg %d: 0x%04x\r\n", i, reg_val);
+  }
+  /*
+  // override strap registers for advertising capabilities (mode 3:0)
+  // need to set extended register 258 to 0x8001
+  for (volatile int j = 0; j < 200000; j++) { }
+  fpga_spi_txrx(0x82, 0x8102); // write address 258 = 0x0102, set high bit
+  for (volatile int j = 0; j < 200000; j++) { }
+  fpga_spi_txrx(0x81, 0x0b03); // start write of extended register addr
+  for (volatile int j = 0; j < 200000; j++) { }
+  fpga_spi_txrx(0x82, 0x8001); // address 258 desired data = 0x8001
+  for (volatile int j = 0; j < 200000; j++) { }
+  fpga_spi_txrx(0x81, 0x0c03); // start write of extended register data reg
+  for (volatile int j = 0; j < 200000; j++) { }
+  */
+
+  for (volatile int j = 0; j < 4000000; j++) { } // wait a while for negotiate
+
+  // poll the PHY register file
+  for (int i = 0; i < 32; i++)
+  {
+    fpga_spi_txrx(0x81, (uint16_t)((i << 8) | 0x1)); // start read of phy reg
+    for (volatile int j = 0; j < 400000; j++) { } // wait a while
+    uint16_t reg_val = fpga_spi_txrx(0x02, 0); // read out data
+    printf("phy reg %d: 0x%04x\r\n", i, reg_val);
+  }
+ 
+  // poll the extended register file
+  for (int i = 256; i < 264; i++)
+  {
+    for (volatile int j = 0; j < 200000; j++) { }
+    fpga_spi_txrx(0x82, 0x0000 | i); // address of extended register
+    for (volatile int j = 0; j < 200000; j++) { }
+    fpga_spi_txrx(0x81, 0x0b03); // start write of extended register addr
+    for (volatile int j = 0; j < 200000; j++) { }
+    fpga_spi_txrx(0x81, 0x0d01); // request read of extended register data
+    for (volatile int j = 0; j < 200000; j++) { }
+    uint16_t reg_val = fpga_spi_txrx(0x02, 0); // read out extended data
+    printf("phy ext reg %d: 0x%04x\r\n", i, reg_val);
+  }
+ 
   printf("entering main loop\r\n");
   while (1)
   {

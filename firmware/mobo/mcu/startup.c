@@ -134,6 +134,6 @@ void reset_vector( void )
 
   __libc_init_array() ;
   main() ;
-  while (1) { } // never gers here...
+  while (1) { } // never gets here...
 }
 

@@ -1,4 +1,4 @@
-add_executable(mobo-mcu.elf mobo_mcu.c startup.c fpga_spi.c)
+add_executable(mobo-mcu.elf mobo_mcu.c startup.c fpga_spi.c power.c)
 #set_target_properties(mobo_mcu.elf PROPERTIES LINK_FLAGS "-T\"${CMAKE_CURRENT_SOURCE_DIR}/../common_sam3x/sam3x8e.ld\"")
 target_link_libraries(mobo-mcu.elf common_sam3x c gcc)
 

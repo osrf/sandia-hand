@@ -19,6 +19,7 @@
 #include "common_sam3x/sam3x.h"
 #include "common_sam3x/console.h"
 #include "fpga_spi.h"
+#include "power.h"
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -31,6 +32,7 @@ void main()
 {
   console_init();
   fpga_spi_init();
+  power_init();
   printf("hello, world!\r\n");
   for (int i = 0; i < 4; i++)
   {

@@ -20,6 +20,7 @@
 #include "common_sam3x/console.h"
 #include "fpga_spi.h"
 #include "power.h"
+#include "enet.h"
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -33,20 +34,69 @@ void main()
   console_init();
   fpga_spi_init();
   power_init();
+  enet_init();
   printf("hello, world!\r\n");
-  for (int i = 0; i < 4; i++)
-  {
-    //printf("%d\r\n", i);
-    printf("fpga register %d: 0x%04x\r\n", i, fpga_spi_txrx(i, 0));
-    for (volatile int j = 0; j < 100000; j++) { }
-  }
-  // blink the LED a few times
+  // blink the FPGA LED a few times
   for (int i = 0; i < 4; i++)
   {
     for (volatile int j = 0; j < 200000; j++) { }
     fpga_spi_txrx(0x80, 0);
     for (volatile int j = 0; j < 200000; j++) { }
     fpga_spi_txrx(0x80, 1);
+  }
+  __enable_irq();
+  printf("entering main loop\r\n");
+  #define TEST_PKT_LEN 60
+  const uint16_t test_pkt_len = TEST_PKT_LEN;
+  uint8_t test_pkt[TEST_PKT_LEN] = 
+  { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, // 0-5:  destination MAC
+    0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, // 6-11: source MAC
+    0x08, 0x06, // 12-13: ethertype: 0806 = ARP
+    0x00, 0x01, // 14-15: ARP hardware type = ethernet
+    0x08, 0x00, // 16-17: ipv4 protocol type = 0x0800
+    0x06, // 18: hardware length = 0x06
+    0x04, // 19: protocol length = 0x04
+    0x00, 0x01, // 20-21: ARP operation: request
+    0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, // 22-27: bogus sender MAC
+    0x0a, 0x0a, 0x01, 0x02, // 28-31: sender IP: 10.10.1.2
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 32-37: bogus target MAC
+    0x0a, 0x0a, 0x01, 0x01, // 38-41: target IP: 10.10.1.1
+    0, 0, 0, 0, 0, 0, // 42-47
+    0, 0, 0, 0, 0, 0, // 48-53
+    0, 0, 0, 0, 0, 0, // 54-59
+  };
+
+  while (1)
+  {
+    for (volatile int j = 0; j < 20000000; j++) { }
+    printf("tx\r\n");
+    enet_tx_raw(test_pkt, test_pkt_len);
+    printf("tx avail: %d\r\n", enet_tx_avail());
+    while (!enet_tx_avail()) { }
+    printf("tx avail now\r\n");
+    /*
+    for (volatile int j = 0; j < 2000000; j++) { }
+    printf("\r\n");
+    printf("portb: %08x\r\n", PIOB->PIO_PDSR);
+    printf("rsr: %08x\r\n", EMAC->EMAC_RSR);
+    printf("ale: %d\r\n", EMAC->EMAC_ALE);
+    printf("fro: %d\r\n", EMAC->EMAC_FRO);
+    printf("fcs: %d\r\n", EMAC->EMAC_FCSE);
+    printf("rre: %d\r\n", EMAC->EMAC_RRE);
+    printf("rov: %d\r\n", EMAC->EMAC_ROV);
+    printf("rse: %d\r\n", EMAC->EMAC_RSE);
+    printf("ele: %d\r\n", EMAC->EMAC_ELE);
+    printf("rjb: %d\r\n", EMAC->EMAC_RJA);
+    printf("usf: %d\r\n", EMAC->EMAC_USF);
+    printf("rle: %d\r\n", EMAC->EMAC_RLE);
+    */
+  }
+/*
+  for (int i = 0; i < 4; i++)
+  {
+    //printf("%d\r\n", i);
+    printf("fpga register %d: 0x%04x\r\n", i, fpga_spi_txrx(i, 0));
+    for (volatile int j = 0; j < 100000; j++) { }
   }
   // reset the PHY via hardware reset pin
   fpga_spi_txrx(0x81, 4); // assert PHY_RESET_N
@@ -78,7 +128,7 @@ void main()
     uint16_t reg_val = fpga_spi_txrx(0x02, 0); // read out extended data
     printf("phy ext reg %d: 0x%04x\r\n", i, reg_val);
   }
-  /*
+#if 0 
   // override strap registers for advertising capabilities (mode 3:0)
   // need to set extended register 258 to 0x8001
   for (volatile int j = 0; j < 200000; j++) { }
@@ -90,7 +140,7 @@ void main()
   for (volatile int j = 0; j < 200000; j++) { }
   fpga_spi_txrx(0x81, 0x0c03); // start write of extended register data reg
   for (volatile int j = 0; j < 200000; j++) { }
-  */
+#endif
 
   for (volatile int j = 0; j < 4000000; j++) { } // wait a while for negotiate
 
@@ -116,11 +166,7 @@ void main()
     uint16_t reg_val = fpga_spi_txrx(0x02, 0); // read out extended data
     printf("phy ext reg %d: 0x%04x\r\n", i, reg_val);
   }
- 
-  printf("entering main loop\r\n");
-  while (1)
-  {
-  }
+  */
 }
 
 ///////////////////////////////////////////////////////////////////////////

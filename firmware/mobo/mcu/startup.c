@@ -19,6 +19,7 @@
 // lots of this originally snarfed from an Atmel sam3s distro, and much changed
 #include "stdint.h"
 #include "common_sam3x/sam3x.h"
+#include "enet.h"
 
 /* Stack Configuration */  
 #define STACK_SIZE       0x1000     /** Stack size (in DWords) */
@@ -64,45 +65,53 @@ IntFunc exception_table[] = {
     0,               // Reserved
     unmapped_vector, // PendSV_Handler,
     systick_vector,  // SysTick_Handler,
-
-    // add 16 to these numbers to get the ARM ISR number...
-    /* Configurable interrupts  */
-    unmapped_vector, // 0  Supply Controller 
-    unmapped_vector, // 1  Reset Controller 
-    unmapped_vector, // 2  Real Time Clock 
-    unmapped_vector, // 3  Real Time Timer 
-    unmapped_vector, // 4  Watchdog Timer 
+    // SAM3X configurable interrupts begin here...
+    // (add 16 to the numbers below to get the ARM ISR number)
+    unmapped_vector, // 0  SUPC  Supply Controller 
+    unmapped_vector, // 1  RSTC  Reset Controller 
+    unmapped_vector, // 2  RTC   Real Time Clock 
+    unmapped_vector, // 3  RTT   Real Time Timer 
+    unmapped_vector, // 4  WDT   Watchdog Timer 
     unmapped_vector, // 5  PMC 
-    unmapped_vector, // 6  EEFC 
-    unmapped_vector, // 7  Reserved 
+    unmapped_vector, // 6  EEFC0
+    unmapped_vector, // 7  EEFC1
     unmapped_vector, // 8  UART0 
-    unmapped_vector, // 9  UART1 
-    unmapped_vector, // 10 SMC 
+    unmapped_vector, // 9  SMC 
+    unmapped_vector, // 10 reserved
     unmapped_vector, // 11 PIOA
     unmapped_vector, // 12 PIOB
     unmapped_vector, // 13 PIOC
-    unmapped_vector, //USART0_IrqHandler,  /* 14 USART 0 */
-    unmapped_vector, //USART1_IrqHandler,  /* 15 USART 1 */
-    unmapped_vector, //IrqHandlerNotUsed,  /* 16 Reserved */
-    unmapped_vector, //IrqHandlerNotUsed,  /* 17 Reserved */
-    unmapped_vector, //MCI_IrqHandler,     /* 18 MCI */
-    unmapped_vector, //TWI0_IrqHandler,    /* 19 TWI 0 */
-    unmapped_vector, //TWI1_IrqHandler,    /* 20 TWI 1 */
-    unmapped_vector, //SPI_IrqHandler,     /* 21 SPI */
-    unmapped_vector, //SSC_IrqHandler,     /* 22 SSC */
-    unmapped_vector, //TC0_IrqHandler,     /* 23 Timer Counter 0 */
-    unmapped_vector, //TC1_IrqHandler,     /* 24 Timer Counter 1 */
-    unmapped_vector, //TC2_IrqHandler,     /* 25 Timer Counter 2 */
-    unmapped_vector, //TC3_IrqHandler,     /* 26 Timer Counter 3 */
-    unmapped_vector, //TC4_IrqHandler,     /* 27 Timer Counter 4 */
-    unmapped_vector, //TC5_IrqHandler,     /* 28 Timer Counter 5 */
-    unmapped_vector, //ADC_IrqHandler,     /* 29 ADC controller */
-    unmapped_vector, //DAC_IrqHandler,     /* 30 DAC controller */
-    unmapped_vector, //PWM_IrqHandler,     /* 31 PWM */
-    unmapped_vector, //CRCCU_IrqHandler,   /* 32 CRC Calculation Unit */
-    unmapped_vector, //ACC_IrqHandler,     /* 33 Analog Comparator */
-    unmapped_vector, //USBD_IrqHandler,    /* 34 USB Device Port */
-    unmapped_vector, //IrqHandlerNotUsed   /* 35 not used */
+    unmapped_vector, // 14 PIOD
+    unmapped_vector, // 15 PIOE (not used)
+    unmapped_vector, // 16 PIOF (not used)
+    unmapped_vector, // 17 USART0
+    unmapped_vector, // 18 USART1
+    unmapped_vector, // 19 USART2 
+    unmapped_vector, // 20 USART3 
+    unmapped_vector, // 21 HSMCI
+    unmapped_vector, // 22 TWI0
+    unmapped_vector, // 23 TWI1
+    unmapped_vector, // 24 SPI0
+    unmapped_vector, // 25 SPI1
+    unmapped_vector, // 26 SSC 
+    unmapped_vector, // 27 TC0
+    unmapped_vector, // 28 TC1
+    unmapped_vector, // 29 TC2
+    unmapped_vector, // 30 TC3
+    unmapped_vector, // 31 TC4
+    unmapped_vector, // 32 TC5
+    unmapped_vector, // 33 TC6
+    unmapped_vector, // 34 TC7
+    unmapped_vector, // 35 TC8
+    unmapped_vector, // 36 PWM
+    unmapped_vector, // 37 ADC
+    unmapped_vector, // 38 DACC
+    unmapped_vector, // 39 DMAC
+    unmapped_vector, // 40 UOTGHS
+    unmapped_vector, // 41 TRNG
+    enet_vector,     // 42 EMAC
+    unmapped_vector, // 43 CAN0
+    unmapped_vector, // 44 CAN1
 };
 
 void reset_vector( void )
@@ -111,27 +120,22 @@ void reset_vector( void )
   //LowLevelInit() ;
   EFC0->EEFC_FMR = EEFC_FMR_FWS(3);
   EFC1->EEFC_FMR = EEFC_FMR_FWS(3);
-  // TODO: power up PLL, switch to main oscillator
-
+  // TODO: power up PLL, switch to main oscillator. 
+  // bootloader already has us at 64 Mhz, but could tweak this if needed.
+  // set up data segment
   pSrc = &_etext ;
   pDest = &_srelocate ;
-
-  // set up data
   if ( pSrc != pDest )
     for ( ; pDest < &_erelocate ; )
       *pDest++ = *pSrc++ ;
-
-  // set up bss
+  // set up bss segment
   for ( pDest = &_szero ; pDest < &_ezero ; )
     *pDest++ = 0;
-
   // set vector table base address
   pSrc = (uint32_t *)&_sfixed;
   SCB->VTOR = ( (uint32_t)pSrc & SCB_VTOR_TBLOFF_Msk ) ;
-
   if ( ((uint32_t)pSrc >= IRAM_ADDR) && ((uint32_t)pSrc < IRAM_ADDR+IRAM_SIZE) )
     SCB->VTOR |= 1 << SCB_VTOR_TBLBASE_Pos ;
-
   __libc_init_array() ;
   main() ;
   while (1) { } // never gets here...

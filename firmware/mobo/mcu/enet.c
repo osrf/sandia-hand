@@ -138,7 +138,7 @@ void enet_init()
 
   for (int i = 0; i < ENET_TX_BUFFERS; i++)
   {
-    g_enet_tx_desc[i].addr = (uint32_t)g_enet_tx_desc;
+    g_enet_tx_desc[i].addr = (uint32_t)g_enet_tx_buf;
     g_enet_tx_desc[i].status.val = 0; // clear all flags
     g_enet_tx_desc[i].status.bm.b_used = 1; // no need to send this guy
   }

@@ -45,6 +45,16 @@ void main()
     fpga_spi_txrx(0x80, 1);
   }
   __enable_irq();
+  // reset the PHY via hardware reset pin
+  fpga_spi_txrx(0x81, 4); // assert PHY_RESET_N
+  for (volatile int j = 0; j < 400000; j++) { } // wait a while
+  fpga_spi_txrx(0x81, 0); // de-assert PHY_RESET_N
+  for (volatile int j = 0; j < 1000000; j++) { } // wait a longer while
+  // now reset the PHY via software reset register
+  fpga_spi_txrx(0x82, 0x9000); // set reset bit and auto-negotiate bit
+  fpga_spi_txrx(0x81, 0x0001); // start write of register zero
+  for (volatile int j = 0; j < 1000000; j++) { } // wait a longer while
+
   printf("entering main loop\r\n");
   #define TEST_PKT_LEN 60
   const uint16_t test_pkt_len = TEST_PKT_LEN;
@@ -98,15 +108,6 @@ void main()
     printf("fpga register %d: 0x%04x\r\n", i, fpga_spi_txrx(i, 0));
     for (volatile int j = 0; j < 100000; j++) { }
   }
-  // reset the PHY via hardware reset pin
-  fpga_spi_txrx(0x81, 4); // assert PHY_RESET_N
-  for (volatile int j = 0; j < 400000; j++) { } // wait a while
-  fpga_spi_txrx(0x81, 0); // de-assert PHY_RESET_N
-  for (volatile int j = 0; j < 1000000; j++) { } // wait a longer while
-  // now reset the PHY via software reset register
-  fpga_spi_txrx(0x82, 0x9000); // set reset bit and auto-negotiate bit
-  fpga_spi_txrx(0x81, 0x0001); // start write of register zero
-  for (volatile int j = 0; j < 1000000; j++) { } // wait a longer while
   // poll the PHY register file
   for (int i = 0; i < 32; i++)
   {

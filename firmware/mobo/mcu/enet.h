@@ -25,6 +25,8 @@ void enet_init();
 void enet_vector();
 void enet_tx_raw(const uint8_t *pkt, uint16_t pkt_len);
 uint8_t enet_tx_avail();
+void enet_idle(); // handle non time-critical ethernet tasks
+void enet_systick();
 
 #endif
 

@@ -19,6 +19,7 @@
 #include "enet.h"
 #include "common_sam3x/sam3x.h"
 #include <stdio.h>
+#include <string.h>
 
 // hardware connections:
 //   PB0 = EREFCK
@@ -29,6 +30,11 @@
 //   PB5 = ERX_0
 //   PB6 = ERX_1
 //   PB7 = ERX_ER
+
+#define htonl(x) (__REV((uint32_t)x))
+#define htons(x) (__REV16((uint16_t)x))
+#define ntohl(x) (htonl(x))
+#define ntohs(x) (htons(x))
 
 // structure definitions taken from ASF 3.5.1,  /sam/drivers/emac/emac.h
 typedef struct emac_rx_descriptor {
@@ -84,20 +90,98 @@ typedef struct emac_tx_descriptor {
   } status;
 } __attribute__ ((packed, aligned(8))) emac_tx_descriptor_t;
 
+#define ENET_MAX_PKT_SIZE 1550
+
+typedef struct 
+{
+  uint8_t  eth_dest_addr[6];
+  uint8_t  eth_source_addr[6];
+  uint16_t eth_ethertype : 16;
+} __attribute__((packed)) eth_header_t;
+
+typedef struct 
+{
+  eth_header_t eth;
+  uint8_t  ip_header_len   :  4;
+  uint8_t  ip_version      :  4;
+  uint8_t  ip_ecn          :  2;
+  uint8_t  ip_diff_serv    :  6;
+  uint16_t ip_len          : 16;
+  uint16_t ip_id           : 16;
+  uint16_t ip_flag_frag    : 16;
+  uint8_t  ip_ttl          :  8;
+  uint8_t  ip_proto        :  8;
+  uint16_t ip_checksum     : 16;
+  uint32_t ip_source_addr  : 32;
+  uint32_t ip_dest_addr    : 32;
+} __attribute__((packed)) ip_header_t;
+static const uint16_t IP_ETHERTYPE = 0x0800;
+static const uint8_t  IP_HEADER_LEN = 5;
+static const uint8_t  IP_VERSION = 4;
+static const uint8_t  IP_PROTO_ICMP = 0x01;
+static const uint8_t  IP_PROTO_UDP = 0x11;
+static const uint16_t IP_DONT_FRAGMENT = 0x4000;
+
+typedef struct
+{
+  eth_header_t eth;
+  uint16_t arp_hw_type         : 16;
+  uint16_t arp_proto_type      : 16;
+  uint8_t  arp_hw_addr_len     :  8;
+  uint8_t  arp_proto_addr_len  :  8;
+  uint16_t arp_operation       : 16;
+  uint8_t  arp_sender_hw_addr[6];
+  uint32_t arp_sender_proto_addr;
+  uint8_t  arp_target_hw_addr[6];
+  uint32_t arp_target_proto_addr;
+} __attribute__((packed)) arp_pkt_t;
+static const uint16_t ARP_ETHERTYPE = 0x0806;
+static const uint16_t ARP_HW_ETHERNET = 1;
+static const uint16_t ARP_PROTO_IPV4 = 0x0800;
+static const uint16_t ARP_OP_REQUEST = 1;
+static const uint16_t ARP_OP_RESPONSE = 2;
+
+
+/////////////////////////////////////////////////////////////////////////////
+#define ICMP_MAX_DATA 200
+typedef struct
+{
+  ip_header_t ip;
+  uint8_t  icmp_type;
+  uint8_t  icmp_code;
+  uint16_t icmp_checksum;
+  uint16_t icmp_id;
+  uint16_t icmp_sequence;
+} __attribute__((packed)) icmp_header_t;
+static const uint8_t ICMP_ECHO_REPLY   = 0x00;
+static const uint8_t ICMP_ECHO_REQUEST = 0x08;
+
+/////////////////////////////////////////////////////////////////////////////
+// globals
+
 #define ENET_RX_BUFFERS 16
 #define ENET_RX_UNITSIZE 128
 volatile static emac_rx_descriptor_t __attribute__((aligned(8)))
                    g_enet_rx_desc[ENET_RX_BUFFERS];
 volatile static uint8_t __attribute__((aligned(8))) 
                    g_enet_rx_buf[ENET_RX_BUFFERS * ENET_RX_UNITSIZE];
+static uint8_t __attribute__((aligned(8)))
+                   g_enet_rx_full_packet[ENET_MAX_PKT_SIZE];
 
 // keep the TX path simple. single big buffer.
 #define ENET_TX_BUFFERS 1
-#define ENET_TX_UNITSIZE 1550
+#define ENET_TX_UNITSIZE ENET_MAX_PKT_SIZE
 volatile static emac_tx_descriptor_t __attribute__((aligned(8)))
                    g_enet_tx_desc[ENET_TX_BUFFERS];
 volatile static uint8_t __attribute__((aligned(8)))
                    g_enet_tx_buf[ENET_TX_BUFFERS * ENET_TX_UNITSIZE];
+
+
+// todo: read these from flash somewhere, probably in bootloader section
+static uint8_t g_enet_hand_mac[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
+static uint32_t g_enet_hand_ip = 0x0a0a0102; // 10.10.1.2
+static uint32_t g_enet_master_ip = 0x0a0a0101; // 10.10.1.
+static uint8_t g_enet_master_mac[6] = {0,0,0,0,0,0}; // to request via ARP
 
 void enet_init()
 {
@@ -154,9 +238,196 @@ void enet_init()
   NVIC_EnableIRQ(EMAC_IRQn);
 }
 
+static void enet_arp_rx(uint8_t *pkt, const uint32_t len)
+{
+  arp_pkt_t *arp_pkt = (arp_pkt_t *)pkt;
+  if (ntohs(arp_pkt->arp_hw_type) != ARP_HW_ETHERNET || 
+      ntohs(arp_pkt->arp_proto_type) != ARP_PROTO_IPV4)
+  {
+    printf("unknown ARP hw type (0x%x) or protocol type (0x%0x)\r\n",
+           ntohs(arp_pkt->arp_hw_type), ntohs(arp_pkt->arp_proto_type));
+    return; // this function only handles ARP for IPv4 over ethernet
+  }
+  uint16_t op = ntohs(arp_pkt->arp_operation);
+  if (op == ARP_OP_REQUEST) 
+  {
+    int req_ip = ntohl(arp_pkt->arp_target_proto_addr);
+    if (req_ip != g_enet_hand_ip)
+    {
+      //printf("ignoring ARP request for 0x%08x\r\n", req_ip);
+      return; 
+    }
+    //printf("request for 0x%08x\r\n", req_ip);
+    //const uint8_t *request_eth_addr = arp_pkt->sender_hw_addr;
+    //const uint32_t *request_ip = htonl(arp_pkt->sender_proto_addr);
+    arp_pkt_t response;
+    for (int i = 0; i < 6; i++)
+    {
+      response.eth.eth_dest_addr[i] = arp_pkt->arp_sender_hw_addr[i];
+      response.eth.eth_source_addr[i] = g_enet_hand_mac[i];
+      response.arp_sender_hw_addr[i] = g_enet_hand_mac[i];
+      response.arp_target_hw_addr[i] = arp_pkt->arp_sender_hw_addr[i];
+    }
+    response.eth.eth_ethertype = htons(ARP_ETHERTYPE);
+    response.arp_sender_proto_addr = htonl(g_enet_hand_ip);
+    response.arp_target_proto_addr = arp_pkt->arp_sender_proto_addr;
+    response.arp_hw_type = htons(ARP_HW_ETHERNET);
+    response.arp_proto_type = htons(ARP_PROTO_IPV4);
+    response.arp_hw_addr_len = 6; // ethernet address length
+    response.arp_proto_addr_len = 4; // IPv4 address length
+    response.arp_operation = htons(ARP_OP_RESPONSE);
+    enet_tx_raw((uint8_t *)&response, sizeof(response));
+  }
+  else if (op == ARP_OP_RESPONSE)
+  {
+    printf("arp response rx\r\n");
+    if (arp_pkt->arp_sender_proto_addr == htonl(g_enet_master_ip))
+    {
+      for (int i = 0; i < 6; i++)
+        g_enet_master_mac[i] = arp_pkt->arp_sender_hw_addr[i];
+      printf("master MAC: %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+             g_enet_master_mac[0], g_enet_master_mac[1],
+             g_enet_master_mac[2], g_enet_master_mac[3],
+             g_enet_master_mac[4], g_enet_master_mac[5]);
+    }
+  }
+}
+
+static void enet_request_master_mac()
+{
+  printf("requesting master MAC...\r\n");
+  arp_pkt_t request;
+  for (int i = 0; i < 6; i++)
+  {
+    request.eth.eth_dest_addr[i] = 0xff; // broadcast it
+    request.arp_target_hw_addr[i] = 0xff;
+    request.eth.eth_source_addr[i] = g_enet_hand_mac[i];
+    request.arp_sender_hw_addr[i] = g_enet_hand_mac[i];
+  }
+  request.arp_sender_proto_addr = htonl(g_enet_hand_ip);
+  request.arp_target_proto_addr = htonl(g_enet_master_ip);
+  request.eth.eth_ethertype = htons(ARP_ETHERTYPE);
+  request.arp_hw_type = htons(ARP_HW_ETHERNET);
+  request.arp_proto_type = htons(ARP_PROTO_IPV4);
+  request.arp_hw_addr_len = 6; // ethernet address length
+  request.arp_proto_addr_len = 4; // IPv4 address length
+  request.arp_operation = htons(ARP_OP_REQUEST);
+  enet_tx_raw((uint8_t *)&request, sizeof(request));
+}
+
+static void enet_add_ip_header_checksum(ip_header_t *ip)
+{
+  ip->ip_checksum = 0;
+  uint32_t sum = 0;
+  for (int word_idx = 0; word_idx < 10; word_idx++)
+  {
+    uint16_t word = *((uint16_t *)ip + sizeof(eth_header_t)/2 + word_idx);
+    word = ntohs(word);
+    sum += word;
+    //printf("word %d: 0x%02x\r\n", word_idx, word);
+  }
+  sum += (sum >> 16);
+  sum &= 0xffff;
+  ip->ip_checksum = (uint16_t)htons(~sum);
+  //printf("ip header checksum: 0x%04x\r\n", ip->ip_checksum);
+}
+
+static void enet_icmp_rx(uint8_t *pkt, const uint32_t len)
+{
+  //printf("enet_icmp_rx\r\n");
+  icmp_header_t *icmp = (icmp_header_t *)pkt;
+  if (icmp->icmp_type != ICMP_ECHO_REQUEST)
+    return;
+  static const int ICMP_RESPONSE_MAX_LEN = 300; // i have no idea
+  uint8_t icmp_response_buf[ICMP_RESPONSE_MAX_LEN];
+  uint16_t incoming_ip_len = ntohs(icmp->ip.ip_len);
+  uint16_t icmp_data_len = incoming_ip_len - 20 - 8; // everything after icmp
+  if (icmp_data_len > ICMP_RESPONSE_MAX_LEN - sizeof(icmp_header_t))
+    icmp_data_len = ICMP_RESPONSE_MAX_LEN - sizeof(icmp_header_t);
+  icmp_header_t *icmp_response = (icmp_header_t *)icmp_response_buf;
+  for (int i = 0; i < 6; i++)
+  {
+    icmp_response->ip.eth.eth_dest_addr[i] = icmp->ip.eth.eth_source_addr[i];
+    icmp_response->ip.eth.eth_source_addr[i] = g_enet_hand_mac[i];
+  }
+  icmp_response->ip.eth.eth_ethertype = htons(IP_ETHERTYPE);
+  icmp_response->ip.ip_header_len = IP_HEADER_LEN;
+  icmp_response->ip.ip_version = IP_VERSION;
+  icmp_response->ip.ip_ecn = 0;
+  icmp_response->ip.ip_diff_serv = 0;
+  icmp_response->ip.ip_len = htons(incoming_ip_len);
+  icmp_response->ip.ip_id = 0;
+  icmp_response->ip.ip_flag_frag = htons(IP_DONT_FRAGMENT);
+  icmp_response->ip.ip_ttl = icmp->ip.ip_ttl;
+  icmp_response->ip.ip_proto = IP_PROTO_ICMP;
+  icmp_response->ip.ip_checksum = 0;
+  icmp_response->ip.ip_source_addr = htonl(g_enet_hand_ip);
+  icmp_response->ip.ip_dest_addr = icmp->ip.ip_source_addr;
+  icmp_response->icmp_type = ICMP_ECHO_REPLY;
+  icmp_response->icmp_code = 0;
+  icmp_response->icmp_checksum = 0;
+  icmp_response->icmp_id = icmp->icmp_id;
+  icmp_response->icmp_sequence = icmp->icmp_sequence;
+  enet_add_ip_header_checksum(&icmp_response->ip);
+  //icmp_response->icmp_checksum = htons(0x911a); // hardcoded... never changes
+  uint8_t *icmp_response_payload = icmp_response_buf + sizeof(icmp_header_t);
+  uint8_t *icmp_request_payload = pkt + sizeof(icmp_header_t);
+  for (int i = 0; i < icmp_data_len; i++)
+    icmp_response_payload[i] = icmp_request_payload[i];
+  uint32_t csum = 0;
+  for (int word_idx = 0; word_idx < 4 + icmp_data_len / 2; word_idx++)
+  {
+    uint16_t word = *((uint16_t *)icmp_response + sizeof(ip_header_t)/2 + 
+                      word_idx);
+    word = ntohs(word);
+    csum += word;
+  }
+  csum += (csum >> 16);
+  csum &= 0xffff;
+  icmp_response->icmp_checksum = htons(~csum);
+  enet_tx_raw(icmp_response_buf, sizeof(icmp_header_t) + icmp_data_len);
+}
+
+static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
+{
+  printf("enet_udp_rx\r\n");
+}
+
+static void enet_ip_rx(uint8_t *pkt, const uint32_t len)
+{
+  ip_header_t *ip = (ip_header_t *)pkt; 
+  const uint8_t proto = ip->ip_proto;
+  if (proto == IP_PROTO_ICMP)
+    enet_icmp_rx(pkt, len);
+  else if (proto == IP_PROTO_UDP)
+    enet_udp_rx(pkt, len);
+}
+
+static void enet_packet_rx(uint8_t *pkt, const uint32_t len)
+{
+  eth_header_t *eth = (eth_header_t *)pkt;
+  // check our mac address and broadcast. in future, perhaps check a range.
+  int mac_match = 1, bcast_match = 1;
+  for (int i = 0; i < 6; i++)
+  {
+    if (eth->eth_dest_addr[i] != g_enet_hand_mac[i])
+      mac_match = 0;
+    if (eth->eth_dest_addr[i] != 0xff)
+      bcast_match = 0;
+  }
+  if (!mac_match && !bcast_match)
+    return; // buh bye
+  int ethertype = ntohs(eth->eth_ethertype);
+  if (ethertype == IP_ETHERTYPE)
+    enet_ip_rx(pkt, len);
+  else if (ethertype == ARP_ETHERTYPE)
+    enet_arp_rx(pkt, len);
+  else
+    printf("unknown ethertype: 0x%04x\r\n", ethertype);
+}
+
 void enet_vector()
 {
-  //return; // haxx just to try to observe status flag as non-zero
   // read the flags to reset the interrupt 
   volatile uint32_t enet_isr = EMAC->EMAC_ISR;
   volatile uint32_t enet_rsr = EMAC->EMAC_RSR;
@@ -169,24 +440,41 @@ void enet_vector()
     if (enet_rsr & EMAC_RSR_BNA)
       rsr_clear_flag |= EMAC_RSR_BNA;
     EMAC->EMAC_RSR = rsr_clear_flag;
-    // TODO: fire callbacks.
     // spin through buffers and mark them as unowned
-    for (int i = 0; i < ENET_RX_BUFFERS; i++)
+    // collect used buffers into single ethernet RX buffer
+    static int s_rx_buf_idx = 0;
+    static int s_rx_pkt_write_idx = 0;
+    while (g_enet_rx_desc[s_rx_buf_idx].addr.bm.b_ownership)
     {
-      volatile emac_rx_descriptor_t *desc = &g_enet_rx_desc[i];
-      volatile uint8_t *buf = &g_enet_rx_buf[i*ENET_RX_UNITSIZE];
-      if (desc->addr.bm.b_ownership)
+      volatile emac_rx_descriptor_t *desc = &g_enet_rx_desc[s_rx_buf_idx];
+      uint8_t *buf = (uint8_t *)&g_enet_rx_buf[s_rx_buf_idx*ENET_RX_UNITSIZE];
+      desc->addr.bm.b_ownership = 0; // clear buffer
+      if (desc->status.bm.b_sof)
+        s_rx_pkt_write_idx = 0; // ensure we reset this
+      const int buf_data_len = !desc->status.bm.len ? ENET_RX_UNITSIZE :
+                               (desc->status.bm.len - s_rx_pkt_write_idx);
+      /*
+      printf("%d owned, size %d, sof %d, eof %d\r\n", 
+             s_rx_buf_idx, buf_len, desc->status.bm.b_sof, 
+             desc->status.bm.b_eof);
+      */
+      if (buf_data_len > 0 && 
+          s_rx_pkt_write_idx + buf_data_len < ENET_MAX_PKT_SIZE)
       {
-        printf("%d owned, size %d\r\n", 
-               i, desc->status.bm.len);
-        desc->addr.bm.b_ownership = 0; // clear buffer
-        for (int j = 0; j < desc->status.bm.len; j++)
-        {
-          printf("%d: 0x%02x\r\n", j, buf[j]);
-        }
+        memcpy(&g_enet_rx_full_packet[s_rx_pkt_write_idx], buf, buf_data_len);
+        s_rx_pkt_write_idx += buf_data_len;
       }
-      //printf("rx\r\n");
-      // TODO: do something with data
+      else
+      {
+        printf("AAAHH enet rx buffer trashed\r\n");
+        s_rx_pkt_write_idx = 0;
+      }
+      if (desc->status.bm.b_eof)
+      {
+        enet_packet_rx(g_enet_rx_full_packet, s_rx_pkt_write_idx);
+        s_rx_pkt_write_idx = 0; // to be really^n sure this gets reset... 
+      }
+      s_rx_buf_idx = ++s_rx_buf_idx % ENET_RX_BUFFERS; // advance in ring
     }
   }
 }
@@ -195,14 +483,69 @@ void enet_tx_raw(const uint8_t *pkt, uint16_t pkt_len)
 {
   g_enet_tx_desc[0].status.bm.b_used = 0; // we're monkeying with it
   // for now, we just crush whatever is in the tx buffer.
-  for (int i = 0; i < pkt_len && i < ENET_TX_UNITSIZE; i++)
-    g_enet_tx_buf[i] = pkt[i]; // todo: replace with memcpy someday
+  if (pkt_len > ENET_TX_UNITSIZE)
+    pkt_len = ENET_TX_UNITSIZE; // save memory from being brutally crushed
+  /*
+  printf("enet_tx_raw %d bytes:\r\n", pkt_len)
+  for (int i = 0; i < pkt_len; i++)
+    printf("%d: 0x%02x\r\n", i, pkt[i]);
+  */
+  memcpy((uint8_t *)g_enet_tx_buf, pkt, pkt_len);
   g_enet_tx_desc[0].status.bm.b_last_buffer = 1;
   g_enet_tx_desc[0].status.bm.len = pkt_len;
-  EMAC->EMAC_NCR |= EMAC_NCR_TSTART; // kick off TX
+  EMAC->EMAC_NCR |= EMAC_NCR_TSTART; // kick off TX DMA
+}
+
+static int enet_master_mac_valid()
+{
+  for (int i = 0; i < 6; i++)
+    if (g_enet_master_mac[i])
+      return 1;
+  return 0; // all zeros = invalid master MAC
 }
 
 uint8_t enet_tx_avail()
 {
   return (g_enet_tx_desc[0].status.bm.b_last_buffer != 0);
 }
+
+void enet_idle()
+{
+
+}
+
+void enet_systick()
+{
+  static int s_enet_systick_count = 0;
+  if (++s_enet_systick_count % 2000 == 0)
+  {
+    if (!enet_master_mac_valid())
+      enet_request_master_mac();
+    //printf("enet 1hz systick\r\n");
+  }
+}
+
+////////////////////////////////////////////////////////////////////////
+// graveyard
+#if 0
+  printf("enet_packet_rx %d bytes\r\n", len);
+  printf("dest  addr: %02x %02x %02x %02x %02x %02x\r\n",
+         eth_pkt->dest_addr[0],
+         eth_pkt->dest_addr[1],
+         eth_pkt->dest_addr[2],
+         eth_pkt->dest_addr[3],
+         eth_pkt->dest_addr[4],
+         eth_pkt->dest_addr[5]); printf("source addr: %02x %02x %02x %02x %02x %02x\r\n",
+         eth_pkt->source_addr[0],
+         eth_pkt->source_addr[1],
+         eth_pkt->source_addr[2],
+         eth_pkt->source_addr[3],
+         eth_pkt->source_addr[4],
+         eth_pkt->source_addr[5]);
+  printf("arp ethertype: %x\r\n", ntohs(arp_pkt->ethertype));
+  printf("arp hw type: %x\r\n", ntohs(arp_pkt->hw_type));
+  printf("arp proto type: %x\r\n", ntohs(arp_pkt->proto_type));
+  printf("arp hw addr len: %x\r\n", arp_pkt->hw_addr_len);
+  printf("arp proto addr len: %x\r\n", arp_pkt->proto_addr_len);
+#endif
+

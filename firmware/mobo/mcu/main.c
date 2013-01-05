@@ -27,6 +27,7 @@
 
 void systick_vector()
 {
+  enet_systick();
 }
 
 void main()
@@ -46,15 +47,16 @@ void main()
   }
   __enable_irq();
   // reset the PHY via hardware reset pin
+  printf("asserting PHY hardware reset\r\n");
   fpga_spi_txrx(0x81, 4); // assert PHY_RESET_N
-  for (volatile int j = 0; j < 400000; j++) { } // wait a while
+  for (volatile int j = 0; j < 2000000; j++) { } // wait a while
   fpga_spi_txrx(0x81, 0); // de-assert PHY_RESET_N
-  for (volatile int j = 0; j < 1000000; j++) { } // wait a longer while
+  for (volatile int j = 0; j < 4000000; j++) { } // wait a longer while
+  printf("requesting PHY software reset\r\n");
   // now reset the PHY via software reset register
   fpga_spi_txrx(0x82, 0x9000); // set reset bit and auto-negotiate bit
   fpga_spi_txrx(0x81, 0x0001); // start write of register zero
-  for (volatile int j = 0; j < 1000000; j++) { } // wait a longer while
-
+  for (volatile int j = 0; j < 4000000; j++) { } // wait a longer while
   printf("entering main loop\r\n");
   #define TEST_PKT_LEN 60
   const uint16_t test_pkt_len = TEST_PKT_LEN;
@@ -75,16 +77,74 @@ void main()
     0, 0, 0, 0, 0, 0, // 48-53
     0, 0, 0, 0, 0, 0, // 54-59
   };
+  SysTick_Config(F_CPU/1000); // set up 1 khz systick
 
   while (1)
   {
+    enet_idle();
+    /*
     for (volatile int j = 0; j < 20000000; j++) { }
     printf("tx\r\n");
     enet_tx_raw(test_pkt, test_pkt_len);
     printf("tx avail: %d\r\n", enet_tx_avail());
     while (!enet_tx_avail()) { }
     printf("tx avail now\r\n");
-    /*
+    */
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////
+// libc stub nonsense
+
+extern int _end;
+extern caddr_t _sbrk(int incr);
+
+extern caddr_t _sbrk(int incr)
+{
+  static unsigned char *heap = NULL ;
+  unsigned char *prev_heap ;
+  if ( heap == NULL )
+    heap = (unsigned char *)&_end ;
+  prev_heap = heap;
+  heap += incr ;
+  return (caddr_t) prev_heap ;
+}
+extern int _kill(int pid, int sig) { return -1; }
+extern void _exit(int status) { }
+int _getpid() { return 1; }
+extern int _write(int fd, const void *buf, size_t count)
+{
+  //io_led(true);
+  console_send_block((uint8_t *)buf, count);
+  //io_led(false);
+  return count;
+}
+extern int _close(int fd) { return -1; }
+int _fstat(int fd, struct stat *st)
+{
+  st->st_mode = S_IFCHR;
+    return 0;
+}
+int _isatty(int fd) { return 1; }
+off_t _lseek(int fd, off_t offset, int whence) { return 0; }
+ssize_t _read(int fd, void *buf, size_t count) { return 0; }
+
+struct __FILE { int handle; };
+FILE __stdout;
+FILE __stderr;
+int fputc(int ch, FILE *f)
+{
+  //console_send_string("fputc\r\n");
+  return 0;
+}
+void _ttywrch(int ch)
+{
+  //console_send_string("ttywrch\r\n");
+}
+
+/////////////////////////////////////////////////////////////////////////
+// graveyard
+#if 0
     for (volatile int j = 0; j < 2000000; j++) { }
     printf("\r\n");
     printf("portb: %08x\r\n", PIOB->PIO_PDSR);
@@ -99,8 +159,7 @@ void main()
     printf("rjb: %d\r\n", EMAC->EMAC_RJA);
     printf("usf: %d\r\n", EMAC->EMAC_USF);
     printf("rle: %d\r\n", EMAC->EMAC_RLE);
-    */
-  }
+
 /*
   for (int i = 0; i < 4; i++)
   {
@@ -168,55 +227,6 @@ void main()
     printf("phy ext reg %d: 0x%04x\r\n", i, reg_val);
   }
   */
-}
 
-///////////////////////////////////////////////////////////////////////////
-// libc stub nonsense
-
-extern int _end;
-extern caddr_t _sbrk(int incr);
-
-extern caddr_t _sbrk(int incr)
-{
-  static unsigned char *heap = NULL ;
-  unsigned char *prev_heap ;
-  if ( heap == NULL )
-    heap = (unsigned char *)&_end ;
-  prev_heap = heap;
-  heap += incr ;
-  return (caddr_t) prev_heap ;
-}
-extern int _kill(int pid, int sig) { return -1; }
-extern void _exit(int status) { }
-int _getpid() { return 1; }
-extern int _write(int fd, const void *buf, size_t count)
-{
-  //io_led(true);
-  console_send_block((uint8_t *)buf, count);
-  //io_led(false);
-  return count;
-}
-extern int _close(int fd) { return -1; }
-int _fstat(int fd, struct stat *st)
-{
-  st->st_mode = S_IFCHR;
-    return 0;
-}
-int _isatty(int fd) { return 1; }
-off_t _lseek(int fd, off_t offset, int whence) { return 0; }
-ssize_t _read(int fd, void *buf, size_t count) { return 0; }
-
-struct __FILE { int handle; };
-FILE __stdout;
-FILE __stderr;
-int fputc(int ch, FILE *f)
-{
-  //console_send_string("fputc\r\n");
-  return 0;
-}
-void _ttywrch(int ch)
-{
-  //console_send_string("ttywrch\r\n");
-}
-
+#endif
 

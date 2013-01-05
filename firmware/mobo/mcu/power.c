@@ -18,6 +18,7 @@
 
 #include "power.h"
 #include "common_sam3x/sam3x.h"
+#include "stdio.h"
 
 // hardware connections:
 //   PA21 = F0_LV
@@ -28,6 +29,7 @@
 //   PA4  = F2_HV
 //   PA6  = F3_LV
 //   PA16 = F3_HV
+//   PB16 = 9V_EN  needs to be turned on for any of the low-volt rails to work
 
 #define POWER_NUM_FINGERS 4
 
@@ -45,25 +47,34 @@ void power_init()
   const uint32_t piob_pins = PIO_PB17 | PIO_PB19;
   const uint32_t pioc_pins = PIO_PC19;
   PIOA->PIO_PER = PIOA->PIO_OER = PIOA->PIO_CODR = pioa_pins;
-  PIOB->PIO_PER = PIOB->PIO_OER = PIOB->PIO_CODR = piob_pins;
+  PIOB->PIO_PER = PIOB->PIO_OER = PIOB->PIO_CODR = piob_pins | PIO_PB16;
   PIOC->PIO_PER = PIOC->PIO_OER = PIOC->PIO_CODR = pioc_pins;
+  // turn on 9v rail
+  PIOB->PIO_SODR = PIO_PB16;
 }
 
 void power_set(const uint8_t finger_idx, const power_state_t power_state)
 {
   if (finger_idx >= POWER_NUM_FINGERS) return; // get that out
   const power_switch_t *sw = power_switches[finger_idx];
+  /*
+  printf("setting finger %d to power state %d\r\n", 
+         finger_idx, (uint8_t)power_state);
+  printf("sw[1].pio = %08x\r\n", (uint32_t)sw[1].pio);
+  printf("sw[1].pin_idx = %08x\r\n", sw[1].pin_idx);
+  printf("PIOB = %08x\r\n", (uint32_t)PIOB);
+  */
   switch(power_state)
   {
-    POWER_OFF:
+    case POWER_OFF:
       sw[0].pio->PIO_CODR = sw[0].pin_idx; // low voltage off
       sw[1].pio->PIO_CODR = sw[1].pin_idx; // high voltage off
       break;
-    POWER_LOW:
+    case POWER_LOW:
       sw[0].pio->PIO_SODR = sw[0].pin_idx; // low voltage on
       sw[1].pio->PIO_CODR = sw[1].pin_idx; // high voltage off
       break;
-    POWER_ON: // need to wait a bit for high voltage to ramp up? not sure
+    case POWER_ON: // need to wait a bit for high voltage to ramp up? not sure
       sw[1].pio->PIO_SODR = sw[1].pin_idx; // high voltage on
       sw[0].pio->PIO_CODR = sw[0].pin_idx; // low voltage off
       break;

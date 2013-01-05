@@ -21,7 +21,7 @@
 
 #include <stdint.h>
 
-typedef enum { POWER_OFF, POWER_LOW, POWER_ON } power_state_t;
+typedef enum { POWER_OFF = 0, POWER_LOW = 1, POWER_ON = 2} power_state_t;
 
 void power_init();
 void power_set(const uint8_t finger_idx, const power_state_t power_state);

@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "hand_packets.h"
+#include "power.h"
 
 // hardware connections:
 //   PB0 = EREFCK
@@ -417,6 +418,11 @@ static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
     set_finger_power_state_t *sfp = (set_finger_power_state_t *)(udp_payload+4);
     printf("sfp finger %d state %d\r\n", 
            sfp->finger_idx, sfp->finger_power_state);
+    if (sfp->finger_idx > 3)
+      return; // buh bye
+    if (sfp->finger_power_state > (uint8_t)POWER_ON)
+      return; // buh bye
+    power_set(sfp->finger_idx, (power_state_t)sfp->finger_power_state);
   }
 }
 

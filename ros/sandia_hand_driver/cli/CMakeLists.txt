@@ -1,0 +1,2 @@
+rosbuild_add_executable(hand_cli hand_cli.cpp)
+target_link_libraries(hand_cli sandia_hand)

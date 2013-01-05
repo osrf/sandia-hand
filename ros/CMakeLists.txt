@@ -8,3 +8,11 @@ ExternalProject_Add(sandia_hand_teleop
                     INSTALL_COMMAND "")
 install(CODE "execute_process(COMMAND make -C ${CMAKE_CURRENT_BINARY_DIR}/sandia_hand_teleop install)")
 
+ExternalProject_Add(sandia_hand_driver
+                    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/sandia_hand_driver
+                    BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/sandia_hand_driver
+                    CMAKE_ARGS
+                      -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+                    INSTALL_COMMAND "")
+install(CODE "execute_process(COMMAND make -C ${CMAKE_CURRENT_BINARY_DIR}/sandia_hand_driver install)")
+

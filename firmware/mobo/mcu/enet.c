@@ -20,6 +20,7 @@
 #include "common_sam3x/sam3x.h"
 #include <stdio.h>
 #include <string.h>
+#include "hand_packets.h"
 
 // hardware connections:
 //   PB0 = EREFCK
@@ -99,6 +100,7 @@ typedef struct
   uint16_t eth_ethertype : 16;
 } __attribute__((packed)) eth_header_t;
 
+/////////////////////////////////////////////////////////////////////////////
 typedef struct 
 {
   eth_header_t eth;
@@ -122,6 +124,7 @@ static const uint8_t  IP_PROTO_ICMP = 0x01;
 static const uint8_t  IP_PROTO_UDP = 0x11;
 static const uint16_t IP_DONT_FRAGMENT = 0x4000;
 
+/////////////////////////////////////////////////////////////////////////////
 typedef struct
 {
   eth_header_t eth;
@@ -141,7 +144,6 @@ static const uint16_t ARP_PROTO_IPV4 = 0x0800;
 static const uint16_t ARP_OP_REQUEST = 1;
 static const uint16_t ARP_OP_RESPONSE = 2;
 
-
 /////////////////////////////////////////////////////////////////////////////
 #define ICMP_MAX_DATA 200
 typedef struct
@@ -155,6 +157,17 @@ typedef struct
 } __attribute__((packed)) icmp_header_t;
 static const uint8_t ICMP_ECHO_REPLY   = 0x00;
 static const uint8_t ICMP_ECHO_REQUEST = 0x08;
+
+/////////////////////////////////////////////////////////////////////////////
+typedef struct
+{
+  ip_header_t ip;
+  uint16_t udp_source_port;
+  uint16_t udp_dest_port;
+  uint16_t udp_len;
+  uint16_t udp_checksum;
+} __attribute__((packed)) udp_header_t;
+static const uint16_t UDP_HAND_PORT = 12321; // some random number
 
 /////////////////////////////////////////////////////////////////////////////
 // globals
@@ -390,7 +403,21 @@ static void enet_icmp_rx(uint8_t *pkt, const uint32_t len)
 
 static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
 {
-  printf("enet_udp_rx\r\n");
+  udp_header_t *udp = (udp_header_t *)pkt;
+  const uint16_t port = ntohs(udp->udp_dest_port);
+  printf("enet_udp_rx, port %d\r\n", port);
+  if (port != UDP_HAND_PORT)
+    return;
+  uint8_t *udp_payload = pkt + sizeof(udp_header_t);
+  uint32_t udp_payload_len = len - sizeof(udp_header_t);
+  uint32_t cmd = *((uint32_t *)udp_payload);
+  printf("  cmd %d\r\n", cmd);
+  if (cmd == CMD_ID_SET_FINGER_POWER_STATE)
+  {
+    set_finger_power_state_t *sfp = (set_finger_power_state_t *)(udp_payload+4);
+    printf("sfp finger %d state %d\r\n", 
+           sfp->finger_idx, sfp->finger_power_state);
+  }
 }
 
 static void enet_ip_rx(uint8_t *pkt, const uint32_t len)

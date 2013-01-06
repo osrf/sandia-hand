@@ -21,7 +21,12 @@ public:
   enum FingerPowerState { FPS_OFF  = FINGER_POWER_STATE_OFF, 
                           FPS_LOW  = FINGER_POWER_STATE_LOW,
                           FPS_FULL = FINGER_POWER_STATE_FULL }; 
-  bool setFingerPower(uint8_t finger_idx, FingerPowerState fps);
+  bool setFingerPower(const uint8_t finger_idx, const FingerPowerState fps);
+
+  enum FingerControlMode { FCM_IDLE      = FINGER_CONTROL_MODE_IDLE,
+                           FCM_JOINT_POS = FINGER_CONTROL_MODE_JOINT_POS };
+  bool setFingerControlMode(const uint8_t finger_idx, 
+                            const FingerControlMode fcm);
 
 private:
   static const int MAX_FINGERS = 4;

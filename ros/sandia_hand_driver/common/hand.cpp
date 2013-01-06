@@ -44,7 +44,7 @@ bool Hand::init(const char *ip)
   return true;
 }
 
-bool Hand::setFingerPower(uint8_t finger_idx, FingerPowerState fps)
+bool Hand::setFingerPower(const uint8_t finger_idx, const FingerPowerState fps)
 {
   if (finger_idx >= MAX_FINGERS)
     return false;
@@ -54,6 +54,21 @@ bool Hand::setFingerPower(uint8_t finger_idx, FingerPowerState fps)
   sfps->finger_idx = finger_idx;
   sfps->finger_power_state = (uint8_t)fps;
   if (!tx_udp(pkt, 4 + sizeof(set_finger_power_state_t)))
+    return false;
+  return true;
+}
+
+bool Hand::setFingerControlMode(const uint8_t finger_idx,
+                                const FingerControlMode fcm)
+{
+  if (finger_idx >= MAX_FINGERS)
+    return false;
+  uint8_t pkt[50];
+  *((uint32_t *)pkt) = CMD_ID_SET_FINGER_CONTROL_MODE;
+  set_finger_control_mode_t *p = (set_finger_control_mode_t *)(pkt + 4);
+  p->finger_idx = finger_idx;
+  p->finger_control_mode = (uint8_t)fcm;
+  if (!tx_udp(pkt, 4 + sizeof(set_finger_control_mode_t)))
     return false;
   return true;
 }

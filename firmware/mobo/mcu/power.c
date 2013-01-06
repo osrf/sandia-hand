@@ -34,6 +34,7 @@
 #define POWER_NUM_FINGERS 4
 
 typedef struct { Pio *pio; uint32_t pin_idx; } power_switch_t;
+// TODO: map finger_idx to finger socket indices
 const power_switch_t power_switches[POWER_NUM_FINGERS][2] =  
   { { { PIOA, PIO_PA21 }, { PIOC, PIO_PC19 } },
     { { PIOB, PIO_PB19 }, { PIOB, PIO_PB17 } },

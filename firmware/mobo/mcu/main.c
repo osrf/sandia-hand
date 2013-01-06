@@ -21,6 +21,7 @@
 #include "fpga_spi.h"
 #include "power.h"
 #include "enet.h"
+#include "finger.h"
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -36,6 +37,7 @@ void main()
   fpga_spi_init();
   power_init();
   enet_init();
+  finger_init();
   printf("hello, world!\r\n");
   // blink the FPGA LED a few times
   for (int i = 0; i < 4; i++)

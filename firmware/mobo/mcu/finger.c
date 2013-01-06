@@ -113,10 +113,10 @@ void finger_tx_raw(uint8_t finger_idx, uint8_t *data, uint16_t data_len)
   // TEMPORARY HACK: blast out on all rs485 channels
   for (int i = 0; i < 5; i++)
   {
-    const rs485_de_t *de = &g_finger_rs485_de[finger_idx];
+    const rs485_de_t *de = &g_finger_rs485_de[i];
     de->pio->PIO_SODR = de->pin_idx;
   }
-  for (volatile int i = 0; i < 100; i++) { } // let driver ramp up
+  for (volatile int i = 0; i < 10; i++) { } // let driver ramp up
   while ((USART3->US_CSR & US_CSR_TXRDY) == 0) { }
   for (uint32_t i = 0; i < data_len; i++)
   {
@@ -129,7 +129,7 @@ void finger_tx_raw(uint8_t finger_idx, uint8_t *data, uint16_t data_len)
   // TEMPORARY HACK: blast out on all rs485 channels
   for (int i = 0; i < 5; i++)
   {
-    const rs485_de_t *de = &g_finger_rs485_de[finger_idx];
+    const rs485_de_t *de = &g_finger_rs485_de[i];
     //de->pio->PIO_SODR = de->pin_idx;
     de->pio->PIO_CODR = de->pin_idx;
   }

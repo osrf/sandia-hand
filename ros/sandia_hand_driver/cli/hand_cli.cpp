@@ -86,6 +86,18 @@ int main(int argc, char **argv)
     }
     hand.setFingerControlMode(finger_idx, fcm);
   }
+  else if (!strcmp(cmd, "jp")) // set joint position
+  {
+    if (argc < 6)
+    {
+      printf("usage: hand_cli jp FINGER_IDX J0 J1 J2\n");
+      return 1;
+    }
+    if (!parse_finger_idx(finger_idx, argv[2]))
+      return 1;
+    float j0 = atof(argv[3]), j1 = atof(argv[4]), j2 = atof(argv[5]);
+    hand.setFingerJointPos(finger_idx, j0, j1, j2);
+  }
   else
   {
     printf("unknown command: [%s]\n", cmd);

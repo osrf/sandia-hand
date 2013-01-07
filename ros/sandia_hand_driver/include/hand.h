@@ -27,6 +27,8 @@ public:
                            FCM_JOINT_POS = FINGER_CONTROL_MODE_JOINT_POS };
   bool setFingerControlMode(const uint8_t finger_idx, 
                             const FingerControlMode fcm);
+  bool setFingerJointPos(const uint8_t finger_idx,
+                         float joint_0, float joint_1, float joint_2);
 
 private:
   static const int MAX_FINGERS = 4;

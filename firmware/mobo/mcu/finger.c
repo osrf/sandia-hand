@@ -18,12 +18,20 @@
 
 typedef struct { Pio *pio; uint32_t pin_idx; } rs485_de_t;
 // TODO: map finger_idx to rs485 channel indices. have palm be channel 4.
+/*
 static const rs485_de_t g_finger_rs485_de[5] =
   { { PIOC, PIO_PC28 },
     { PIOD, PIO_PD6  },
     { PIOA, PIO_PA0  },
     { PIOB, PIO_PB14 },
     { PIOD, PIO_PD0  } };
+*/
+static const rs485_de_t g_finger_rs485_de[5] =
+  { { PIOD, PIO_PD0  },
+    { PIOD, PIO_PD6  },
+    { PIOA, PIO_PA0  },
+    { PIOB, PIO_PB14 },
+    { PIOC, PIO_PC28 } };
 
 void finger_init()
 {
@@ -96,11 +104,27 @@ void finger_set_control_mode(uint8_t finger_idx, uint8_t control_mode)
   finger_tx_raw(finger_idx, pkt, 20);
 }
 
+void finger_set_joint_pos(uint8_t finger_idx, float j0, float j1, float j2)
+{
+  if (finger_idx > 3)
+    return;
+  uint8_t pkt[50];
+  pkt[0] = 0x42;
+  pkt[1] = 10; // generic finger address
+  *((uint16_t *)(&pkt[2])) = 13; // 1 mode byte + three 32-bit floats 
+  pkt[4] = 0x1d; // control mode packet id
+  pkt[5] = 2; // joint position mode
+  *((float *)&pkt[6]) = j0;
+  *((float *)&pkt[10]) = j1;
+  *((float *)&pkt[14]) = j2;
+  *((uint16_t *)(&pkt[18])) = finger_calc_crc(pkt);
+  finger_tx_raw(finger_idx, pkt, 20);
+}
+
 void finger_tx_raw(uint8_t finger_idx, uint8_t *data, uint16_t data_len)
 {
   if (finger_idx > 3)
     return;
-
   /*
   printf("finger tx raw %d bytes:\r\n");
   for (int i = 0; i < data_len; i++)

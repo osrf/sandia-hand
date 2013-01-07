@@ -429,8 +429,10 @@ static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
   else if (cmd == CMD_ID_SET_FINGER_CONTROL_MODE)
   {
     set_finger_control_mode_t *p = (set_finger_control_mode_t *)cmd_data;
+    /*
     printf("sfcm finger %d mode %d\r\n",
            p->finger_idx, p->finger_control_mode);
+    */
     if (p->finger_idx > 3 || 
         p->finger_control_mode > FINGER_CONTROL_MODE_JOINT_POS)
       return;
@@ -438,6 +440,11 @@ static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
   }
   else if (cmd == CMD_ID_SET_FINGER_JOINT_POS)
   {
+    set_finger_joint_pos_t *p = (set_finger_joint_pos_t *)cmd_data;
+    if (p->finger_idx > 3)
+      return;
+    finger_set_joint_pos(p->finger_idx, p->joint_0_radians, 
+                         p->joint_1_radians, p->joint_2_radians);
   }
 }
 

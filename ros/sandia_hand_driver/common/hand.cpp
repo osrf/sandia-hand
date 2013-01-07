@@ -73,6 +73,23 @@ bool Hand::setFingerControlMode(const uint8_t finger_idx,
   return true;
 }
 
+bool Hand::setFingerJointPos(const uint8_t finger_idx,
+                             float joint_0, float joint_1, float joint_2)
+{
+  if (finger_idx >= MAX_FINGERS)
+    return false;
+  uint8_t pkt[50];
+  *((uint32_t *)pkt) = CMD_ID_SET_FINGER_JOINT_POS;
+  set_finger_joint_pos_t *p = (set_finger_joint_pos_t *)(pkt + 4);
+  p->finger_idx = finger_idx;
+  p->joint_0_radians = joint_0;
+  p->joint_1_radians = joint_1;
+  p->joint_2_radians = joint_2;
+  if (!tx_udp(pkt, 4 + sizeof(set_finger_joint_pos_t)))
+    return false;
+  return true;
+}
+
 bool Hand::tx_udp(uint8_t *pkt, uint16_t pkt_len)
 {
   if (-1 == sendto(sock, pkt, pkt_len, 0, (sockaddr *)&saddr, sizeof(sockaddr)))

@@ -121,7 +121,8 @@ void finger_set_joint_pos(uint8_t finger_idx, float j0, float j1, float j2)
   finger_tx_raw(finger_idx, pkt, 20);
 }
 
-void finger_tx_raw(uint8_t finger_idx, uint8_t *data, uint16_t data_len)
+void finger_tx_raw(const uint8_t finger_idx, 
+                   const uint8_t *data, const uint16_t data_len)
 {
   if (finger_idx > 3)
     return;
@@ -135,11 +136,21 @@ void finger_tx_raw(uint8_t finger_idx, uint8_t *data, uint16_t data_len)
   // typedef struct { Pio *pio; uint32_t pin_idx; } rs485_de_t;
   // drive the rs485 channel
   // TEMPORARY HACK: blast out on all rs485 channels
+  /*
   for (int i = 0; i < 5; i++)
   {
     const rs485_de_t *de = &g_finger_rs485_de[i];
     de->pio->PIO_SODR = de->pin_idx;
   }
+  */
+  /*
+  if (finger_idx == FINGER_THUMB) 
+    USART3->US_MR |= US_MR_INVDATA; // thumb needs to be inverted, whoops
+  else
+    USART3->US_MR &= ~US_MR_INVDATA;
+  */
+  const rs485_de_t *de = &g_finger_rs485_de[finger_idx];
+  de->pio->PIO_SODR = de->pin_idx;
   for (volatile int i = 0; i < 10; i++) { } // let driver ramp up
   while ((USART3->US_CSR & US_CSR_TXRDY) == 0) { }
   for (uint32_t i = 0; i < data_len; i++)
@@ -150,13 +161,16 @@ void finger_tx_raw(uint8_t finger_idx, uint8_t *data, uint16_t data_len)
   while ((USART3->US_CSR & US_CSR_TXEMPTY) == 0) { } // wait to finish tx'ing
   for (volatile int i = 0; i < 10; i++) { } // wait a bit (why?)
   // release the rs485 channel
+  de->pio->PIO_CODR = de->pin_idx;
   // TEMPORARY HACK: blast out on all rs485 channels
+  /*
   for (int i = 0; i < 5; i++)
   {
     const rs485_de_t *de = &g_finger_rs485_de[i];
     //de->pio->PIO_SODR = de->pin_idx;
     de->pio->PIO_CODR = de->pin_idx;
   }
+  */
   // for now, let's allow the ARM to keep control of rs485.
 }
 

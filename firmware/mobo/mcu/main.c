@@ -22,6 +22,7 @@
 #include "power.h"
 #include "enet.h"
 #include "finger.h"
+#include "cam.h"
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -38,6 +39,7 @@ void main()
   power_init();
   enet_init();
   finger_init();
+  cam_init();
   printf("hello, world!\r\n");
   // blink the FPGA LED a few times
   for (int i = 0; i < 4; i++)

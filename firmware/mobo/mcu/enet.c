@@ -407,19 +407,20 @@ static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
 {
   udp_header_t *udp = (udp_header_t *)pkt;
   const uint16_t port = ntohs(udp->udp_dest_port);
-  printf("enet_udp_rx, port %d\r\n", port);
   if (port != UDP_HAND_PORT)
+  {
+    //printf("enet_udp_rx, port %d\r\n", port);
     return;
+  }
   uint8_t *udp_payload = pkt + sizeof(udp_header_t);
   uint32_t udp_payload_len = len - sizeof(udp_header_t);
   uint32_t cmd = *((uint32_t *)udp_payload);
   uint8_t *cmd_data = (uint8_t *)(udp_payload+4);
-  printf("  cmd %d\r\n", cmd);
   if (cmd == CMD_ID_SET_FINGER_POWER_STATE)
   {
     set_finger_power_state_t *sfp = (set_finger_power_state_t *)cmd_data;
-    printf("sfp finger %d state %d\r\n", 
-           sfp->finger_idx, sfp->finger_power_state);
+    //printf("sfp finger %d state %d\r\n", 
+    //       sfp->finger_idx, sfp->finger_power_state);
     if (sfp->finger_idx > 3)
       return; // buh bye
     if (sfp->finger_power_state > (uint8_t)POWER_ON)
@@ -429,10 +430,8 @@ static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
   else if (cmd == CMD_ID_SET_FINGER_CONTROL_MODE)
   {
     set_finger_control_mode_t *p = (set_finger_control_mode_t *)cmd_data;
-    /*
-    printf("sfcm finger %d mode %d\r\n",
-           p->finger_idx, p->finger_control_mode);
-    */
+    //printf("sfcm finger %d mode %d\r\n",
+    //       p->finger_idx, p->finger_control_mode);
     if (p->finger_idx > 3 || 
         p->finger_control_mode > FINGER_CONTROL_MODE_JOINT_POS)
       return;
@@ -445,6 +444,10 @@ static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
       return;
     finger_set_joint_pos(p->finger_idx, p->joint_0_radians, 
                          p->joint_1_radians, p->joint_2_radians);
+  }
+  else
+  {
+    printf("  unhandled cmd %d\r\n", cmd);
   }
 }
 

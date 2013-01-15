@@ -4,4 +4,4 @@ endif()
 set(@PKG_NAME@_CONFIG_INCLUDED TRUE)
 
 # install this for passing ros path to drcsim
-set(@PKG_NAME@_ROS_PACKAGE_PATH @CMAKE_INSTALL_PREFIX@/@PROJECT_NAME@/ros)
+set(@PKG_NAME@_ROS_PACKAGE_PATH @CMAKE_INSTALL_PREFIX@/share/@PROJECT_NAME@/ros)

@@ -35,3 +35,8 @@ endif (NOT CMAKE_BUILD_TYPE)
 string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE)
 
 add_subdirectory(ros)
+
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+set(conf_file "${CMAKE_CURRENT_SOURCE_DIR}/cmake/sandia-hand-config.cmake")
+configure_file("${conf_file}.in" "${PROJECT_BINARY_DIR}/${conf_file}" @ONLY)
+install(FILES "${PROJECT_BINARY_DIR}/${conf_file}" DESTINATION share/${PROJECT_NAME}/cmake COMPONENT cmake)

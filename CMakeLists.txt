@@ -20,7 +20,7 @@ list (APPEND CPACK_SOURCE_IGNORE_FILES ";/.hg/;.hgignore;.swp$;/build/")
 set (CPACK_SOURCE_PACKAGE_FILE_NAME "@PROJECT_NAME@-@SANDIA_HAND_VERSION_FULL@")
 include (CPack)
 
-set (ROS_DISTRO "groovy")
+set (ROS_DISTRO "fuerte")
 
 set (INCLUDE_INSTALL_DIR "include/${PROJECT_NAME}-${SANDIA_HAND_VERSION}/${PROJECT_NAME}") 
 set (LIB_INSTALL_DIR "lib" CACHE STRING "Installation directory for libraries (relative to CMAKE_INSTALL_PREFIX)") 
@@ -37,6 +37,6 @@ string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE)
 add_subdirectory(ros)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-set(cmake_conf_file "${CMAKE_CURRENT_SOURCE_DIR}/cmake/sandia-hand-config.cmake")
-configure_file("${cmake_conf_file}.in" "${cmake_conf_file}" @ONLY)
-install(FILES ${cmake_conf_file} DESTINATION share/${PROJECT_NAME}/cmake/ COMPONENT cmake)
+set(conf_file "${CMAKE_CURRENT_SOURCE_DIR}/cmake/sandia-hand-config.cmake")
+configure_file("${conf_file}.in" "${PROJECT_BINARY_DIR}/${conf_file}" @ONLY)
+install(FILES "${PROJECT_BINARY_DIR}/${conf_file}" DESTINATION share/${PROJECT_NAME}/cmake COMPONENT cmake)

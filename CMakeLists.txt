@@ -21,6 +21,9 @@ set (CPACK_SOURCE_PACKAGE_FILE_NAME "@PROJECT_NAME@-@SANDIA_HAND_VERSION_FULL@")
 include (CPack)
 
 set (ROS_DISTRO "fuerte")
+if (NOT EXISTS "$ENV{ROS_ROOT}")
+  message(FATAL_ERROR "Cannot find ROS_ROOT. Ensure that ROS is installed and source the appropriate ROS configuration file (e.g. /opt/ros/${ROS_DISTRO}/setup.sh).")
+endif()
 
 set (INCLUDE_INSTALL_DIR "include/${PROJECT_NAME}-${SANDIA_HAND_VERSION}/${PROJECT_NAME}") 
 set (LIB_INSTALL_DIR "lib" CACHE STRING "Installation directory for libraries (relative to CMAKE_INSTALL_PREFIX)") 

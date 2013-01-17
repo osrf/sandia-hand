@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 2.4.6)
+if (NOT EXISTS "$ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake")
+  message(FATAL_ERROR "Cannot find rosbuild.cmake. Ensure that ROS is installed, source the appropriate ROS configuration file (e.g. /opt/ros/fuerte/setup.sh), delete your CMakeCache.txt and try again.")
+endif()
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 set(ENV{ROS_PACKAGE_PATH} ${PROJECT_SOURCE_DIR}:$ENV{ROS_PACKAGE_PATH})
 rosbuild_init()

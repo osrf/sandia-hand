@@ -29,13 +29,17 @@ public:
                             const FingerControlMode fcm);
   bool setFingerJointPos(const uint8_t finger_idx,
                          float joint_0, float joint_1, float joint_2);
+  bool listen(const float max_seconds);
 
 private:
-  static const int MAX_FINGERS = 4;
-  static const uint16_t HAND_PORT = 12321; // i love palindromes
-  int sock;
-  sockaddr_in saddr;
+  static const int MAX_FINGERS = 4, NUM_SOCKS = 3;
+  static const uint16_t HAND_BASE_PORT = 12321; // i love palindromes
+  int control_sock, cam_socks[2];
+  sockaddr_in control_saddr, cam_saddrs[2];
+  int *socks[NUM_SOCKS];
+  sockaddr_in *saddrs[NUM_SOCKS];
   bool tx_udp(uint8_t *pkt, uint16_t pkt_len);
+  bool rx_data(const int sock_idx, const uint8_t *data, const int data_len);
 };
 
 }

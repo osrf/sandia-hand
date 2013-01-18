@@ -1,6 +1,7 @@
 #include "hand.h"
 #include <cstdio>
 #include <cstring>
+#include <cmath>
 using namespace sandia_hand;
 
 Hand::Hand(int num_fingers)
@@ -9,7 +10,14 @@ Hand::Hand(int num_fingers)
     num_fingers = 0;
   else if (num_fingers > MAX_FINGERS)
     num_fingers = MAX_FINGERS;
-  sock = 0;
+  socks[0] = &control_sock;
+  socks[1] = &cam_socks[0];
+  socks[2] = &cam_socks[1];
+  saddrs[0] = &control_saddr;
+  saddrs[1] = &cam_saddrs[0];
+  saddrs[2] = &cam_saddrs[1];
+  for (int i = 0; i < NUM_SOCKS; i++)
+    *socks[0] = 0;
 }
 
 Hand::~Hand()
@@ -18,29 +26,32 @@ Hand::~Hand()
 
 bool Hand::init(const char *ip)
 {
-  if (-1 == (sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)))
+  for (int i = 0; i < NUM_SOCKS; i++)
   {
-    perror("could't create udp socket");
-    return false;
+    if (-1 == (*socks[i] = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)))
+    {
+      perror("could't create udp socket");
+      return false;
+    }
+    bzero(saddrs[i], sizeof(saddrs[i]));
+    saddrs[i]->sin_family = AF_INET;
+    saddrs[i]->sin_port = htons(HAND_BASE_PORT + i);
+    saddrs[i]->sin_addr.s_addr = INADDR_ANY;
+    if (bind(*socks[i], (struct sockaddr *)saddrs[i], sizeof(*saddrs[i])) != 0)
+    {
+      perror("couldn't bind udp socket");
+      return false;
+    }
+    // recycle the saddr structs to easily send future outgoing datagrams
+    bzero(saddrs[i], sizeof(*saddrs[i]));
+    saddrs[i]->sin_family = AF_INET;
+    if (0 == inet_aton(ip, &saddrs[i]->sin_addr))
+    {
+      perror("inet_aton");
+      return false;
+    }
+    saddrs[i]->sin_port = htons(HAND_BASE_PORT + i);
   }
-  bzero(&saddr, sizeof(saddr));
-  saddr.sin_family = AF_INET;
-  saddr.sin_port = htons(HAND_PORT);
-  saddr.sin_addr.s_addr = INADDR_ANY;
-  if (bind(sock, (struct sockaddr *)&saddr, sizeof(saddr)) != 0)
-  {
-    perror("couldn't bind udp socket");
-    return false;
-  }
-  // recycle the saddr struct to be used for future outgoing datagrams
-  bzero(&saddr, sizeof(saddr));
-  saddr.sin_family = AF_INET;
-  if (0 == inet_aton(ip, &saddr.sin_addr))
-  {
-    perror("inet_aton");
-    return false;
-  }
-  saddr.sin_port = htons(HAND_PORT);
   return true;
 }
 
@@ -92,10 +103,56 @@ bool Hand::setFingerJointPos(const uint8_t finger_idx,
 
 bool Hand::tx_udp(uint8_t *pkt, uint16_t pkt_len)
 {
-  if (-1 == sendto(sock, pkt, pkt_len, 0, (sockaddr *)&saddr, sizeof(sockaddr)))
+  if (-1 == sendto(control_sock, pkt, pkt_len, 0, 
+                   (sockaddr *)&control_saddr, sizeof(sockaddr)))
   {
     perror("couldn't send udp packet");
     return false;
+  }
+  return true;
+}
+
+bool Hand::listen(const float max_seconds)
+{
+  printf("listen()\n");
+  timeval timeout;
+  timeout.tv_sec  = (time_t)trunc(max_seconds);
+  timeout.tv_usec = (suseconds_t)((max_seconds - timeout.tv_sec) * 1e6);
+  fd_set rdset;
+  FD_ZERO(&rdset);
+  for (int i = 0; i < 3; i++)
+    FD_SET(*socks[i], &rdset);
+  if (select(*socks[2]+1, &rdset, NULL, NULL, &timeout) <= 0)
+    return false;
+  for (int i = 0; i < 3; i++)
+    if (FD_ISSET(*socks[i], &rdset)) 
+    {
+      int bytes_recv;
+      sockaddr_in recv_addr;
+      socklen_t addr_len = sizeof(recv_addr);
+      uint8_t recv_buf[2000];
+      if ((bytes_recv = recvfrom(*socks[i], recv_buf, sizeof(recv_buf), 0,
+                                 (struct sockaddr *)&recv_addr, 
+                                 &addr_len)) == -1) 
+      {
+        perror("recvfrom"); // find a better way to report this...
+        return false;
+      }
+      if (!rx_data(i, recv_buf, bytes_recv))
+        return false;
+    }
+  return true; // no errors
+}
+
+bool Hand::rx_data(const int sock_idx, const uint8_t *data, const int data_len)
+{
+  printf("received %d bytes on sock %d\n", data_len, sock_idx);
+  if (sock_idx == 1)
+  {
+    uint32_t frame_count = *((uint32_t *)data);
+    uint16_t row_count = *((uint16_t *)(data+4));
+    printf("  frame count: %d\n", frame_count);
+    printf("    row count: %d\n", row_count);
   }
   return true;
 }

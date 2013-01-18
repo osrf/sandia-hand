@@ -4,6 +4,7 @@
   </description>
   <author>Morgan Quigley</author>
   <license>Apache 2.0</license>
+  <depend package="roscpp"/>
 </package>
 
 

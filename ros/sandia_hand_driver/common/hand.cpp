@@ -101,6 +101,16 @@ bool Hand::setFingerJointPos(const uint8_t finger_idx,
   return true;
 }
 
+bool Hand::setCameraStreaming(bool cam_0_streaming, bool cam_1_streaming)
+{
+  uint8_t pkt[50];
+  *((uint32_t *)pkt) = CMD_ID_CONFIGURE_CAMERA_STREAM;
+  configure_camera_stream_t *p = (configure_camera_stream_t *)(pkt + 4);
+  p->cam_0_stream = cam_0_streaming ? CAMERA_STREAM_ON : CAMERA_STREAM_OFF;
+  p->cam_1_stream = cam_1_streaming ? CAMERA_STREAM_ON : CAMERA_STREAM_OFF;
+  return tx_udp(pkt, 4 + sizeof(configure_camera_stream_t));
+}
+
 bool Hand::tx_udp(uint8_t *pkt, uint16_t pkt_len)
 {
   if (-1 == sendto(control_sock, pkt, pkt_len, 0, 
@@ -114,7 +124,7 @@ bool Hand::tx_udp(uint8_t *pkt, uint16_t pkt_len)
 
 bool Hand::listen(const float max_seconds)
 {
-  printf("listen()\n");
+  //printf("listen()\n");
   timeval timeout;
   timeout.tv_sec  = (time_t)trunc(max_seconds);
   timeout.tv_usec = (suseconds_t)((max_seconds - timeout.tv_sec) * 1e6);
@@ -127,6 +137,7 @@ bool Hand::listen(const float max_seconds)
   for (int i = 0; i < 3; i++)
     if (FD_ISSET(*socks[i], &rdset)) 
     {
+      //printf("%d set\n", i);
       int bytes_recv;
       sockaddr_in recv_addr;
       socklen_t addr_len = sizeof(recv_addr);
@@ -146,13 +157,26 @@ bool Hand::listen(const float max_seconds)
 
 bool Hand::rx_data(const int sock_idx, const uint8_t *data, const int data_len)
 {
-  printf("received %d bytes on sock %d\n", data_len, sock_idx);
+  //printf("received %d bytes on sock %d\n", data_len, sock_idx);
   if (sock_idx == 1)
   {
-    uint32_t frame_count = *((uint32_t *)data);
-    uint16_t row_count = *((uint16_t *)(data+4));
-    printf("  frame count: %d\n", frame_count);
-    printf("    row count: %d\n", row_count);
+    static FILE *frame_file = NULL;
+    const uint32_t frame_count = *((uint32_t *)data);
+    const uint16_t row_count = *((uint16_t *)(data+4));
+    const uint8_t *pixels = data + 8;
+    const int WIDTH = 720, HEIGHT = 480;
+    if (row_count == 0)
+    {
+      printf("  frame count: %d\n", frame_count);
+      if (frame_file)
+        fclose(frame_file);
+      char fname_buf[100];
+      snprintf(fname_buf, sizeof(fname_buf), "img_%06d.pgm", frame_count);
+      frame_file = fopen(fname_buf, "w");
+      fprintf(frame_file, "P5\n%d %d\n255\n", WIDTH, HEIGHT);
+    }
+    fwrite(pixels, 1, 720, frame_file);
+    //printf("    row count: %d\n", row_count);
   }
   return true;
 }

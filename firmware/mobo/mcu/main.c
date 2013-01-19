@@ -27,10 +27,12 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+
 void systick_vector()
 {
   enet_systick();
 }
+
 
 void main()
 {
@@ -52,16 +54,19 @@ void main()
   __enable_irq();
   // reset the PHY via hardware reset pin
   printf("asserting PHY hardware reset\r\n");
-  fpga_spi_txrx(0x81, 4); // assert PHY_RESET_N
+  fpga_spi_txrx(FPGA_SPI_REG_MDIO_CFG | FPGA_SPI_WRITE, 4); // assert PHY_RESET
   for (volatile int j = 0; j < 2000000; j++) { } // wait a while
-  fpga_spi_txrx(0x81, 0); // de-assert PHY_RESET_N
+  fpga_spi_txrx(FPGA_SPI_REG_MDIO_CFG | FPGA_SPI_WRITE, 0); // release PHY_RESET
   for (volatile int j = 0; j < 4000000; j++) { } // wait a longer while
   printf("requesting PHY software reset\r\n");
-  // now reset the PHY via software reset register
-  fpga_spi_txrx(0x82, 0x9000); // set reset bit and auto-negotiate bit
-  fpga_spi_txrx(0x81, 0x0001); // start write of register zero
+  // now do a software reset of the PHY 
+  fpga_spi_txrx(FPGA_SPI_REG_MDIO_WDATA | FPGA_SPI_WRITE, 
+                0x9000); // set SW reset bit and auto-negotiate bit
+  fpga_spi_txrx(FPGA_SPI_REG_MDIO_CFG | FPGA_SPI_WRITE,
+                0x0001); // start write of register zero
   for (volatile int j = 0; j < 4000000; j++) { } // wait a longer while
   printf("entering main loop\r\n");
+  /*
   #define TEST_PKT_LEN 60
   const uint16_t test_pkt_len = TEST_PKT_LEN;
   uint8_t test_pkt[TEST_PKT_LEN] = 
@@ -81,6 +86,7 @@ void main()
     0, 0, 0, 0, 0, 0, // 48-53
     0, 0, 0, 0, 0, 0, // 54-59
   };
+  */
   SysTick_Config(F_CPU/1000); // set up 1 khz systick
 
   while (1)

@@ -23,6 +23,8 @@
 #include "hand_packets.h"
 #include "power.h"
 #include "finger.h"
+#include "cam.h"
+#include "fpga_spi.h"
 
 // hardware connections:
 //   PB0 = EREFCK
@@ -304,6 +306,16 @@ static void enet_arp_rx(uint8_t *pkt, const uint32_t len)
              g_enet_master_mac[0], g_enet_master_mac[1],
              g_enet_master_mac[2], g_enet_master_mac[3],
              g_enet_master_mac[4], g_enet_master_mac[5]);
+      // set master MAC register on fpga
+      fpga_spi_txrx(FPGA_SPI_REG_ETH_DEST_ADDR_0 | FPGA_SPI_WRITE,
+                     (uint16_t)g_enet_master_mac[5] |
+                    ((uint16_t)g_enet_master_mac[4] << 8));
+      fpga_spi_txrx(FPGA_SPI_REG_ETH_DEST_ADDR_1 | FPGA_SPI_WRITE,
+                     (uint16_t)g_enet_master_mac[3] |
+                    ((uint16_t)g_enet_master_mac[2] << 8));
+      fpga_spi_txrx(FPGA_SPI_REG_ETH_DEST_ADDR_2 | FPGA_SPI_WRITE,
+                     (uint16_t)g_enet_master_mac[1] |
+                    ((uint16_t)g_enet_master_mac[0] << 8));
     }
   }
 }
@@ -409,7 +421,7 @@ static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
   const uint16_t port = ntohs(udp->udp_dest_port);
   if (port != UDP_HAND_PORT)
   {
-    //printf("enet_udp_rx, port %d\r\n", port);
+    //printf("enet_udp_rx, unknown port %d\r\n", port);
     return;
   }
   uint8_t *udp_payload = pkt + sizeof(udp_header_t);
@@ -444,6 +456,11 @@ static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
       return;
     finger_set_joint_pos(p->finger_idx, p->joint_0_radians, 
                          p->joint_1_radians, p->joint_2_radians);
+  }
+  else if (cmd == CMD_ID_CONFIGURE_CAMERA_STREAM)
+  {
+    configure_camera_stream_t *p = (configure_camera_stream_t *)cmd_data;
+    cam_set_streams(p->cam_0_stream, p->cam_1_stream);
   }
   else
   {

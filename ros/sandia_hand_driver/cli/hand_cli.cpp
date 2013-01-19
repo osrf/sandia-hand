@@ -12,6 +12,13 @@ int b2e(bool b) // convert boolean function return values to exit codes
   return b ? 0 : 1;
 }
 
+static bool g_done = false;
+void signal_handler(int signum)
+{
+  if (signum == SIGINT)
+    g_done = true;
+}
+
 bool parse_finger_idx(uint8_t &finger_idx, const char *s)
 {
   finger_idx = atoi(s);
@@ -122,13 +129,15 @@ int set_joint_position(int argc, char **argv, Hand &hand)
 int cam_pgm(int argc, char **argv, Hand &hand)
 {
   printf("taking pgm image from hand...\n");
+  hand.setCameraStreaming(true, true);
   ros::Time t_start(ros::Time::now());
-  while ((ros::Time::now() - t_start).toSec() < 50)
+  while (!g_done && (ros::Time::now() - t_start).toSec() < 50)
   {
     if (hand.listen(1.0))
     {
     }
   }
+  hand.setCameraStreaming(false, false);
   return 0;
 }
 
@@ -146,6 +155,7 @@ int main(int argc, char **argv)
     printf("couldn't init hand\n");
     return false;
   }
+  signal(SIGINT, signal_handler);
   const char *cmd = argv[1];
   if (!strcmp(cmd, "p")) 
     return set_all_finger_powers(argc, argv, hand);

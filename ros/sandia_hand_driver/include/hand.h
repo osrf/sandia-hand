@@ -30,6 +30,7 @@ public:
   bool setFingerJointPos(const uint8_t finger_idx,
                          float joint_0, float joint_1, float joint_2);
   bool listen(const float max_seconds);
+  bool setCameraStreaming(bool cam_0_stream, bool cam_1_stream);
 
 private:
   static const int MAX_FINGERS = 4, NUM_SOCKS = 3;

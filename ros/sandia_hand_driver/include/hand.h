@@ -7,9 +7,11 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include "hand_packets.h"
+#include <boost/function.hpp>
 
 namespace sandia_hand
 {
+
 
 class Hand
 {
@@ -31,16 +33,22 @@ public:
                          float joint_0, float joint_1, float joint_2);
   bool listen(const float max_seconds);
   bool setCameraStreaming(bool cam_0_stream, bool cam_1_stream);
+  static const int IMG_WIDTH = 720, IMG_HEIGHT = 480, NUM_CAMS = 2;
+  typedef boost::function<void(uint8_t, uint32_t, uint8_t *)> ImageCallback;
+  void setImageCallback(ImageCallback callback);
 
 private:
   static const int MAX_FINGERS = 4, NUM_SOCKS = 3;
   static const uint16_t HAND_BASE_PORT = 12321; // i love palindromes
-  int control_sock, cam_socks[2];
-  sockaddr_in control_saddr, cam_saddrs[2];
+  int control_sock, cam_socks[NUM_CAMS];
+  sockaddr_in control_saddr, cam_saddrs[NUM_CAMS];
   int *socks[NUM_SOCKS];
   sockaddr_in *saddrs[NUM_SOCKS];
   bool tx_udp(uint8_t *pkt, uint16_t pkt_len);
   bool rx_data(const int sock_idx, const uint8_t *data, const int data_len);
+  uint8_t *img_data[NUM_CAMS]; // camera image buffers
+  bool *img_rows_recv[NUM_CAMS]; // keep track of completeness
+  ImageCallback img_cb;
 };
 
 }

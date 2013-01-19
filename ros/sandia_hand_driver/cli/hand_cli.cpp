@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <unistd.h>
+#include <boost/function.hpp>
 #include "hand.h"
 #include "ros/time.h"
 using namespace sandia_hand;
@@ -126,17 +127,29 @@ int set_joint_position(int argc, char **argv, Hand &hand)
   return 0;
 }
 
+void cam_pgm_cb(uint8_t cam_idx, uint32_t frame_count, uint8_t *img_data)
+{
+  printf("cam_pgm_cb\n");
+  FILE *f = NULL;
+  char fname_buf[100];
+  snprintf(fname_buf, sizeof(fname_buf), "img_%06d.pgm", frame_count);
+  f = fopen(fname_buf, "w");
+  fprintf(f, "P5\n%d %d\n255\n", Hand::IMG_WIDTH, Hand::IMG_HEIGHT);
+  fwrite(img_data, 1, Hand::IMG_WIDTH * Hand::IMG_HEIGHT, f);
+  g_done = true; // got the image. bail now from spin loop
+  printf("wrote %s\n", fname_buf);
+  fclose(f);
+}
+
 int cam_pgm(int argc, char **argv, Hand &hand)
 {
-  printf("taking pgm image from hand...\n");
+  printf("saving one pgm image from the hand...\n");
+  hand.setImageCallback(&cam_pgm_cb); 
   hand.setCameraStreaming(true, true);
   ros::Time t_start(ros::Time::now());
-  while (!g_done && (ros::Time::now() - t_start).toSec() < 50)
-  {
-    if (hand.listen(1.0))
-    {
-    }
-  }
+  while (!g_done && (ros::Time::now() - t_start).toSec() < 10)
+    if (!hand.listen(1.0))
+      break;
   hand.setCameraStreaming(false, false);
   return 0;
 }

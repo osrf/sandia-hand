@@ -18,6 +18,13 @@ Hand::Hand(int num_fingers)
   saddrs[2] = &cam_saddrs[1];
   for (int i = 0; i < NUM_SOCKS; i++)
     *socks[0] = 0;
+  for (int i = 0; i < NUM_CAMS; i++)
+  {
+    img_data[i] = new uint8_t[IMG_WIDTH * IMG_HEIGHT];
+    img_rows_recv[i] = new bool[IMG_HEIGHT];
+    for (int j = 0; j < IMG_HEIGHT; j++)
+      img_rows_recv[i][j] = false;
+  }
 }
 
 Hand::~Hand()
@@ -158,26 +165,35 @@ bool Hand::listen(const float max_seconds)
 bool Hand::rx_data(const int sock_idx, const uint8_t *data, const int data_len)
 {
   //printf("received %d bytes on sock %d\n", data_len, sock_idx);
-  if (sock_idx == 1)
+  if (sock_idx == 1 || sock_idx == 2)
   {
-    static FILE *frame_file = NULL;
-    const uint32_t frame_count = *((uint32_t *)data);
+    const int cam_idx = sock_idx - 1;
+    const uint32_t frame_count = *((uint32_t *)data); // maybe use sometime?
     const uint16_t row_count = *((uint16_t *)(data+4));
     const uint8_t *pixels = data + 8;
-    const int WIDTH = 720, HEIGHT = 480;
     if (row_count == 0)
+      for (int i = 0; i < IMG_HEIGHT; i++)
+        img_rows_recv[cam_idx][i] = false;
+    if (row_count < IMG_HEIGHT)
     {
-      printf("  frame count: %d\n", frame_count);
-      if (frame_file)
-        fclose(frame_file);
-      char fname_buf[100];
-      snprintf(fname_buf, sizeof(fname_buf), "img_%06d.pgm", frame_count);
-      frame_file = fopen(fname_buf, "w");
-      fprintf(frame_file, "P5\n%d %d\n255\n", WIDTH, HEIGHT);
+      memcpy(img_data[cam_idx] + row_count * IMG_WIDTH, pixels, IMG_WIDTH);
+      img_rows_recv[cam_idx][row_count] = true;
     }
-    fwrite(pixels, 1, 720, frame_file);
-    //printf("    row count: %d\n", row_count);
+    if (row_count == IMG_HEIGHT - 1)
+    {
+      // only counts if it's a complete image...
+      bool all_recv = true;
+      for (int i = 0; i < IMG_HEIGHT-1 && all_recv; i++)
+        if (!img_rows_recv[cam_idx][i])
+          all_recv = false;
+      if (all_recv && img_cb)
+        img_cb(cam_idx, frame_count, img_data[cam_idx]);
+    }
   }
   return true;
 }
 
+void Hand::setImageCallback(ImageCallback callback)
+{
+  img_cb = callback;
+}

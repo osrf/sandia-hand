@@ -1,4 +1,4 @@
-#include "hand.h"
+#include "sandia_hand/hand.h"
 #include <cstdio>
 #include <cstring>
 #include <cmath>

@@ -1,5 +1,5 @@
-#ifndef HAND_H
-#define HAND_H
+#ifndef SANDIA_HAND_H
+#define SANDIA_HAND_H
 
 #include <vector>
 #include <sys/types.h>
@@ -11,7 +11,6 @@
 
 namespace sandia_hand
 {
-
 
 class Hand
 {

@@ -4,7 +4,7 @@
 #include <cstring>
 #include <unistd.h>
 #include <boost/function.hpp>
-#include "hand.h"
+#include "sandia_hand/hand.h"
 #include "ros/time.h"
 using namespace sandia_hand;
 

@@ -4,6 +4,8 @@
   </description>
   <author>Morgan Quigley</author>
   <license>Apache 2.0</license>
+  <depend package="sandia_hand_msgs"/>
+  <depend package="osrf_msgs"/>
 </package>
 
 

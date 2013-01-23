@@ -5,6 +5,8 @@
   <author>Morgan Quigley</author>
   <license>Apache 2.0</license>
   <depend package="roscpp"/>
+  <depend package="image_transport"/>
+  <depend package="camera_info_manager"/>
 </package>
 
 

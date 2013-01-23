@@ -132,7 +132,8 @@ void cam_pgm_cb(uint8_t cam_idx, uint32_t frame_count, uint8_t *img_data)
   printf("cam_pgm_cb\n");
   FILE *f = NULL;
   char fname_buf[100];
-  snprintf(fname_buf, sizeof(fname_buf), "img_%06d.pgm", frame_count);
+  snprintf(fname_buf, sizeof(fname_buf), "cam_%d_img_%06d.pgm", 
+           cam_idx, frame_count);
   f = fopen(fname_buf, "w");
   fprintf(f, "P5\n%d %d\n255\n", Hand::IMG_WIDTH, Hand::IMG_HEIGHT);
   fwrite(img_data, 1, Hand::IMG_WIDTH * Hand::IMG_HEIGHT, f);

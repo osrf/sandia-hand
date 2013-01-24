@@ -1,0 +1,3 @@
+rosbuild_add_executable(sandia_hand_node sandia_hand_node.cpp)
+target_link_libraries(sandia_hand_node sandia_hand)
+install(TARGETS sandia_hand_node DESTINATION bin)

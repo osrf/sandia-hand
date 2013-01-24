@@ -23,4 +23,3 @@ add_subdirectory(cli)
 add_subdirectory(nodes)
 install(FILES manifest.xml DESTINATION ${INSTALL_SHARE_PATH})
 install(FILES include/sandia_hand/hand.h DESTINATION include/sandia_hand)
-#install(FILES include/hand.h

@@ -46,13 +46,13 @@ typedef struct
 static const uint8_t CAMERA_STREAM_OFF = 0;
 static const uint8_t CAMERA_STREAM_ON  = 1;
 
-static const uint32_t FINGER_RAW_TX_MAX_LEN = 500;
+#define FINGER_RAW_TX_MAX_LEN 500
 typedef struct
 {
   uint8_t finger_idx;
   uint8_t pad;
   uint16_t tx_data_len;
-  uint8_t tx_data[FINGER_TX_MAX_LEN];
+  uint8_t tx_data[FINGER_RAW_TX_MAX_LEN];
 } __attribute__((packed)) finger_raw_tx_t;
 #endif
 

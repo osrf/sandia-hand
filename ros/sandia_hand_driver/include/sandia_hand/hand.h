@@ -8,6 +8,7 @@
 #include <netdb.h>
 #include "hand_packets.h"
 #include <boost/function.hpp>
+#include <sandia_hand/finger.h>
 
 namespace sandia_hand
 {
@@ -15,7 +16,10 @@ namespace sandia_hand
 class Hand
 {
 public:
-  Hand(int num_fingers = 4);
+  static const int NUM_FINGERS = 4;
+  Finger fingers[NUM_FINGERS];
+  
+  Hand();
   ~Hand();
   bool init(const char *ip = "10.10.1.2");
 
@@ -38,7 +42,7 @@ public:
   bool pingFinger(const uint8_t finger_idx);
 
 private:
-  static const int MAX_FINGERS = 4, NUM_SOCKS = 3;
+  static const int NUM_SOCKS = 3;
   static const uint16_t HAND_BASE_PORT = 12321; // i love palindromes
   int control_sock, cam_socks[NUM_CAMS];
   sockaddr_in control_saddr, cam_saddrs[NUM_CAMS];
@@ -49,7 +53,8 @@ private:
   uint8_t *img_data[NUM_CAMS]; // camera image buffers
   bool *img_rows_recv[NUM_CAMS]; // keep track of completeness
   ImageCallback img_cb;
-  bool fingerRawTx(const uint8_t *data, const uint16_t data_len);
+  bool fingerRawTx(const uint8_t finger_idx, 
+                   const uint8_t *data, const uint16_t data_len);
 };
 
 }

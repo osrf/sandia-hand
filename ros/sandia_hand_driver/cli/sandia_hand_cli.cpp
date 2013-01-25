@@ -20,15 +20,14 @@ void signal_handler(int signum)
     g_done = true;
 }
 
-bool parse_finger_idx(uint8_t &finger_idx, const char *s)
+void parse_finger_idx(uint8_t &finger_idx, const char *s)
 {
   finger_idx = atoi(s);
   if (finger_idx >= 4)
   {
     printf("finger_idx must be in {0,1,2,3}\n");
-    return false;
+    exit(1);
   }
-  return true;
 }
 
 bool verify_argc(const int argc, const int min_argc, const char *usage_text)
@@ -68,13 +67,26 @@ int set_all_finger_powers(int argc, char **argv, Hand &hand)
   return 0;
 }
 
+int finger_ping(int argc, char **argv, Hand &hand)
+{
+  verify_argc(argc, 3, "usage: fping FINGER_IDX\n");
+  uint8_t finger_idx = 0;
+  parse_finger_idx(finger_idx, argv[2]);
+  printf("pinging finger %d:\n", finger_idx);
+  printf("  motor module: ");
+  if (hand.fingers[finger_idx].mm.ping())
+    printf("   OK\n");
+  else
+    printf("   fail\n");
+  return 0;
+}
+
 int set_single_finger_power(int argc, char **argv, Hand &hand)
 {
   verify_argc(argc, 4, "usage: hand_cli fp FINGER_IDX POWER_STATE\n"
                        "  where POWER_STATE = {off, low, on}\n");
   uint8_t finger_idx = 0;
-  if (!parse_finger_idx(finger_idx, argv[2]))
-    return 1;
+  parse_finger_idx(finger_idx, argv[2]);
   const char *fp_str = argv[3];
   Hand::FingerPowerState fps;
   if (!strcmp(fp_str, "off"))
@@ -98,8 +110,7 @@ int set_finger_control_mode(int argc, char **argv, Hand &hand)
   verify_argc(argc, 4, "usage: hand_cli fcm FINGER_IDX CONTROL_MODE\n"
                        "  where CONTROL_MODE = {idle, joint_pos}\n");
   uint8_t finger_idx = 0;
-  if (!parse_finger_idx(finger_idx, argv[2]))
-    return 1;
+  parse_finger_idx(finger_idx, argv[2]);
   const char *fcm_str = argv[3];
   Hand::FingerControlMode fcm;
   if (!strcmp(fcm_str, "idle"))
@@ -120,8 +131,7 @@ int set_joint_position(int argc, char **argv, Hand &hand)
 {
   verify_argc(argc, 6, "usage: hand_cli jp FINGER_IDX J0 J1 J2\n");
   uint8_t finger_idx = 0;
-  if (!parse_finger_idx(finger_idx, argv[2]))
-    return 1;
+  parse_finger_idx(finger_idx, argv[2]);
   float j0 = atof(argv[3]), j1 = atof(argv[4]), j2 = atof(argv[5]);
   hand.setFingerJointPos(finger_idx, j0, j1, j2);
   return 0;
@@ -155,6 +165,7 @@ int cam_pgm(int argc, char **argv, Hand &hand)
   return 0;
 }
 
+
 int main(int argc, char **argv)
 {
   if (argc < 2)
@@ -181,6 +192,8 @@ int main(int argc, char **argv)
     return set_joint_position(argc, argv, hand);
   else if (!strcmp(cmd, "cam_pgm"))
     return cam_pgm(argc, argv, hand);
+  else if (!strcmp(cmd, "fping"))
+    return finger_ping(argc, argv, hand);
   printf("unknown command: [%s]\n", cmd);
   return 1;
 }

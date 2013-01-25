@@ -2,14 +2,11 @@
 #include <cstdio>
 #include <cstring>
 #include <cmath>
+#include <boost/bind.hpp>
 using namespace sandia_hand;
 
-Hand::Hand(int num_fingers)
+Hand::Hand()
 {
-  if (num_fingers < 0)
-    num_fingers = 0;
-  else if (num_fingers > MAX_FINGERS)
-    num_fingers = MAX_FINGERS;
   socks[0] = &control_sock;
   socks[1] = &cam_socks[0];
   socks[2] = &cam_socks[1];
@@ -25,6 +22,8 @@ Hand::Hand(int num_fingers)
     for (int j = 0; j < IMG_HEIGHT; j++)
       img_rows_recv[i][j] = false;
   }
+  for (int i = 0; i < NUM_FINGERS; i++)
+    fingers[i].mm.setRawTx(boost::bind(&Hand::fingerRawTx, this, i, _1, _2));
 }
 
 Hand::~Hand()
@@ -64,7 +63,7 @@ bool Hand::init(const char *ip)
 
 bool Hand::setFingerPower(const uint8_t finger_idx, const FingerPowerState fps)
 {
-  if (finger_idx >= MAX_FINGERS)
+  if (finger_idx >= NUM_FINGERS)
     return false;
   uint8_t pkt[50];
   *((uint32_t *)pkt) = CMD_ID_SET_FINGER_POWER_STATE;
@@ -79,7 +78,7 @@ bool Hand::setFingerPower(const uint8_t finger_idx, const FingerPowerState fps)
 bool Hand::setFingerControlMode(const uint8_t finger_idx,
                                 const FingerControlMode fcm)
 {
-  if (finger_idx >= MAX_FINGERS)
+  if (finger_idx >= NUM_FINGERS)
     return false;
   uint8_t pkt[50];
   *((uint32_t *)pkt) = CMD_ID_SET_FINGER_CONTROL_MODE;
@@ -94,7 +93,7 @@ bool Hand::setFingerControlMode(const uint8_t finger_idx,
 bool Hand::setFingerJointPos(const uint8_t finger_idx,
                              float joint_0, float joint_1, float joint_2)
 {
-  if (finger_idx >= MAX_FINGERS)
+  if (finger_idx >= NUM_FINGERS)
     return false;
   uint8_t pkt[50];
   *((uint32_t *)pkt) = CMD_ID_SET_FINGER_JOINT_POS;
@@ -203,7 +202,8 @@ bool Hand::pingFinger(const uint8_t finger_idx)
   return false; // todo
 }
 
-bool Hand::fingerRawTx(const uint8_t *data, const uint16_t data_len)
+bool Hand::fingerRawTx(const uint8_t finger_idx, 
+                       const uint8_t *data, const uint16_t data_len)
 {
   return false; // todo
 }

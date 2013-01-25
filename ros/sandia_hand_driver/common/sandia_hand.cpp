@@ -197,3 +197,14 @@ void Hand::setImageCallback(ImageCallback callback)
 {
   img_cb = callback;
 }
+
+bool Hand::pingFinger(const uint8_t finger_idx)
+{
+  return false; // todo
+}
+
+bool Hand::fingerRawTx(const uint8_t *data, const uint16_t data_len)
+{
+  return false; // todo
+}
+

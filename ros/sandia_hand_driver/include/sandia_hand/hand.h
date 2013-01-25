@@ -35,6 +35,7 @@ public:
   static const int IMG_WIDTH = 720, IMG_HEIGHT = 480, NUM_CAMS = 2;
   typedef boost::function<void(uint8_t, uint32_t, uint8_t *)> ImageCallback;
   void setImageCallback(ImageCallback callback);
+  bool pingFinger(const uint8_t finger_idx);
 
 private:
   static const int MAX_FINGERS = 4, NUM_SOCKS = 3;
@@ -48,6 +49,7 @@ private:
   uint8_t *img_data[NUM_CAMS]; // camera image buffers
   bool *img_rows_recv[NUM_CAMS]; // keep track of completeness
   ImageCallback img_cb;
+  bool fingerRawTx(const uint8_t *data, const uint16_t data_len);
 };
 
 }

@@ -16,10 +16,11 @@
  *  limitations under the License.
  */
 
-#include "hand_packets.h"
+#include "sandia_hand/hand_packets.h"
 #include "finger.h"
 #include <stdio.h>
 #include "common_sam3x/sam3x.h"
+#include "fpga_spi.h"
 
 // hardware connections:
 // PA15 = RS485_SEL
@@ -79,6 +80,7 @@ void finger_init()
   USART3->US_IDR = 0xffffffff; // no interrupts
   USART3->US_BRGR = (F_CPU / 2000000) / 16; // make it a 2 megabit channel
   USART3->US_CR = US_CR_TXEN | US_CR_RXEN;
+  fpga_spi_txrx(FPGA_SPI_REG_FINGER_BAUD_DIV | FPGA_SPI_WRITE, 50); // 2 Mb
 }
 
 static uint16_t finger_calc_crc(uint8_t *pkt)

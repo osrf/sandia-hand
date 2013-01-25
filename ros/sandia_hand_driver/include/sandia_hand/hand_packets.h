@@ -52,7 +52,7 @@ typedef struct
   uint8_t finger_idx;
   uint8_t pad;
   uint16_t tx_data_len;
-  uint8_t tx_data[FINGER_TX_MAX_LEN];
+  uint8_t tx_data[FINGER_RAW_TX_MAX_LEN];
 } __attribute__((packed)) finger_raw_tx_t;
 #endif
 

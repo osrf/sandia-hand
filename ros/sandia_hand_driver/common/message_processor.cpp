@@ -15,8 +15,7 @@ MessageProcessor::~MessageProcessor()
 bool MessageProcessor::ping()
 {
   printf("MessageProcessor::ping()\n");
-  prepareTxBuffer(PKT_PING, 0);
-  return true;
+  return sendTxBuffer(PKT_PING, 0);
 }
 
 uint8_t *MessageProcessor::getTxBuffer()
@@ -36,7 +35,7 @@ bool MessageProcessor::sendTxBuffer(const uint8_t pkt_id, uint16_t payload_len)
     payload_len = MAX_OUTGOING_PACKET_LENGTH - PAD;
   }
   outgoing_packet_[0] = 0x42;
-  outgoing_packet_[1] = addr;
+  outgoing_packet_[1] = addr_;
   *((uint16_t *)(&outgoing_packet_[2])) = payload_len;
   outgoing_packet_[4] = pkt_id;
   // i'm sure this could be done much faster, if it ever mattered.

@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <boost/function.hpp>
+#include <vector>
 
 namespace sandia_hand
 {

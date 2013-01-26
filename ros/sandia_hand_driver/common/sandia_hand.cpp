@@ -117,6 +117,24 @@ bool Hand::setCameraStreaming(bool cam_0_streaming, bool cam_1_streaming)
   return tx_udp(pkt, 4 + sizeof(configure_camera_stream_t));
 }
 
+bool Hand::fingerRawTx(const uint8_t finger_idx, 
+                       const uint8_t *data, const uint16_t data_len)
+{
+  printf("Hand::fingerRawTx(%d, x, %d)\n", finger_idx, data_len);
+  for (int i = 0; i < data_len; i++)
+    printf("  %02d:0x%02x\n", i, data[i]);
+  uint8_t pkt[FINGER_RAW_TX_MAX_LEN+20];
+  *((uint32_t *)pkt) = CMD_ID_FINGER_RAW_TX;
+  finger_raw_tx_t *p = (finger_raw_tx_t *)(pkt + 4);
+  p->finger_idx = finger_idx;
+  p->pad = 0;
+  p->tx_data_len = data_len;
+  for (int i = 0; i < data_len && i < FINGER_RAW_TX_MAX_LEN; i++)
+    p->tx_data[i] = data[i]; // todo: speed this up someday if it ever matters
+  return tx_udp(pkt, 4 + sizeof(finger_raw_tx_t) - 
+                     FINGER_RAW_TX_MAX_LEN + data_len);  // ugly
+}
+
 bool Hand::tx_udp(uint8_t *pkt, uint16_t pkt_len)
 {
   if (-1 == sendto(control_sock, pkt, pkt_len, 0, 
@@ -198,12 +216,6 @@ void Hand::setImageCallback(ImageCallback callback)
 }
 
 bool Hand::pingFinger(const uint8_t finger_idx)
-{
-  return false; // todo
-}
-
-bool Hand::fingerRawTx(const uint8_t finger_idx, 
-                       const uint8_t *data, const uint16_t data_len)
 {
   return false; // todo
 }

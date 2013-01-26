@@ -2,14 +2,11 @@
 #include <cstdio>
 #include <cstring>
 #include <cmath>
+#include <boost/bind.hpp>
 using namespace sandia_hand;
 
-Hand::Hand(int num_fingers)
+Hand::Hand()
 {
-  if (num_fingers < 0)
-    num_fingers = 0;
-  else if (num_fingers > MAX_FINGERS)
-    num_fingers = MAX_FINGERS;
   socks[0] = &control_sock;
   socks[1] = &cam_socks[0];
   socks[2] = &cam_socks[1];
@@ -25,6 +22,8 @@ Hand::Hand(int num_fingers)
     for (int j = 0; j < IMG_HEIGHT; j++)
       img_rows_recv[i][j] = false;
   }
+  for (int i = 0; i < NUM_FINGERS; i++)
+    fingers[i].mm.setRawTx(boost::bind(&Hand::fingerRawTx, this, i, _1, _2));
 }
 
 Hand::~Hand()
@@ -64,7 +63,7 @@ bool Hand::init(const char *ip)
 
 bool Hand::setFingerPower(const uint8_t finger_idx, const FingerPowerState fps)
 {
-  if (finger_idx >= MAX_FINGERS)
+  if (finger_idx >= NUM_FINGERS)
     return false;
   uint8_t pkt[50];
   *((uint32_t *)pkt) = CMD_ID_SET_FINGER_POWER_STATE;
@@ -79,7 +78,7 @@ bool Hand::setFingerPower(const uint8_t finger_idx, const FingerPowerState fps)
 bool Hand::setFingerControlMode(const uint8_t finger_idx,
                                 const FingerControlMode fcm)
 {
-  if (finger_idx >= MAX_FINGERS)
+  if (finger_idx >= NUM_FINGERS)
     return false;
   uint8_t pkt[50];
   *((uint32_t *)pkt) = CMD_ID_SET_FINGER_CONTROL_MODE;
@@ -94,7 +93,7 @@ bool Hand::setFingerControlMode(const uint8_t finger_idx,
 bool Hand::setFingerJointPos(const uint8_t finger_idx,
                              float joint_0, float joint_1, float joint_2)
 {
-  if (finger_idx >= MAX_FINGERS)
+  if (finger_idx >= NUM_FINGERS)
     return false;
   uint8_t pkt[50];
   *((uint32_t *)pkt) = CMD_ID_SET_FINGER_JOINT_POS;
@@ -116,6 +115,24 @@ bool Hand::setCameraStreaming(bool cam_0_streaming, bool cam_1_streaming)
   p->cam_0_stream = cam_0_streaming ? CAMERA_STREAM_ON : CAMERA_STREAM_OFF;
   p->cam_1_stream = cam_1_streaming ? CAMERA_STREAM_ON : CAMERA_STREAM_OFF;
   return tx_udp(pkt, 4 + sizeof(configure_camera_stream_t));
+}
+
+bool Hand::fingerRawTx(const uint8_t finger_idx, 
+                       const uint8_t *data, const uint16_t data_len)
+{
+  printf("Hand::fingerRawTx(%d, x, %d)\n", finger_idx, data_len);
+  for (int i = 0; i < data_len; i++)
+    printf("  %02d:0x%02x\n", i, data[i]);
+  uint8_t pkt[FINGER_RAW_TX_MAX_LEN+20];
+  *((uint32_t *)pkt) = CMD_ID_FINGER_RAW_TX;
+  finger_raw_tx_t *p = (finger_raw_tx_t *)(pkt + 4);
+  p->finger_idx = finger_idx;
+  p->pad = 0;
+  p->tx_data_len = data_len;
+  for (int i = 0; i < data_len && i < FINGER_RAW_TX_MAX_LEN; i++)
+    p->tx_data[i] = data[i]; // todo: speed this up someday if it ever matters
+  return tx_udp(pkt, 4 + sizeof(finger_raw_tx_t) - 
+                     FINGER_RAW_TX_MAX_LEN + data_len);  // ugly
 }
 
 bool Hand::tx_udp(uint8_t *pkt, uint16_t pkt_len)
@@ -199,11 +216,6 @@ void Hand::setImageCallback(ImageCallback callback)
 }
 
 bool Hand::pingFinger(const uint8_t finger_idx)
-{
-  return false; // todo
-}
-
-bool Hand::fingerRawTx(const uint8_t *data, const uint16_t data_len)
 {
   return false; // todo
 }

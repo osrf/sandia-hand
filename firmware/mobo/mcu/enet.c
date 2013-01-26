@@ -462,6 +462,13 @@ static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
     configure_camera_stream_t *p = (configure_camera_stream_t *)cmd_data;
     cam_set_streams(p->cam_0_stream, p->cam_1_stream);
   }
+  else if (cmd == CMD_ID_FINGER_RAW_TX)
+  {
+    finger_raw_tx_t *p = (finger_raw_tx_t *)cmd_data;
+    if (p->finger_idx > 3 || p->tx_data_len > FINGER_RAW_TX_MAX_LEN)
+      return;
+    finger_tx_raw(p->finger_idx, p->tx_data, p->tx_data_len);
+  }
   else
   {
     printf("  unhandled cmd %d\r\n", cmd);

@@ -146,11 +146,9 @@ void finger_tx_raw(const uint8_t finger_idx,
 {
   if (finger_idx > 3)
     return;
-  /*
-  printf("finger tx raw %d bytes:\r\n");
+  printf("finger tx raw %d bytes:\r\n", data_len);
   for (int i = 0; i < data_len; i++)
     printf("  %d: 0x%02x\r\n", i, data[i]);
-  */
   // assert RS485_SEL so that the ARM has control of the rs485 transceivers
   PIOA->PIO_SODR = PIO_PA15;
   // typedef struct { Pio *pio; uint32_t pin_idx; } rs485_de_t;

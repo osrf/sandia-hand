@@ -1,11 +1,15 @@
 #include <cstdio>
 #include "sandia_hand/message_processor.h"
+#include <boost/function.hpp>
+#include <boost/bind.hpp>
 using namespace sandia_hand;
 
 MessageProcessor::MessageProcessor(const uint8_t addr)
 : addr_(addr)
 {
   outgoing_packet_.resize(MAX_OUTGOING_PACKET_LENGTH);
+  registerRxHandler(PKT_PING, boost::bind(&MessageProcessor::rxPing, this, 
+                                          _1, _2));
 }
 
 MessageProcessor::~MessageProcessor()
@@ -16,6 +20,11 @@ bool MessageProcessor::ping()
 {
   printf("MessageProcessor::ping()\n");
   return sendTxBuffer(PKT_PING, 0);
+}
+
+void MessageProcessor::rxPing(const uint8_t *data, const uint16_t data_len)
+{
+  printf("MessageProcessor::rxPing()\n");
 }
 
 uint8_t *MessageProcessor::getTxBuffer()
@@ -56,5 +65,16 @@ bool MessageProcessor::sendTxBuffer(const uint8_t pkt_id, uint16_t payload_len)
   *((uint16_t *)(&outgoing_packet_[5 + payload_len])) = crc;
   raw_tx_(&outgoing_packet_[0], payload_len + 7);
   return true;
+}
+
+bool MessageProcessor::rx(const uint8_t *data, const uint16_t data_len)
+{
+  printf("MessageProcessor::rx(0x%08x, %d)\n", (uint32_t)data, data_len);
+  return true;
+}
+
+void MessageProcessor::registerRxHandler(uint8_t msg_id, RxFunctor f)
+{
+  rx_map_[msg_id] = f;
 }
 

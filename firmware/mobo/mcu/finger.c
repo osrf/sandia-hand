@@ -144,11 +144,13 @@ void finger_set_joint_pos(uint8_t finger_idx, float j0, float j1, float j2)
 void finger_tx_raw(const uint8_t finger_idx, 
                    const uint8_t *data, const uint16_t data_len)
 {
-  if (finger_idx > 3)
+  if (finger_idx > 4) // palm is the "fourth finger" since protocol is same
     return;
+  /*
   printf("finger tx raw %d bytes:\r\n", data_len);
   for (int i = 0; i < data_len; i++)
     printf("  %d: 0x%02x\r\n", i, data[i]);
+  */
   // assert RS485_SEL so that the ARM has control of the rs485 transceivers
   PIOA->PIO_SODR = PIO_PA15;
   // typedef struct { Pio *pio; uint32_t pin_idx; } rs485_de_t;

@@ -18,4 +18,4 @@ set(INSTALL_SHARE_PATH ${CMAKE_INSTALL_PREFIX}/share/sandia-hand-${SANDIA_HAND_V
 
 install(FILES manifest.xml
         DESTINATION ${INSTALL_SHARE_PATH})
-install(DIRECTORY msg msg_gen src DESTINATION ${INSTALL_SHARE_PATH} PATTERN ".*" EXCLUDE)
+install(DIRECTORY srv srv_gen msg msg_gen src DESTINATION ${INSTALL_SHARE_PATH} PATTERN ".*" EXCLUDE)

@@ -1,4 +1,5 @@
 set (model_basenames
+     sandia_hand_description
      sandia_hand_left_on_box
      sandia_hand_right_on_box
      sandia_hand_both_on_box)

@@ -1,2 +1,3 @@
-rosbuild_add_executable(hand_cli hand_cli.cpp)
-target_link_libraries(hand_cli sandia_hand)
+rosbuild_add_executable(sandia_hand_cli sandia_hand_cli.cpp)
+target_link_libraries(sandia_hand_cli sandia_hand)
+install(TARGETS sandia_hand_cli DESTINATION bin)

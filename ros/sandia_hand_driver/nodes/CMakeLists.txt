@@ -1,0 +1,7 @@
+rosbuild_add_executable(sandia_hand_node sandia_hand_node.cpp)
+target_link_libraries(sandia_hand_node sandia_hand)
+_rosbuild_list_to_string(blah ${sandia_hand_driver_LIBRARY_DIRS})
+message("library dirs: " ${sandia_hand_driver_LIBRARY_DIRS})
+message("blah" ${blah})
+set_target_properties(sandia_hand_node PROPERTIES INSTALL_RPATH ${${PKG_NAME}_LIBRARY_DIRS})
+install(TARGETS sandia_hand_node DESTINATION bin)

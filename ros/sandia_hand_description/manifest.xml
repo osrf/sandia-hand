@@ -6,6 +6,5 @@
   <license>BSD</license>
   <depend package="urdf"/>
   <depend package="xacro"/>
-  <depend package="gazebo"/>
 </package>
 

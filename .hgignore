@@ -5,3 +5,6 @@ build
 bin
 *.swp
 lib
+msg_gen
+srv_gen
+sandia_hand_msgs/src

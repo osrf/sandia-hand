@@ -7,6 +7,8 @@
 static const uint32_t CMD_ID_SET_FINGER_POWER_STATE  = 1;
 static const uint32_t CMD_ID_SET_FINGER_CONTROL_MODE = 2;
 static const uint32_t CMD_ID_SET_FINGER_JOINT_POS    = 3;
+static const uint32_t CMD_ID_CONFIGURE_CAMERA_STREAM = 4;
+static const uint32_t CMD_ID_FINGER_RAW_TX           = 5; // pass-through
 
 typedef struct 
 {
@@ -36,5 +38,21 @@ typedef struct
   float joint_2_radians;
 } __attribute__((packed)) set_finger_joint_pos_t;
 
+typedef struct
+{
+  uint8_t cam_0_stream;
+  uint8_t cam_1_stream;
+} __attribute__((packed)) configure_camera_stream_t;
+static const uint8_t CAMERA_STREAM_OFF = 0;
+static const uint8_t CAMERA_STREAM_ON  = 1;
+
+#define FINGER_RAW_TX_MAX_LEN 500
+typedef struct
+{
+  uint8_t finger_idx;
+  uint8_t pad;
+  uint16_t tx_data_len;
+  uint8_t tx_data[FINGER_RAW_TX_MAX_LEN];
+} __attribute__((packed)) finger_raw_tx_t;
 #endif
 

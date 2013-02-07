@@ -21,6 +21,27 @@
 
 #include <stdint.h>
 
+#define FPGA_SPI_REG_MASTER_CFG          0
+#define FPGA_SPI_REG_MDIO_CFG            1
+#define FPGA_SPI_REG_MDIO_WDATA          2
+#define FPGA_SPI_REG_CAM_CFG             3
+#define FPGA_SPI_REG_UDP_SOURCE_PORT     4
+#define FPGA_SPI_REG_UDP_DEST_PORT       5
+#define FPGA_SPI_REG_IP_SOURCE_ADDR_LO   6
+#define FPGA_SPI_REG_IP_SOURCE_ADDR_HI   7
+#define FPGA_SPI_REG_IP_DEST_ADDR_LO     8
+#define FPGA_SPI_REG_IP_DEST_ADDR_HI     9
+#define FPGA_SPI_REG_ETH_SOURCE_ADDR_0  10
+#define FPGA_SPI_REG_ETH_SOURCE_ADDR_1  11
+#define FPGA_SPI_REG_ETH_SOURCE_ADDR_2  12
+#define FPGA_SPI_REG_ETH_DEST_ADDR_0    13
+#define FPGA_SPI_REG_ETH_DEST_ADDR_1    14
+#define FPGA_SPI_REG_ETH_DEST_ADDR_2    15
+#define FPGA_SPI_REG_CAM_MAX_ROWS       16
+#define FPGA_SPI_REG_FINGER_BAUD_DIV    17
+
+#define FPGA_SPI_WRITE                0x80
+
 void fpga_spi_init();
 uint16_t fpga_spi_txrx(uint8_t reg, uint16_t tx_data);
 

@@ -53,6 +53,8 @@ void cam_init()
   for (volatile int j = 0; j < 200000; j++) { } // let 3v8 rail come up
   fpga_spi_txrx(0x83, 0x003f); // raise (de-assert) the camera reset lines
   for (volatile int j = 0; j < 200000; j++) { } // wait for camera to wake up
+  fpga_spi_txrx(FPGA_SPI_REG_CAM_MAX_ROWS | FPGA_SPI_WRITE, 0x01e0); // 480 
+  /*
   for (int i = 0; i < 256; i++)
   {
     printf("reg 0x%02x: ", i);
@@ -61,6 +63,17 @@ void cam_init()
     uint16_t val_1 = cam_read_register(1, i);
     printf("0x%04x\r\n", val_1);
   }
+  */
+}
+
+void cam_set_streams(const uint8_t stream_0, const uint8_t stream_1)
+{
+  uint16_t cam_cfg = 0x003f |
+                     (stream_0 ? CAM_CAPTURE_0 : 0) |
+                     (stream_1 ? CAM_CAPTURE_1 : 0);
+  printf("cam_set_streams(%d, %d) --> 0x%04x\r\n", 
+         stream_0, stream_1, cam_cfg);
+  fpga_spi_txrx(FPGA_SPI_REG_CAM_CFG | FPGA_SPI_WRITE, cam_cfg);
 }
 
 uint16_t cam_read_register(uint8_t cam_idx, uint8_t reg_idx)
@@ -101,4 +114,5 @@ uint16_t cam_read_register(uint8_t cam_idx, uint8_t reg_idx)
   }
   return __REV16(rx_val);
 }
+
 

@@ -25,3 +25,4 @@ install(FILES manifest.xml
 
 add_subdirectory(control_nodes)
 add_subdirectory(input_nodes)
+add_subdirectory(launch)

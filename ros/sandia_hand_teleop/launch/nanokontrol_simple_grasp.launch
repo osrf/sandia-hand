@@ -4,5 +4,5 @@
   <node name="simple_grasp" pkg="sandia_hand_teleop" type="simple_grasp.py"/>
   <!-- Change first arg "l" for left hand, "r" for right hand. 
        Change second arg to set which scene must be active [0-3] for control to happen. -->
-  <node name="joy_to_simple_grasp" pkg="sandia_hand_teleop" type="joy_to_simple_grasp.py" args="lr 1"/>
+  <node name="joy_to_simple_grasp" pkg="sandia_hand_teleop" type="joy_to_simple_grasp.py" args="lr 2"/>
 </launch>

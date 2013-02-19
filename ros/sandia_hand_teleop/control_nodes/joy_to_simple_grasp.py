@@ -27,9 +27,9 @@ USAGE = 'joy_to_simple_grasp.py {l|r|lr} [scene]'
 
 # Axis to grasp name; activate button for each axis is axis number * 2
 GRASP_MAPPING = {
-  0 : 'cylindrical',
-  1 : 'spherical',
-  2 : 'prismatic'
+  6 : 'cylindrical',
+  7 : 'spherical',
+  8 : 'prismatic'
 }
 
 # Scene button comes last

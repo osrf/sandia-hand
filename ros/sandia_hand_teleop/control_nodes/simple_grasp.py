@@ -19,19 +19,22 @@
 
 import roslib; roslib.load_manifest('sandia_hand_teleop')
 import rospy
-from sandia_hand_msgs.srv import SimpleGraspSrv
-from sandia_hand_msgs.srv import SimpleGraspSrvResponse
+from sandia_hand_msgs.srv import SimpleGraspSrv, SimpleGraspSrvResponse
+from sandia_hand_msgs.msg import SimpleGrasp
 from osrf_msgs.msg import JointCommands
 
 g_jc_pub = None
 g_jc = JointCommands()
 
 def grasp_srv(req):
+  return grasp_cb(req.grasp)
+
+def grasp_cb(msg):
   global g_jc_pub, g_jc
-  print "request: grasp [%s] amount [%f]" % (req.grasp.name, req.grasp.closed_amount)
+  print "request: grasp [%s] amount [%f]" % (msg.name, msg.closed_amount)
   # save some typing
-  gn = req.grasp.name
-  x = req.grasp.closed_amount
+  gn = msg.name
+  x = msg.closed_amount
   if x < 0:
     x = 0
   elif x > 1:
@@ -65,4 +68,5 @@ if __name__ == '__main__':
   g_jc.position = [0] * 12
   g_jc_pub = rospy.Publisher('joint_commands', JointCommands) # same namespace
   g_jc_srv = rospy.Service('simple_grasp', SimpleGraspSrv, grasp_srv)
+  g_jc_sub = rospy.Subscriber('simple_grasp', SimpleGrasp, grasp_cb)
   rospy.spin()

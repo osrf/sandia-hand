@@ -20,7 +20,6 @@
 import roslib; roslib.load_manifest('sandia_hand_teleop')
 import rospy, sys
 from sensor_msgs.msg import Joy
-from sandia_hand_msgs.srv import SimpleGraspSrv
 from sandia_hand_msgs.msg import SimpleGrasp
 
 USAGE = 'joy_to_simple_grasp.py {l|r|lr} [scene]'
@@ -39,7 +38,7 @@ class Grasper:
     def __init__(self, argv):
         self.srv_name = 'sandia_hands/%s/simple_grasp'
         self.hands = []
-        self.srv_proxies = []
+        self.pubs = []
         if len(argv) < 2 or len(argv) > 3:
             self.usage()
         if argv[1] == 'l':
@@ -59,9 +58,7 @@ class Grasper:
         rospy.init_node('grasp_teleop', anonymous=True)
 
         for s in self.hands:
-            print 'Waiting for service %s'%(s)
-            rospy.wait_for_service(s)
-            self.srv_proxies.append(rospy.ServiceProxy(s, SimpleGraspSrv))
+            self.pubs.append(rospy.Publisher(s, SimpleGrasp))
 
         self.joy_sub = rospy.Subscriber('joy', Joy, self.joy_cb)
 
@@ -82,11 +79,8 @@ class Grasper:
               break
       if grasp is None:
           return
-      for s in self.srv_proxies:
-          try:
-              s(SimpleGrasp(grasp, amount))
-          except rospy.ServiceException, e:
-              print "service call failed: %s" % e
+      for s in self.pubs:
+          s.publish(SimpleGrasp(grasp, amount))
 
 if __name__ == '__main__':
     g = Grasper(rospy.myargv())

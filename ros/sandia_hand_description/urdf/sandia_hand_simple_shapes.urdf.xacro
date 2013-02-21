@@ -11,7 +11,7 @@
     <link name="${side}_f${idx}_base">
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <inertial>
-        <mass value="0.35"/>
+        <mass value="0.250"/> <!-- (2.303 - 1.303) / 4 -->
         <origin xyz="0 0 0"/>
         <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
       </inertial>
@@ -27,7 +27,7 @@
     <link name="${side}_f${idx}_0">
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <inertial>
-        <mass value="0.05"/>
+        <mass value="0.106"/> <!-- F1 -->
         <origin xyz="0 0 0"/>
         <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
       </inertial>
@@ -88,7 +88,7 @@
     <link name="${side}_f${idx}_1">
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <inertial>
-        <mass value="0.05"/>
+        <mass value="0.033"/> <!-- F2 -->
         <origin xyz="0 0 0"/>
         <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
       </inertial>
@@ -142,7 +142,7 @@
     <link name="${side}_f${idx}_2">
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <inertial>
-        <mass value="0.05"/>
+        <mass value="0.033"/>  <!-- F3 -->
         <origin xyz="0 0 0"/>
         <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
       </inertial>
@@ -264,9 +264,10 @@
     <link name="${side}_palm">
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <inertial>
-        <mass value="0.3"/>
+        <mass value="1.303"/>
         <origin xyz="0 0 0"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        <!-- solid sphere with 5cm radius -->
+        <inertia ixx="0.002303" ixy="0" ixz="0" iyy="0.002303" iyz="0" izz="0.002303"/>
       </inertial>
       <!-- begin simple shape approximation of palm -->
       <collision group="default">

@@ -23,6 +23,7 @@
 #include "enet.h"
 #include "finger.h"
 #include "cam.h"
+#include "current.h"
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -31,6 +32,7 @@
 void systick_vector()
 {
   enet_systick();
+  current_systick();
 }
 
 
@@ -42,6 +44,7 @@ void main()
   enet_init();
   finger_init();
   cam_init();
+  current_init();
   printf("hello, world!\r\n");
   // blink the FPGA LED a few times
   for (int i = 0; i < 4; i++)
@@ -92,6 +95,7 @@ void main()
   while (1)
   {
     enet_idle();
+    current_idle();
     /*
     for (volatile int j = 0; j < 20000000; j++) { }
     printf("tx\r\n");

@@ -9,6 +9,7 @@
 #include "hand_packets.h"
 #include <boost/function.hpp>
 #include <sandia_hand/finger.h>
+#include <sandia_hand/palm.h>
 
 namespace sandia_hand
 {
@@ -18,6 +19,7 @@ class Hand
 public:
   static const int NUM_FINGERS = 4;
   Finger fingers[NUM_FINGERS];
+  Palm palm;
   
   Hand();
   ~Hand();
@@ -42,10 +44,10 @@ public:
   bool pingFinger(const uint8_t finger_idx);
 
 private:
-  static const int NUM_SOCKS = 3;
+  static const int NUM_SOCKS = 4;
   static const uint16_t HAND_BASE_PORT = 12321; // i love palindromes
-  int control_sock, cam_socks[NUM_CAMS];
-  sockaddr_in control_saddr, cam_saddrs[NUM_CAMS];
+  int control_sock, cam_socks[NUM_CAMS], rs485_sock;
+  sockaddr_in control_saddr, cam_saddrs[NUM_CAMS], rs485_saddr;
   int *socks[NUM_SOCKS];
   sockaddr_in *saddrs[NUM_SOCKS];
   bool tx_udp(uint8_t *pkt, uint16_t pkt_len);

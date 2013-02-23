@@ -6,13 +6,16 @@
 using namespace sandia_hand;
 
 Hand::Hand()
+: palm(10) // default rs485 address of palm
 {
   socks[0] = &control_sock;
   socks[1] = &cam_socks[0];
   socks[2] = &cam_socks[1];
+  socks[3] = &rs485_sock;
   saddrs[0] = &control_saddr;
   saddrs[1] = &cam_saddrs[0];
   saddrs[2] = &cam_saddrs[1];
+  saddrs[3] = &rs485_saddr;
   for (int i = 0; i < NUM_SOCKS; i++)
     *socks[0] = 0;
   for (int i = 0; i < NUM_CAMS; i++)
@@ -24,10 +27,14 @@ Hand::Hand()
   }
   for (int i = 0; i < NUM_FINGERS; i++)
     fingers[i].mm.setRawTx(boost::bind(&Hand::fingerRawTx, this, i, _1, _2));
+  palm.setRawTx(boost::bind(&Hand::fingerRawTx, this, 4, _1, _2));
 }
 
 Hand::~Hand()
 {
+  for (int i = 0; i < NUM_SOCKS; i++)
+    if (*socks[i])
+      close(*socks[i]);
 }
 
 bool Hand::init(const char *ip)
@@ -120,9 +127,11 @@ bool Hand::setCameraStreaming(bool cam_0_streaming, bool cam_1_streaming)
 bool Hand::fingerRawTx(const uint8_t finger_idx, 
                        const uint8_t *data, const uint16_t data_len)
 {
+  /*
   printf("Hand::fingerRawTx(%d, x, %d)\n", finger_idx, data_len);
   for (int i = 0; i < data_len; i++)
     printf("  %02d:0x%02x\n", i, data[i]);
+  */
   uint8_t pkt[FINGER_RAW_TX_MAX_LEN+20];
   *((uint32_t *)pkt) = CMD_ID_FINGER_RAW_TX;
   finger_raw_tx_t *p = (finger_raw_tx_t *)(pkt + 4);
@@ -154,11 +163,11 @@ bool Hand::listen(const float max_seconds)
   timeout.tv_usec = (suseconds_t)((max_seconds - timeout.tv_sec) * 1e6);
   fd_set rdset;
   FD_ZERO(&rdset);
-  for (int i = 0; i < 3; i++)
+  for (int i = 0; i < NUM_SOCKS; i++)
     FD_SET(*socks[i], &rdset);
   if (select(*socks[2]+1, &rdset, NULL, NULL, &timeout) <= 0)
     return false;
-  for (int i = 0; i < 3; i++)
+  for (int i = 0; i < NUM_SOCKS; i++)
     if (FD_ISSET(*socks[i], &rdset)) 
     {
       //printf("%d set\n", i);
@@ -173,7 +182,7 @@ bool Hand::listen(const float max_seconds)
         perror("recvfrom"); // find a better way to report this...
         return false;
       }
-      if (!rx_data(i, recv_buf, bytes_recv))
+      if (!rx_data(i, recv_buf, bytes_recv)) // just to reduce indenting...
         return false;
     }
   return true; // no errors
@@ -205,6 +214,27 @@ bool Hand::rx_data(const int sock_idx, const uint8_t *data, const int data_len)
           all_recv = false;
       if (all_recv && img_cb)
         img_cb(cam_idx, frame_count, img_data[cam_idx]);
+    }
+  }
+  else if (sock_idx == 3) // rs485 sock
+  {
+    printf("rs485 sock received %d bytes\n", data_len);
+    // bytes come in pairs on this socket
+    for (int i = 0; i < data_len / 2; i++)
+    {
+      const uint8_t rs485_sender_byte = data[i * 2];
+      if (!(rs485_sender_byte & 0x80))
+      {
+        printf("WOAH THERE PARTNER. unexpected byte on rs485 sock: 0x%02x\n",
+               rs485_sender_byte);
+        continue;
+      }
+      const uint8_t rs485_sender = rs485_sender_byte & ~0x80;
+      const uint8_t rs485_byte = data[i * 2 + 1];
+      if (rs485_sender < 4)
+        fingers[rs485_sender].mm.rx(&rs485_byte, 1); // todo: batch this
+      else if (rs485_sender == 4)
+        palm.rx(&rs485_byte, 1);
     }
   }
   return true;

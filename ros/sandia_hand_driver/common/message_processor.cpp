@@ -69,7 +69,7 @@ bool MessageProcessor::sendTxBuffer(const uint8_t pkt_id, uint16_t payload_len)
 
 bool MessageProcessor::rx(const uint8_t *data, const uint16_t data_len)
 {
-  printf("MessageProcessor::rx(0x%08x, %d)\n", (uint32_t)data, data_len);
+  //printf("MessageProcessor::rx(0x%08x, %d)\n", (uint32_t)data, data_len);
   // todo: search rx_map_ and see if we have a handler registered for this msg
   return true;
 }

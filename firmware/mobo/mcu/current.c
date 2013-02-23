@@ -21,8 +21,12 @@
 #include <stdio.h>
 
 uint8_t g_current_poll_req = 0;
-static uint16_t current_read_finger_sensor_reg(const uint8_t finger_idx, 
-                                               const uint8_t reg);
+static void current_start_read_finger_sensor_reg(const uint8_t finger_idx, 
+                                                 const uint8_t reg);
+static enum { CURRENT_IDLE = 0, CURRENT_RX_WAIT = 1 } 
+  g_current_state = CURRENT_IDLE;
+static uint16_t g_current_rx_cnt = 0, g_current_rx_val = 0;
+static uint8_t *g_current_rx_ptr = 0;
 
 void current_init()
 {
@@ -47,6 +51,31 @@ void current_idle()
     g_current_poll_req = 0;
     printf("cpoll\r\n");
   }
+  if (g_current_state == CURRENT_RX_WAIT)
+  {
+#if 0
+    while (rx_cnt > 0)
+  {
+    uint32_t status = TWI1->TWI_SR;
+    if (status & TWI_SR_NACK)
+    {
+      printf("twi1 received nack\r\n");
+      return 0;
+    }
+    if (rx_cnt == 1)
+      TWI1->TWI_CR = TWI_CR_STOP;
+    if (!(status & TWI_SR_RXRDY))
+      continue; // busy-wait in this loop
+    *rx_ptr++ = TWI1->TWI_RHR;
+    rx_cnt--;
+  }
+    if (g_current_rx_cnt == 0)
+    {
+      //return __REV16(rx_val);
+      g_current_state = CURRENT_IDLE;
+    }
+#endif 
+  }
 }
 
 void current_systick()
@@ -56,9 +85,28 @@ void current_systick()
     g_current_poll_req = 1;
 }
 
-uint16_t current_read_finger_sensor_reg(uint8_t finger_idx, uint8_t reg)
+void current_start_read_finger_sensor_reg(const uint8_t finger_idx, 
+                                          const uint8_t reg_idx)
 {
   uint8_t i2c_addr;
   // TODO: implement this....
+  switch(finger_idx)
+  {
+    case 0: i2c_addr = 0x44; break; // see schematics & INA226 datasheet
+    case 1: i2c_addr = 0x45; break;
+    case 2: i2c_addr = 0x46; break;
+    case 3: i2c_addr = 0x47; break;
+    default: return; break; // bogus
+  }
+  TWI1->TWI_MMR = 0; // not sure why, but atmel library clears this first
+  TWI1->TWI_MMR = TWI_MMR_MREAD | 
+                  TWI_MMR_IADRSZ_1_BYTE |
+                  TWI_MMR_DADR(i2c_addr);
+  TWI1->TWI_IADR = reg_idx;
+  TWI1->TWI_CR = TWI_CR_START;
+  g_current_rx_val = 0;
+  g_current_rx_cnt = 2;
+  g_current_rx_ptr = (uint8_t *)&g_current_rx_val;
+  g_current_state = CURRENT_RX_WAIT;
 }
 

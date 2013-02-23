@@ -3,6 +3,24 @@
 <robot name="sandia_hand"
        xmlns:xacro="http://www.ros.org/wiki/xacro">
 
+  <xacro:macro name="finger_gazebo" params="side idx">
+    <gazebo reference ="${side}_f${idx}_base">
+      <mu1>0.9</mu1>
+      <mu2>0.9</mu2>
+    </gazebo>
+    <gazebo reference="${side}_f${idx}_0">
+      <mu1>0.9</mu1>
+      <mu2>0.9</mu2>
+    </gazebo>
+    <gazebo reference="${side}_f${idx}_1">
+      <mu1>0.9</mu1>
+      <mu2>0.9</mu2>
+    </gazebo>
+    <gazebo reference="${side}_f${idx}_2">
+      <mu1>0.9</mu1>
+      <mu2>0.9</mu2>
+    </gazebo>
+  </xacro:macro>
   <xacro:macro name="sandia_hand_gazebo" params="side">
     <gazebo>
       <plugin filename="libgazebo_ros_controller_manager.so" name="gazebo_ros_controller_manager">
@@ -10,7 +28,10 @@
         <updateRate>1000.0</updateRate>
       </plugin>
     </gazebo>
+    <gazebo reference="${side}_palm">
+      <mu1>0.9</mu1>
+      <mu2>0.9</mu2>
+    </gazebo>
   </xacro:macro>
-
 </robot>
 

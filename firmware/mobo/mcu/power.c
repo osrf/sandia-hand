@@ -18,6 +18,7 @@
 
 #include "power.h"
 #include "common_sam3x/sam3x.h"
+#include "sandia_hand/hand_packets.h"
 #include <stdio.h>
 
 // hardware connections:
@@ -43,12 +44,20 @@ const power_switch_t power_switches[POWER_NUM_FINGERS][2] =
 uint8_t g_power_poll_req = 0;
 static void power_start_read_finger_sensor_reg(const uint8_t finger_idx, 
                                                const uint8_t reg);
+static void power_start_poll();
+static void power_i2c_rx_complete(const uint16_t rx_data);
+static void power_i2c_write_sync(const uint8_t  finger_idx,
+                                 const uint8_t  reg_idx,
+                                 const uint16_t reg_val);
+static uint8_t power_finger_idx_to_i2c_addr(const uint8_t finger_idx);
+
+static uint16_t g_power_i2c_rx_val = 0;
+static uint8_t g_power_i2c_rx_cnt = 0, *g_power_i2c_rx_ptr = 0;
 static enum { POWER_IDLE = 0, POWER_RX_WAIT = 1 } 
   g_power_state = POWER_IDLE;
-static uint16_t g_power_rx_cnt = 0, g_power_rx_val = 0;
-static uint8_t *g_power_rx_ptr = 0;
-
-
+static uint8_t g_power_autopoll_finger_idx = 0;
+int16_t g_power_finger_currents[4] = {0};
+uint8_t g_power_autosend_status = 0;
 
 void power_init()
 {
@@ -74,6 +83,11 @@ void power_init()
   TWI1->TWI_CR = TWI_CR_MSEN; // enable master mode
   TWI1->TWI_CWGR = TWI_CWGR_CLDIV(77) | TWI_CWGR_CHDIV(77) |  // 50% duty cycle
                    TWI_CWGR_CKDIV(3); // 400 khz i2c / 2^3 = 50 (weak pullups)
+  // for finger sockets, assume max expected current = 3A
+  // ina226 datasheet p.14:  set current_lsb = 0.1 mA
+  // giving CAL = 0.00512 / (0.0001 amp * 0.01 ohm) = 5120
+  for (int i = 0; i < 4; i++)
+    power_i2c_write_sync(i, 5, __REV16(5120));
 }
 
 void power_set(const uint8_t finger_idx, const power_state_t power_state)
@@ -109,64 +123,136 @@ void power_idle()
   if (g_power_poll_req)
   {
     g_power_poll_req = 0;
-    //printf("cpoll\r\n");
+    power_start_poll();
+    return;
   }
   if (g_power_state == POWER_RX_WAIT)
   {
-  #if 0
-    while (rx_cnt > 0)
-  {
-    uint32_t status = TWI1->TWI_SR;
+    const uint32_t status = TWI1->TWI_SR;
     if (status & TWI_SR_NACK)
     {
-      printf("twi1 received nack\r\n");
-      return 0;
+      g_power_state = POWER_IDLE;
+      //printf("twi1 received nack\r\n");
+      return;
     }
-    if (rx_cnt == 1)
+    if (g_power_i2c_rx_cnt == 1) // one more byte to go.
       TWI1->TWI_CR = TWI_CR_STOP;
     if (!(status & TWI_SR_RXRDY))
-      continue; // busy-wait in this loop
-    *rx_ptr++ = TWI1->TWI_RHR;
-    rx_cnt--;
-  }
-    if (g_current_rx_cnt == 0)
+      return; // nothing exciting has happened since last time. bail for now.
+    // if we get here, there is a new byte waiting for us in TWI_RHR
+    if (!g_power_i2c_rx_ptr) // sanity check...
     {
-      //return __REV16(rx_val);
-      g_current_state = CURRENT_IDLE;
+      //printf("woah there partner! g_power_i2c_rx_ptr is null!\r\n");
+      return;
     }
-#endif 
+    *g_power_i2c_rx_ptr++ = TWI1->TWI_RHR;
+    if (--g_power_i2c_rx_cnt == 0)
+    {
+      g_power_state = POWER_IDLE;
+      power_i2c_rx_complete(__REV16(g_power_i2c_rx_val));
+    }
   }
 }
 
 void power_systick()
 {
   static int s_power_systick_count = 0;
-  if (++s_power_systick_count % 1000 == 0)
+  if (++s_power_systick_count % 100 == 0) // 100 hz
     g_power_poll_req = 1;
 }
 
 void power_start_read_finger_sensor_reg(const uint8_t finger_idx, 
                                         const uint8_t reg_idx)
 {
-  uint8_t i2c_addr;
-  // TODO: implement this....
-  switch(finger_idx)
-  {
-    case 0: i2c_addr = 0x44; break; // see schematics & INA226 datasheet
-    case 1: i2c_addr = 0x45; break;
-    case 2: i2c_addr = 0x46; break;
-    case 3: i2c_addr = 0x47; break;
-    default: return; break; // bogus
-  }
+  //printf("starting read of register %d on finger %d\r\n",
+  //       reg_idx, finger_idx);
+  const uint8_t i2c_addr = power_finger_idx_to_i2c_addr(finger_idx);
+  if (!i2c_addr)
+    return; // bogus
   TWI1->TWI_MMR = 0; // not sure why, but atmel library clears this first
   TWI1->TWI_MMR = TWI_MMR_MREAD | 
                   TWI_MMR_IADRSZ_1_BYTE |
                   TWI_MMR_DADR(i2c_addr);
   TWI1->TWI_IADR = reg_idx;
   TWI1->TWI_CR = TWI_CR_START;
-  g_power_rx_val = 0;
-  g_power_rx_cnt = 2;
-  g_power_rx_ptr = (uint8_t *)&g_power_rx_val;
+  g_power_i2c_rx_val = 0;
+  g_power_i2c_rx_cnt = 2;
+  g_power_i2c_rx_ptr = (uint8_t *)&g_power_i2c_rx_val;
   g_power_state = POWER_RX_WAIT;
+}
+
+void power_start_poll()
+{
+  g_power_autopoll_finger_idx = 0;
+  power_start_read_finger_sensor_reg(0, 0x04);
+}
+
+void power_i2c_rx_complete(const uint16_t rx_data)
+{
+  /*
+  printf("finger %d: %d\r\n",
+         g_power_autopoll_finger_idx, 
+         (int16_t)rx_data);
+  */
+  g_power_finger_currents[g_power_autopoll_finger_idx] = (int16_t)rx_data;
+  if (++g_power_autopoll_finger_idx < 4)
+    power_start_read_finger_sensor_reg(g_power_autopoll_finger_idx, 0x04);
+  else
+  {
+    printf(".\r\n");
+    /*
+    else if (g_power_autosend_status)
+    {
+      printf("pas\r\n");
+    }
+    */
+  }
+}
+
+void power_i2c_write_sync(const uint8_t  finger_idx,
+                          const uint8_t  reg_idx,
+                          const uint16_t reg_val)
+{
+  const uint8_t i2c_addr = power_finger_idx_to_i2c_addr(finger_idx);
+  /*
+  printf("writing 0x%04x to register %d at addr %d\r\n", 
+         reg_val, reg_idx, i2c_addr);
+  */
+  if (!i2c_addr)
+    return; // bogus
+  TWI1->TWI_MMR = 0; // not sure why, but atmel library clears this first
+  TWI1->TWI_MMR = TWI_MMR_IADRSZ_1_BYTE |
+                  TWI_MMR_DADR(i2c_addr);
+  TWI1->TWI_IADR = reg_idx;
+  uint32_t tx_cnt = 2;
+  uint8_t *tx_ptr = (uint8_t *)&reg_val;
+  while (tx_cnt > 0)
+  {
+    uint32_t status = TWI1->TWI_SR;
+    if (status & TWI_SR_NACK)
+    {
+      //printf("twi1 nack\r\n");
+      return;
+    }
+    if (!(status & TWI_SR_TXRDY))
+      continue; // busy wait...
+    TWI1->TWI_THR = *tx_ptr++;
+    tx_cnt--;
+  }
+  TWI1->TWI_CR = TWI_CR_STOP;
+  while (!(TWI1->TWI_SR & TWI_SR_TXCOMP)) { } // busy wait...
+  TWI1->TWI_SR; // why do another read? atmel library does it.
+}
+
+uint8_t power_finger_idx_to_i2c_addr(const uint8_t finger_idx)
+{
+  switch(finger_idx)
+  {
+    case 0:  return 0x44; break; // see schematics & INA226 datasheet
+    case 1:  return 0x45; break;
+    case 2:  return 0x46; break;
+    case 3:  return 0x47; break;
+    default: return 0;    break; // bogus
+  }
 }
 

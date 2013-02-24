@@ -124,6 +124,15 @@ bool Hand::setCameraStreaming(bool cam_0_streaming, bool cam_1_streaming)
   return tx_udp(pkt, 4 + sizeof(configure_camera_stream_t));
 }
 
+bool Hand::setStatusAutosend(bool enabled)
+{
+  uint8_t pkt[50];
+  *((uint32_t *)pkt) = CMD_ID_SET_STATUS_AUTOSEND;
+  set_status_autosend_t *p = (set_status_autosend_t *)(pkt+4);
+  p->status_autosend_enabled = enabled ? 1 : 0;
+  return tx_udp(pkt, 4 + sizeof(set_status_autosend_t));
+}
+
 bool Hand::fingerRawTx(const uint8_t finger_idx, 
                        const uint8_t *data, const uint16_t data_len)
 {

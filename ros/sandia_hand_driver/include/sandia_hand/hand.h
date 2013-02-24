@@ -42,6 +42,7 @@ public:
   typedef boost::function<void(uint8_t, uint32_t, uint8_t *)> ImageCallback;
   void setImageCallback(ImageCallback callback);
   bool pingFinger(const uint8_t finger_idx);
+  bool setStatusAutosend(bool enabled);
 
 private:
   static const int NUM_SOCKS = 4;

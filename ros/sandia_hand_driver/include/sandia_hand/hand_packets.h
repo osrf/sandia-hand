@@ -9,6 +9,8 @@ static const uint32_t CMD_ID_SET_FINGER_CONTROL_MODE = 2;
 static const uint32_t CMD_ID_SET_FINGER_JOINT_POS    = 3;
 static const uint32_t CMD_ID_CONFIGURE_CAMERA_STREAM = 4;
 static const uint32_t CMD_ID_FINGER_RAW_TX           = 5; // pass-through
+static const uint32_t CMD_ID_SET_STATUS_AUTOSEND     = 6;
+static const uint32_t CMD_ID_STATUS_STREAM           = 7;
 
 typedef struct 
 {
@@ -54,5 +56,15 @@ typedef struct
   uint16_t tx_data_len;
   uint8_t tx_data[FINGER_RAW_TX_MAX_LEN];
 } __attribute__((packed)) finger_raw_tx_t;
-#endif
 
+typedef struct
+{
+  uint8_t status_autosend_enabled;
+} __attribute__((packed)) set_status_autosend_t;
+
+typedef struct
+{
+  uint16_t finger_raw_currents[4];
+} __attribute__((packed)) status_stream_t;
+
+#endif

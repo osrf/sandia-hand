@@ -28,5 +28,7 @@ void power_set(const uint8_t finger_idx, const power_state_t power_state);
 void power_idle();
 void power_systick();
 
+extern uint8_t g_power_autosend_status;
+
 #endif
 

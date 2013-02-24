@@ -165,6 +165,15 @@ int cam_pgm(int argc, char **argv, Hand &hand)
   return 0;
 }
 
+int test_finger_currents(int argc, char **argv, Hand &hand)
+{
+  printf("testing finger currents during boot cycle...\n");
+  hand.setStatusAutosend(true);
+  while (!g_done)
+    hand.listen(1.0);
+  hand.setStatusAutosend(false);
+  return 0;
+}
 
 int main(int argc, char **argv)
 {
@@ -194,6 +203,8 @@ int main(int argc, char **argv)
     return cam_pgm(argc, argv, hand);
   else if (!strcmp(cmd, "fping"))
     return finger_ping(argc, argv, hand);
+  else if (!strcmp(cmd, "test_finger_currents"))
+    return test_finger_currents(argc, argv, hand);
   printf("unknown command: [%s]\n", cmd);
   return 1;
 }

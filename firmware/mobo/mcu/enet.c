@@ -469,6 +469,15 @@ static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
       return;
     finger_tx_raw(p->finger_idx, p->tx_data, p->tx_data_len);
   }
+  else if (cmd == CMD_ID_SET_STATUS_AUTOSEND)
+  {
+    set_status_autosend_t *p = (set_status_autosend_t *)cmd_data;
+    printf("ssa %d\r\n", p->status_autosend_enabled);
+    if (p->status_autosend_enabled)
+      g_power_autosend_status = 1;
+    else
+      g_power_autosend_status = 0;
+  }
   else
   {
     printf("  unhandled cmd %d\r\n", cmd);

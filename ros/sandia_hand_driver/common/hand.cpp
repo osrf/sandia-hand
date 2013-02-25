@@ -225,6 +225,10 @@ bool Hand::rx_data(const int sock_idx, const uint8_t *data, const int data_len)
         img_cb(cam_idx, frame_count, img_data[cam_idx]);
     }
   }
+  else if (sock_idx == 0)
+  {
+    printf("sock_idx 0\n");
+  }
   else if (sock_idx == 3) // rs485 sock
   {
     printf("rs485 sock received %d bytes\n", data_len);

@@ -239,19 +239,19 @@ bool Hand::rx_data(const int sock_idx, const uint8_t *data, const int data_len)
       for (int i = 0; i < 4; i++)
       {
         printf("  %d raw current: %d\n", i, p->finger_milliamps[i]);
-        fprintf(current_log, "%d ", (int16_t)p->finger_milliamps[i]);
+        fprintf(f_log, "%d ", (int16_t)p->finger_milliamps[i]);
       }
       for (int i = 0; i < 3; i++)
       {
         printf("  %d raw logic current: %d\n", i, p->logic_milliamps[i]);
-        fprintf(current_log, "%d ", (int16_t)p->logic_milliamps[i]);
+        fprintf(f_log, "%d ", (int16_t)p->logic_milliamps[i]);
       }
       for (int i = 0; i < 3; i++)
       {
         printf("  %d raw temperature: %d\n", i, p->mobo_raw_temperatures[i]);
-        fprintf(current_log, "%d ", (int16_t)p->mobo_raw_temperatures[i]);
+        fprintf(f_log, "%d ", (int16_t)p->mobo_raw_temperatures[i]);
       }
-      fprintf(current_log, "\n");
+      fprintf(f_log, "\n");
     }
   }
   else if (sock_idx == 3) // rs485 sock

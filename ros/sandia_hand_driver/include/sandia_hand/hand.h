@@ -37,13 +37,14 @@ public:
   bool setFingerJointPos(const uint8_t finger_idx,
                          float joint_0, float joint_1, float joint_2);
   bool listen(const float max_seconds);
-  bool setCameraStreaming(bool cam_0_stream, bool cam_1_stream);
+  bool setCameraStreaming(const bool cam_0_streaming, 
+                          const bool cam_1_streaming);
   static const int IMG_WIDTH = 720, IMG_HEIGHT = 480, NUM_CAMS = 2;
   typedef boost::function<void(uint8_t, uint32_t, uint8_t *)> ImageCallback;
   void setImageCallback(ImageCallback callback);
   bool pingFinger(const uint8_t finger_idx);
-  bool setStatusAutosend(bool enabled);
-
+  bool setMoboStatusHz(const uint16_t mobo_status_hz);
+  bool setFingerAutopollHz(const uint16_t finger_autopoll_hz);
 private:
   static const int NUM_SOCKS = 4;
   static const uint16_t HAND_BASE_PORT = 12321; // i love palindromes

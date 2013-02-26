@@ -35,6 +35,10 @@
 // PD4  = TXD3 = MCU_MUXED_DI
 // PD5  = RXD3 = MCU_MUXED_RO
 
+static void finger_broadcast_raw(const uint8_t *data, const uint16_t data_len);
+static uint8_t g_finger_status_request = 0;
+volatile uint8_t g_finger_autopoll_timeout = 0;
+
 typedef struct { Pio *pio; uint32_t pin_idx; } rs485_de_t;
 // TODO: map finger_idx to rs485 channel indices. have palm be channel 4.
 /*
@@ -192,5 +196,54 @@ void finger_tx_raw(const uint8_t finger_idx,
   }
   */
   // for now, let's allow the ARM to keep control of rs485.
+}
+
+void finger_broadcast_raw(const uint8_t *data, const uint16_t data_len)
+{
+  PIOA->PIO_SODR = PIO_PA15; // assert ARM control of rs485 channels
+  for (int i = 0; i < 5; i++)
+  {
+    const rs485_de_t *de = &g_finger_rs485_de[i];
+    de->pio->PIO_SODR = de->pin_idx;
+  }
+  for (volatile int i = 0; i < 10; i++) { } // let driver ramp up
+  while ((USART3->US_CSR & US_CSR_TXRDY) == 0) { }
+  for (uint32_t i = 0; i < data_len; i++)
+  {
+    USART3->US_THR = data[i];
+    while ((USART3->US_CSR & US_CSR_TXRDY) == 0) { }
+  }
+  while ((USART3->US_CSR & US_CSR_TXEMPTY) == 0) { } // wait to finish tx'ing
+  for (volatile int i = 0; i < 10; i++) { } // wait a bit (why?)
+  for (int i = 0; i < 5; i++)
+  {
+    const rs485_de_t *de = &g_finger_rs485_de[i];
+    de->pio->PIO_CODR = de->pin_idx;
+  }
+}
+
+void finger_idle()
+{
+  if (g_finger_status_request)
+  {
+    g_finger_status_request = 0;
+    uint8_t pkt[50];
+    pkt[0] = 0x42;
+    pkt[1] = 10; // generic finger address
+    *((uint16_t *)(&pkt[2])) = 0; // no payload
+    pkt[4] = 0x21; // status request
+    *((uint16_t *)(&pkt[5])) = finger_calc_crc(pkt);
+    finger_broadcast_raw(pkt, 7);
+  }
+}
+
+void finger_systick()
+{
+  static uint32_t s_finger_systick_count = 0;
+  s_finger_systick_count++;
+  if (!g_finger_autopoll_timeout)
+    return; // disabled
+  if (s_finger_systick_count % g_finger_autopoll_timeout == 0)  
+    g_finger_status_request = 1; // schedule query message to fingers
 }
 

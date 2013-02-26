@@ -115,7 +115,8 @@ bool Hand::setFingerJointPos(const uint8_t finger_idx,
   return true;
 }
 
-bool Hand::setCameraStreaming(bool cam_0_streaming, bool cam_1_streaming)
+bool Hand::setCameraStreaming(const bool cam_0_streaming, 
+                              const bool cam_1_streaming)
 {
   uint8_t pkt[50];
   *((uint32_t *)pkt) = CMD_ID_CONFIGURE_CAMERA_STREAM;
@@ -125,13 +126,22 @@ bool Hand::setCameraStreaming(bool cam_0_streaming, bool cam_1_streaming)
   return tx_udp(pkt, 4 + sizeof(configure_camera_stream_t));
 }
 
-bool Hand::setStatusAutosend(bool enabled)
+bool Hand::setMoboStatusHz(const uint16_t mobo_status_hz)
 {
   uint8_t pkt[50];
-  *((uint32_t *)pkt) = CMD_ID_SET_STATUS_AUTOSEND;
-  set_status_autosend_t *p = (set_status_autosend_t *)(pkt+4);
-  p->status_autosend_enabled = enabled ? 1 : 0;
-  return tx_udp(pkt, 4 + sizeof(set_status_autosend_t));
+  *((uint32_t *)pkt) = CMD_ID_SET_MOBO_STATUS_RATE;
+  set_mobo_status_rate_t *p = (set_mobo_status_rate_t *)(pkt+4);
+  p->mobo_status_hz = mobo_status_hz;
+  return tx_udp(pkt, 4 + sizeof(set_mobo_status_rate_t));
+}
+
+bool Hand::setFingerAutopollHz(const uint16_t autopoll_hz)
+{
+  uint8_t pkt[50];
+  *((uint32_t *)pkt) = CMD_ID_SET_FINGER_AUTOPOLL;
+  set_finger_autopoll_t *p = (set_finger_autopoll_t *)(pkt+4);
+  p->finger_autopoll_hz = autopoll_hz;
+  return tx_udp(pkt, 4 + sizeof(set_finger_autopoll_t));
 }
 
 bool Hand::fingerRawTx(const uint8_t finger_idx, 
@@ -287,4 +297,5 @@ bool Hand::pingFinger(const uint8_t finger_idx)
 {
   return false; // todo
 }
+
 

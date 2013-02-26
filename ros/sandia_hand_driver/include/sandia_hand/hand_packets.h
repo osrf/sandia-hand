@@ -9,8 +9,9 @@ static const uint32_t CMD_ID_SET_FINGER_CONTROL_MODE = 2;
 static const uint32_t CMD_ID_SET_FINGER_JOINT_POS    = 3;
 static const uint32_t CMD_ID_CONFIGURE_CAMERA_STREAM = 4;
 static const uint32_t CMD_ID_FINGER_RAW_TX           = 5; // pass-through
-static const uint32_t CMD_ID_SET_STATUS_AUTOSEND     = 6;
+static const uint32_t CMD_ID_SET_MOBO_STATUS_RATE    = 6;
 static const uint32_t CMD_ID_MOBO_STATUS             = 7;
+static const uint32_t CMD_ID_SET_FINGER_AUTOPOLL     = 8;
 
 typedef struct 
 {
@@ -59,8 +60,8 @@ typedef struct
 
 typedef struct
 {
-  uint8_t status_autosend_enabled;
-} __attribute__((packed)) set_status_autosend_t;
+  uint8_t mobo_status_hz;
+} __attribute__((packed)) set_mobo_status_rate_t;
 
 typedef struct
 {
@@ -68,5 +69,10 @@ typedef struct
   uint16_t logic_milliamps[3];
   uint16_t mobo_raw_temperatures[3];
 } __attribute__((packed)) mobo_status_t;
+
+typedef struct
+{
+  uint16_t finger_autopoll_hz;
+} __attribute__((packed)) set_finger_autopoll_t;
 
 #endif

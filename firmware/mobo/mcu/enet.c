@@ -469,14 +469,23 @@ static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
       return;
     finger_tx_raw(p->finger_idx, p->tx_data, p->tx_data_len);
   }
-  else if (cmd == CMD_ID_SET_STATUS_AUTOSEND)
+  else if (cmd == CMD_ID_SET_MOBO_STATUS_RATE)
   {
-    set_status_autosend_t *p = (set_status_autosend_t *)cmd_data;
-    printf("ssa %d\r\n", p->status_autosend_enabled);
-    if (p->status_autosend_enabled)
-      g_power_autosend_status = 1;
+    set_mobo_status_rate_t *p = (set_mobo_status_rate_t *)cmd_data;
+    printf("ssa %d\r\n", p->mobo_status_hz);
+    if (p->mobo_status_hz)
+      g_power_autosend_timeout = 1000 / p->mobo_status_hz;
     else
-      g_power_autosend_status = 0;
+      g_power_autosend_timeout = 0;
+  }
+  else if (cmd == CMD_ID_SET_FINGER_AUTOPOLL)
+  {
+    set_finger_autopoll_t *p = (set_finger_autopoll_t *)cmd_data;
+    printf("sfa %d\r\n", p->finger_autopoll_hz);
+    if (p->finger_autopoll_hz)
+      g_finger_autopoll_timeout = 1000 / p->finger_autopoll_hz;
+    else
+      g_finger_autopoll_timeout = 0; // special case...
   }
   else
   {

@@ -44,7 +44,7 @@ const power_switch_t power_switches[POWER_NUM_FINGERS][2] =
     { { PIOA, PIO_PA21 }, { PIOC, PIO_PC19 } } }; // thumb
 static power_state_t g_finger_power_states[4] = { POWER_OFF };
 
-static volatile uint8_t g_power_poll_req = 0;
+static volatile uint8_t g_power_poll_req = 0, g_power_status_send_req = 0;
 static void power_start_read_finger_sensor_reg(const uint8_t finger_idx, 
                                                const uint8_t reg);
 static void power_start_poll();
@@ -64,7 +64,7 @@ static volatile enum { POWER_IDLE=0, POWER_RX_WAIT=1, POWER_RX_COMPLETE=2 }
   g_power_state = POWER_IDLE;
 static volatile uint8_t g_power_autopoll_sensor_idx = 0;
 volatile int16_t g_power_finger_currents[4] = {0};
-volatile uint8_t g_power_autosend_status = 0;
+volatile uint8_t g_power_autosend_timeout = 0;
 volatile float g_power_logic_currents[3] = {0}, 
                g_power_logic_voltages[3] = {0};
 volatile uint16_t g_power_adc_readings[3] = {0};
@@ -111,12 +111,14 @@ void power_init()
   */
   power_i2c_write_sync(POWER_VDD_SENSOR_IDX, 0, __REV16(0x7127)); 
   float i, v;
+  /*
   for (int j = 0; j < 10; j++)
   {
     power_ina3221_measure(0, &i, &v);
     power_ina3221_measure(1, &i, &v);
     power_ina3221_measure(2, &i, &v);
   }
+  */
   // turn on ADC
   PMC->PMC_PCER1 |= (1 << (ID_ADC - 32));
   ADC->ADC_CR = ADC_CR_SWRST; // reset it...
@@ -143,7 +145,7 @@ void power_init()
   ADC->ADC_LCDR; // dummy read
   ADC->ADC_IER = ADC_IER_DRDY;
   for (int i = 0; i < 3; i++)
-    g_power_adc_readings[i] = i; // why ask why?
+    g_power_adc_readings[i] = 0;
   NVIC_SetPriority(ADC_IRQn, 11);
   NVIC_EnableIRQ(ADC_IRQn);
 }
@@ -220,8 +222,15 @@ void power_idle()
 
 void power_systick()
 {
-  if (++g_power_systick_value % 50 == 0) // 20 hz
+  g_power_systick_value++;
+  if (g_power_systick_value % 50 == 0) // 20 hz
     g_power_poll_req = 1;
+  if (g_power_autosend_timeout && 
+      (g_power_systick_value % g_power_autosend_timeout == 0)) 
+  {
+    printf("pssr\r\n");
+    g_power_status_send_req = 1;
+  }
   if (g_power_txcomp_time && 
       g_power_systick_value >= g_power_txcomp_time + 2)
   {
@@ -282,8 +291,9 @@ void power_i2c_rx_complete(const uint16_t rx_data)
       ((float)(rx_data >> 3)) * 0.00004f / 0.01f; // ina3221 datasheet, p.23
   if (g_power_autopoll_sensor_idx == 6)
   {
-    if (g_power_autosend_status)
+    if (g_power_status_send_req)
     {
+      g_power_status_send_req = 0;
       uint8_t status_buf[sizeof(mobo_status_t) + 4];
       *((uint32_t *)(status_buf)) = CMD_ID_MOBO_STATUS;
       mobo_status_t *p = (mobo_status_t *)(status_buf + 4);

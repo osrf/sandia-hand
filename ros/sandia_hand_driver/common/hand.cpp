@@ -3,6 +3,7 @@
 #include <cstring>
 #include <cmath>
 #include <boost/bind.hpp>
+#include "sandia_hand/hand_packets.h"
 using namespace sandia_hand;
 
 Hand::Hand()
@@ -227,7 +228,31 @@ bool Hand::rx_data(const int sock_idx, const uint8_t *data, const int data_len)
   }
   else if (sock_idx == 0)
   {
-    printf("sock_idx 0\n");
+    uint32_t pkt_id = *((uint32_t *)(data));
+    if (pkt_id == CMD_ID_MOBO_STATUS)
+    {
+      static FILE *f_log = NULL;
+      if (!f_log)
+        f_log = fopen("current_log.txt", "w");
+      printf("mobo status\n");
+      mobo_status_t *p = (mobo_status_t *)(data + 4);
+      for (int i = 0; i < 4; i++)
+      {
+        printf("  %d raw current: %d\n", i, p->finger_milliamps[i]);
+        fprintf(current_log, "%d ", (int16_t)p->finger_milliamps[i]);
+      }
+      for (int i = 0; i < 3; i++)
+      {
+        printf("  %d raw logic current: %d\n", i, p->logic_milliamps[i]);
+        fprintf(current_log, "%d ", (int16_t)p->logic_milliamps[i]);
+      }
+      for (int i = 0; i < 3; i++)
+      {
+        printf("  %d raw temperature: %d\n", i, p->mobo_raw_temperatures[i]);
+        fprintf(current_log, "%d ", (int16_t)p->mobo_raw_temperatures[i]);
+      }
+      fprintf(current_log, "\n");
+    }
   }
   else if (sock_idx == 3) // rs485 sock
   {

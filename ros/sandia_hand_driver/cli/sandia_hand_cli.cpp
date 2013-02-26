@@ -169,8 +169,18 @@ int test_finger_currents(int argc, char **argv, Hand &hand)
 {
   printf("testing finger currents during boot cycle...\n");
   hand.setStatusAutosend(true);
+  ros::Time t_start(ros::Time::now());
+  bool finger_states[4] = {false, false, false, false};
+  int next_finger_powerup = 0;
   while (!g_done)
+  {
     hand.listen(1.0);
+    if (((ros::Time::now() - t_start).toSec() > next_finger_powerup * 5) &&
+        !finger_states[next_finger_powerup])
+    {
+      // turn on a finger to observe current ramp
+    }
+  }
   hand.setStatusAutosend(false);
   return 0;
 }

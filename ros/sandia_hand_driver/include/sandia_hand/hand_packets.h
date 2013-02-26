@@ -10,7 +10,7 @@ static const uint32_t CMD_ID_SET_FINGER_JOINT_POS    = 3;
 static const uint32_t CMD_ID_CONFIGURE_CAMERA_STREAM = 4;
 static const uint32_t CMD_ID_FINGER_RAW_TX           = 5; // pass-through
 static const uint32_t CMD_ID_SET_STATUS_AUTOSEND     = 6;
-static const uint32_t CMD_ID_STATUS_STREAM           = 7;
+static const uint32_t CMD_ID_MOBO_STATUS             = 7;
 
 typedef struct 
 {
@@ -64,7 +64,9 @@ typedef struct
 
 typedef struct
 {
-  uint16_t finger_raw_currents[4];
-} __attribute__((packed)) status_stream_t;
+  uint16_t finger_milliamps[4];
+  uint16_t logic_milliamps[3];
+  uint16_t mobo_raw_temperatures[3];
+} __attribute__((packed)) mobo_status_t;
 
 #endif

@@ -20,6 +20,7 @@
 #include "stdint.h"
 #include "common_sam3x/sam3x.h"
 #include "enet.h"
+#include "power.h"
 
 /* Stack Configuration */  
 #define STACK_SIZE       0x1000     /** Stack size (in DWords) */
@@ -104,7 +105,7 @@ IntFunc exception_table[] = {
     unmapped_vector, // 34 TC7
     unmapped_vector, // 35 TC8
     unmapped_vector, // 36 PWM
-    unmapped_vector, // 37 ADC
+    power_adc_vector, // 37 ADC
     unmapped_vector, // 38 DACC
     unmapped_vector, // 39 DMAC
     unmapped_vector, // 40 UOTGHS

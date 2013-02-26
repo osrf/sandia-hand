@@ -20,6 +20,7 @@
 #include "common_sam3x/sam3x.h"
 #include "sandia_hand/hand_packets.h"
 #include <stdio.h>
+#include "enet.h"
 
 // hardware connections:
 //   PA21 = F0_LV
@@ -41,6 +42,7 @@ const power_switch_t power_switches[POWER_NUM_FINGERS][2] =
     { { PIOA, PIO_PA2  }, { PIOA, PIO_PA4  } },   // middle
     { { PIOA, PIO_PA6  }, { PIOA, PIO_PA16 } },   // pinkie
     { { PIOA, PIO_PA21 }, { PIOC, PIO_PC19 } } }; // thumb
+static power_state_t g_finger_power_states[4] = { POWER_OFF };
 
 static volatile uint8_t g_power_poll_req = 0;
 static void power_start_read_finger_sensor_reg(const uint8_t finger_idx, 
@@ -58,13 +60,19 @@ static void power_ina3221_measure(const uint8_t ch_idx, float *current,
 
 static volatile uint16_t g_power_i2c_rx_val = 0;
 static volatile uint8_t g_power_i2c_rx_cnt = 0, *g_power_i2c_rx_ptr = 0;
-static volatile enum { POWER_IDLE = 0, POWER_RX_WAIT = 1 } 
+static volatile enum { POWER_IDLE=0, POWER_RX_WAIT=1, POWER_RX_COMPLETE=2 } 
   g_power_state = POWER_IDLE;
 static volatile uint8_t g_power_autopoll_sensor_idx = 0;
 volatile int16_t g_power_finger_currents[4] = {0};
 volatile uint8_t g_power_autosend_status = 0;
 volatile float g_power_logic_currents[3] = {0}, 
                g_power_logic_voltages[3] = {0};
+volatile uint16_t g_power_adc_readings[3] = {0};
+#define POWER_ADC_CH_TEMP_0       1
+#define POWER_ADC_CH_TEMP_1      11
+#define POWER_ADC_CH_ONCHIP_TEMP 15
+static volatile uint32_t g_power_txcomp_time = 0;
+static volatile uint32_t g_power_systick_value = 0;
 
 void power_init()
 {
@@ -101,11 +109,43 @@ void power_init()
   printf("ina3221 man ID: 0x%04x\r\n", power_i2c_read_sync(4, 0xfe));
   printf("ina3221 die ID: 0x%04x\r\n", power_i2c_read_sync(4, 0xff));
   */
-  power_i2c_write_sync(POWER_VDD_SENSOR_IDX, 0, __REV16(0x0)); 
+  power_i2c_write_sync(POWER_VDD_SENSOR_IDX, 0, __REV16(0x7127)); 
   float i, v;
-  power_ina3221_measure(0, &i, &v);
-  power_ina3221_measure(1, &i, &v);
-  power_ina3221_measure(2, &i, &v);
+  for (int j = 0; j < 10; j++)
+  {
+    power_ina3221_measure(0, &i, &v);
+    power_ina3221_measure(1, &i, &v);
+    power_ina3221_measure(2, &i, &v);
+  }
+  // turn on ADC
+  PMC->PMC_PCER1 |= (1 << (ID_ADC - 32));
+  ADC->ADC_CR = ADC_CR_SWRST; // reset it...
+  ADC->ADC_MR = 0;
+  ADC->ADC_PTCR = ADC_PTCR_RXTDIS | ADC_PTCR_TXTDIS;
+  ADC->ADC_RCR = 0;
+  ADC->ADC_RNCR = 0;
+  ADC->ADC_MR = ADC_MR_TRANSFER(1) |
+                ADC_MR_TRACKTIM(1) |
+                ADC_MR_SETTLING_AST17 | // long settling time... no hurry.
+                ADC_MR_PRESCAL(4)  | // adc clock = 64 mhz / ((4+1)*2) = 6.4 M
+                ADC_MR_FREERUN     |
+                ADC_MR_STARTUP_SUT512;
+  ADC->ADC_CHER = (1 << POWER_ADC_CH_TEMP_0) |
+                  (1 << POWER_ADC_CH_TEMP_1) |
+                  (1 << POWER_ADC_CH_ONCHIP_TEMP);
+  ADC->ADC_IDR = 0xffffffff; // no interrupts plz
+  ADC->ADC_ACR = ADC_ACR_TSON;
+  ADC->ADC_CR = ADC_CR_START; // start a conversion
+  while (!(ADC->ADC_ISR & ADC_ISR_DRDY)) { }
+  ADC->ADC_LCDR; // dummy read
+  ADC->ADC_CR = ADC_CR_START; // start another
+  while (!(ADC->ADC_ISR & ADC_ISR_DRDY)) { }
+  ADC->ADC_LCDR; // dummy read
+  ADC->ADC_IER = ADC_IER_DRDY;
+  for (int i = 0; i < 3; i++)
+    g_power_adc_readings[i] = i; // why ask why?
+  NVIC_SetPriority(ADC_IRQn, 11);
+  NVIC_EnableIRQ(ADC_IRQn);
 }
 
 void power_set(const uint8_t finger_idx, const power_state_t power_state)
@@ -134,6 +174,7 @@ void power_set(const uint8_t finger_idx, const power_state_t power_state)
       sw[0].pio->PIO_CODR = sw[0].pin_idx; // low voltage off
       break;
   }
+  g_finger_power_states[finger_idx] = power_state;
 }
 
 void power_idle()
@@ -166,28 +207,32 @@ void power_idle()
     *g_power_i2c_rx_ptr++ = TWI1->TWI_RHR;
     if (--g_power_i2c_rx_cnt == 0)
     {
-      g_power_state = POWER_IDLE;
+      g_power_state = POWER_RX_COMPLETE;
       power_i2c_rx_complete(__REV16(g_power_i2c_rx_val));
     }
   }
-  else if (g_power_state == POWER_IDLE)
+  else if (g_power_state == POWER_RX_COMPLETE)
   {
-    if (status & TWI_SR_TXCOMP)
-    {
-      if (g_power_autopoll_sensor_idx < 4)
-        power_start_read_finger_sensor_reg(g_power_autopoll_sensor_idx, 0x04);
-      if (g_power_autopoll_sensor_idx <= 7)
-        power_start_read_finger_sensor_reg(4, 
-                                  0x01 + (2 * g_power_autopoll_sensor_idx));
-    }
+    if ((!g_power_txcomp_time) && (status & TWI_SR_TXCOMP))
+      g_power_txcomp_time = g_power_systick_value;
   }
 }
 
 void power_systick()
 {
-  static int s_power_systick_count = 0;
-  if (++s_power_systick_count % 100 == 0) // 10 hz
+  if (++g_power_systick_value % 50 == 0) // 20 hz
     g_power_poll_req = 1;
+  if (g_power_txcomp_time && 
+      g_power_systick_value >= g_power_txcomp_time + 2)
+  {
+    //printf("txct = %d stv = %d\r\n", g_power_txcomp_time, g_power_systick_value);
+    if (g_power_autopoll_sensor_idx < 4)
+      power_start_read_finger_sensor_reg(g_power_autopoll_sensor_idx, 0x04);
+    else if (g_power_autopoll_sensor_idx < 7)
+      power_start_read_finger_sensor_reg(4, 
+                             0x01 + (2 * (g_power_autopoll_sensor_idx - 4)));
+    g_power_txcomp_time = 0;
+  }
 }
 
 void power_start_read_finger_sensor_reg(const uint8_t finger_idx, 
@@ -212,29 +257,43 @@ void power_start_read_finger_sensor_reg(const uint8_t finger_idx,
 
 void power_start_poll()
 {
+  /*
+  printf("adc: %04d %04d %04d\r\n", 
+         g_power_adc_readings[0],
+         g_power_adc_readings[1],
+         g_power_adc_readings[2]);
+  */
   g_power_autopoll_sensor_idx = 0;
   power_start_read_finger_sensor_reg(0, 0x04);
 }
 
 void power_i2c_rx_complete(const uint16_t rx_data)
 {
-  //printf("rxc %d\r\n", g_power_autopoll_sensor_idx);
   /*
-  printf("finger %d: %d\r\n",
-         g_power_autopoll_finger_idx, 
+  printf("%d: sensor %d: %d\r\n",
+         g_power_systick_value,
+         g_power_autopoll_sensor_idx, 
          (int16_t)rx_data);
   */
   if (g_power_autopoll_sensor_idx < 4)
     g_power_finger_currents[g_power_autopoll_sensor_idx] = (int16_t)rx_data;
   else if (g_power_autopoll_sensor_idx < 7)
     g_power_logic_currents[g_power_autopoll_sensor_idx - 4] = 
-      ((float)rx_data) * 0.00004f / 0.01f; // ina3221 datasheet, p.23
-  if (g_power_autopoll_sensor_idx == 7)
+      ((float)(rx_data >> 3)) * 0.00004f / 0.01f; // ina3221 datasheet, p.23
+  if (g_power_autopoll_sensor_idx == 6)
   {
     if (g_power_autosend_status)
     {
-      printf("pas\r\n");
-      // TODO: create UDP status packet and blast it out here
+      uint8_t status_buf[sizeof(mobo_status_t) + 4];
+      *((uint32_t *)(status_buf)) = CMD_ID_MOBO_STATUS;
+      mobo_status_t *p = (mobo_status_t *)(status_buf + 4);
+      for (int i = 0; i < 4; i++)
+        p->finger_milliamps[i] = g_power_finger_currents[i];
+      for (int i = 0; i < 3; i++)
+        p->logic_milliamps[i] = g_power_logic_currents[i] * 1000.0f;
+      for (int i = 0; i < 3; i++)
+        p->mobo_raw_temperatures[i] = g_power_adc_readings[i];
+      enet_tx_udp(status_buf, sizeof(mobo_status_t) + 4);
     }
   }
   g_power_autopoll_sensor_idx++;
@@ -335,5 +394,14 @@ void power_ina3221_measure(const uint8_t ch_idx, float *current,
   uint16_t bus = power_i2c_read_sync(POWER_VDD_SENSOR_IDX, 2+ch_idx*2) >> 3;
   *voltage = (float)bus * 0.008f; // ina3221 datasheet, p.23
   printf("bus: %d = %d\r\n", bus, (int)((*voltage) * 1000));
+}
+
+void power_adc_vector()
+{
+  // TODO: filter, etc.
+  g_power_adc_readings[0] = ADC->ADC_CDR[POWER_ADC_CH_TEMP_0];
+  g_power_adc_readings[1] = ADC->ADC_CDR[POWER_ADC_CH_TEMP_1];
+  g_power_adc_readings[2] = ADC->ADC_CDR[POWER_ADC_CH_ONCHIP_TEMP];
+  ADC->ADC_LCDR; // dummy read to clear interrupt flag
 }
 

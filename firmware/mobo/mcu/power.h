@@ -29,7 +29,7 @@ void power_idle();
 void power_systick();
 void power_adc_vector();
 
-extern volatile uint8_t g_power_autosend_timeout;
+extern volatile uint16_t g_power_autosend_timeout;
 
 #endif
 

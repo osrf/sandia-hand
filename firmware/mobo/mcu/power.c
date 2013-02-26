@@ -64,7 +64,7 @@ static volatile enum { POWER_IDLE=0, POWER_RX_WAIT=1, POWER_RX_COMPLETE=2 }
   g_power_state = POWER_IDLE;
 static volatile uint8_t g_power_autopoll_sensor_idx = 0;
 volatile int16_t g_power_finger_currents[4] = {0};
-volatile uint8_t g_power_autosend_timeout = 0;
+volatile uint16_t g_power_autosend_timeout = 0;
 volatile float g_power_logic_currents[3] = {0}, 
                g_power_logic_voltages[3] = {0};
 volatile uint16_t g_power_adc_readings[3] = {0};
@@ -210,27 +210,28 @@ void power_idle()
     if (--g_power_i2c_rx_cnt == 0)
     {
       g_power_state = POWER_RX_COMPLETE;
-      power_i2c_rx_complete(__REV16(g_power_i2c_rx_val));
+      //power_i2c_rx_complete(__REV16(g_power_i2c_rx_val));
     }
   }
   else if (g_power_state == POWER_RX_COMPLETE)
   {
+    power_i2c_rx_complete(__REV16(g_power_i2c_rx_val));
+    /*
     if ((!g_power_txcomp_time) && (status & TWI_SR_TXCOMP))
       g_power_txcomp_time = g_power_systick_value;
+    */
   }
 }
 
 void power_systick()
 {
   g_power_systick_value++;
-  if (g_power_systick_value % 50 == 0) // 20 hz
+  if (g_power_systick_value % 20 == 0) // 50 hz
     g_power_poll_req = 1;
   if (g_power_autosend_timeout && 
       (g_power_systick_value % g_power_autosend_timeout == 0)) 
-  {
-    printf("pssr\r\n");
     g_power_status_send_req = 1;
-  }
+  /*
   if (g_power_txcomp_time && 
       g_power_systick_value >= g_power_txcomp_time + 2)
   {
@@ -242,6 +243,7 @@ void power_systick()
                              0x01 + (2 * (g_power_autopoll_sensor_idx - 4)));
     g_power_txcomp_time = 0;
   }
+  */
 }
 
 void power_start_read_finger_sensor_reg(const uint8_t finger_idx, 
@@ -306,6 +308,13 @@ void power_i2c_rx_complete(const uint16_t rx_data)
       enet_tx_udp(status_buf, sizeof(mobo_status_t) + 4);
     }
   }
+
+  if (g_power_autopoll_sensor_idx < 4)
+    power_start_read_finger_sensor_reg(g_power_autopoll_sensor_idx, 0x04);
+  else if (g_power_autopoll_sensor_idx < 7)
+    power_start_read_finger_sensor_reg(4, 
+                           0x01 + (2 * (g_power_autopoll_sensor_idx - 4)));
+
   g_power_autopoll_sensor_idx++;
 }
 

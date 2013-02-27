@@ -99,6 +99,8 @@ void power_init()
   TWI1->TWI_CR = TWI_CR_MSEN; // enable master mode
   TWI1->TWI_CWGR = TWI_CWGR_CLDIV(77) | TWI_CWGR_CHDIV(77) |  // 50% duty cycle
                    TWI_CWGR_CKDIV(3); // 400 khz i2c / 2^3 = 50 (weak pullups)
+  NVIC_SetPriority(TWI1_IRQn, 1); 
+  NVIC_EnableIRQ(TWI1_IRQn);
   // for finger sockets, assume max expected current = 3A
   // ina226 datasheet p.14:  set current_lsb = 0.1 mA
   // giving CAL = 0.00512 / (0.0001 amp * 0.01 ohm) = 5120
@@ -146,7 +148,7 @@ void power_init()
   ADC->ADC_IER = ADC_IER_DRDY;
   for (int i = 0; i < 3; i++)
     g_power_adc_readings[i] = 0;
-  NVIC_SetPriority(ADC_IRQn, 11);
+  NVIC_SetPriority(ADC_IRQn, 15); // lowest priority. just do it whenever.
   NVIC_EnableIRQ(ADC_IRQn);
 }
 
@@ -188,33 +190,7 @@ void power_idle()
     return;
   }
   const uint32_t status = TWI1->TWI_SR;
-  if (g_power_state == POWER_RX_WAIT)
-  {
-    if (status & TWI_SR_NACK)
-    {
-      g_power_state = POWER_IDLE;
-      printf("twi1 received nack\r\n");
-      return;
-    }
-    if (g_power_i2c_rx_cnt == 1) // one more byte to go.
-      TWI1->TWI_CR = TWI_CR_STOP;
-    if (!(status & TWI_SR_RXRDY))
-      return; // nothing exciting has happened since last time. bail for now.
-    // if we get here, there is a new byte waiting for us in TWI_RHR
-    if (!g_power_i2c_rx_ptr) // sanity check...
-    {
-      printf("woah there partner! g_power_i2c_rx_ptr is null!\r\n");
-      return;
-    }
-    *g_power_i2c_rx_ptr++ = TWI1->TWI_RHR;
-    if (--g_power_i2c_rx_cnt == 0)
-    {
-      g_power_state = POWER_RX_COMPLETE;
-      //printf("idle rxc\r\n");
-      //power_i2c_rx_complete(__REV16(g_power_i2c_rx_val));
-    }
-  }
-  else if (g_power_state == POWER_RX_COMPLETE)
+  if (g_power_state == POWER_RX_COMPLETE)
   {
     if (status & TWI_SR_TXCOMP)
     {
@@ -265,6 +241,8 @@ void power_start_read_finger_sensor_reg(const uint8_t finger_idx,
                   TWI_MMR_IADRSZ_1_BYTE |
                   TWI_MMR_DADR(i2c_addr);
   TWI1->TWI_IADR = reg_idx;
+  TWI1->TWI_RHR; // dummy read to make sure we don't immediately fire interrupt
+  TWI1->TWI_IER = TWI_IER_RXRDY; // fire interrupt on rxrdy
   TWI1->TWI_CR = TWI_CR_START;
   g_power_i2c_rx_val = 0;
   g_power_i2c_rx_cnt = 2;
@@ -337,6 +315,7 @@ uint16_t power_i2c_read_sync(const uint8_t sensor_idx,
   const uint8_t i2c_addr = power_sensor_idx_to_i2c_addr(sensor_idx);
   if (!i2c_addr)
     return 0; // bogus
+  TWI1->TWI_IDR = 0xffffffff; // no interrupts plz
   TWI1->TWI_MMR = 0; // not sure why, but atmel library clears this first
   TWI1->TWI_MMR = TWI_MMR_MREAD | 
                   TWI_MMR_IADRSZ_1_BYTE |
@@ -377,6 +356,7 @@ void power_i2c_write_sync(const uint8_t  sensor_idx,
   */
   if (!i2c_addr)
     return; // bogus
+  TWI1->TWI_IDR = 0xffffffff; // no interrupts plz
   TWI1->TWI_MMR = 0; // not sure why, but atmel library clears this first
   TWI1->TWI_MMR = TWI_MMR_IADRSZ_1_BYTE |
                   TWI_MMR_DADR(i2c_addr);
@@ -447,6 +427,29 @@ void power_set_mobo_status_rate(const uint16_t rate)
          rate, g_power_autosend_timeout, g_power_status_send_req,
          g_power_autopoll_sensor_idx, g_power_poll_req,
          g_power_state, g_power_i2c_rx_cnt, TWI1->TWI_SR);
-    //if (--g_power_i2c_rx_cnt == 0)
+}
+
+void power_twi1_vector()
+{
+  const volatile uint32_t status = TWI1->TWI_SR;
+  const volatile uint32_t rhr = TWI1->TWI_RHR;
+  if (status & TWI_SR_NACK)
+  {
+    g_power_state = POWER_IDLE;
+    //printf("twi1 received nack\r\n");
+    return;
+  }
+  if (g_power_i2c_rx_cnt == 1) // one more byte to go.
+    TWI1->TWI_CR = TWI_CR_STOP;
+  if (!g_power_i2c_rx_ptr) // sanity check...
+    return;
+  *g_power_i2c_rx_ptr++ = rhr;
+  if (--g_power_i2c_rx_cnt == 0)
+  {
+    g_power_state = POWER_RX_COMPLETE;
+    TWI1->TWI_IDR = 0xffffffff; // done with TWI interrupts for now
+    //printf("idle rxc\r\n");
+    //power_i2c_rx_complete(__REV16(g_power_i2c_rx_val));
+  }
 }
 

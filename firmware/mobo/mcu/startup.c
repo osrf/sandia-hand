@@ -91,7 +91,7 @@ IntFunc exception_table[] = {
     unmapped_vector, // 20 USART3 
     unmapped_vector, // 21 HSMCI
     unmapped_vector, // 22 TWI0
-    unmapped_vector, // 23 TWI1
+    power_twi1_vector, // 23 TWI1
     unmapped_vector, // 24 SPI0
     unmapped_vector, // 25 SPI1
     unmapped_vector, // 26 SSC 

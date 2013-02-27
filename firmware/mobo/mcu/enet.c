@@ -253,6 +253,7 @@ void enet_init()
   EMAC->EMAC_IER = EMAC_IER_RXUBR | // receive used bit read (overrun?)
                    EMAC_IER_ROVR  | // receive overrun
                    EMAC_IER_RCOMP ; // receive complete
+  NVIC_SetPriority(EMAC_IRQn, 2); // lower priority than i2c
   NVIC_EnableIRQ(EMAC_IRQn);
 }
 

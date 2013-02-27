@@ -472,11 +472,7 @@ static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
   else if (cmd == CMD_ID_SET_MOBO_STATUS_RATE)
   {
     set_mobo_status_rate_t *p = (set_mobo_status_rate_t *)cmd_data;
-    if (p->mobo_status_hz)
-      g_power_autosend_timeout = 1000 / p->mobo_status_hz;
-    else
-      g_power_autosend_timeout = 0;
-    printf("ssa %d pat = %d\r\n", p->mobo_status_hz, g_power_autosend_timeout);
+    power_set_mobo_status_rate(p->mobo_status_hz);
   }
   else if (cmd == CMD_ID_SET_FINGER_AUTOPOLL)
   {

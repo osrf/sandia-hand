@@ -65,8 +65,9 @@ typedef struct
 
 typedef struct
 {
-  uint16_t finger_milliamps[4];
-  uint16_t logic_milliamps[3];
+  uint32_t mobo_time_ms;
+  float finger_currents[4];
+  float logic_currents[3];
   uint16_t mobo_raw_temperatures[3];
 } __attribute__((packed)) mobo_status_t;
 

@@ -206,19 +206,26 @@ int test_finger_currents(int argc, char **argv, Hand &hand)
 int test_finger_stream(int argc, char **argv, Hand &hand)
 {
   printf("testing finger streaming...\n");
-  hand.setMoboStatusHz(2);
+  hand.setMoboStatusHz(100);
+  /*
   listen_hand(1.0, hand);
-  hand.setFingerPower(0, Hand::FPS_LOW);
-  listen_hand(0.5, hand);
-  hand.setFingerPower(0, Hand::FPS_FULL);
+  for (int i = 0; i < 4; i++)
+    hand.setFingerPower(i, Hand::FPS_LOW);
   printf("waiting for finger boot...\n");
+  listen_hand(0.5, hand);
+  for (int i = 0; i < 4; i++)
+    hand.setFingerPower(i, Hand::FPS_FULL);
   listen_hand(4.0, hand);
   printf("turning on hand streaming...\n");
   hand.setFingerAutopollHz(1);
+  */
   while (!g_done)
     listen_hand(0.1, hand);
+  /*
   printf("turning off finger power...\n");
-  hand.setFingerPower(0, Hand::FPS_OFF);
+  for (int i = 0; i < 4; i++)
+    hand.setFingerPower(i, Hand::FPS_OFF);
+  */
   hand.setMoboStatusHz(0);
   printf("bye\n");
   return 0;

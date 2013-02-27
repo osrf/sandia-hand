@@ -28,8 +28,7 @@ void power_set(const uint8_t finger_idx, const power_state_t power_state);
 void power_idle();
 void power_systick();
 void power_adc_vector();
-
-extern volatile uint16_t g_power_autosend_timeout;
+void power_set_mobo_status_rate(const uint16_t rate);
 
 #endif
 

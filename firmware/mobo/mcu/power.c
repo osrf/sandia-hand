@@ -64,7 +64,7 @@ static volatile enum { POWER_IDLE=0, POWER_RX_WAIT=1, POWER_RX_COMPLETE=2 }
   g_power_state = POWER_IDLE;
 static volatile uint8_t g_power_autopoll_sensor_idx = 0;
 volatile int16_t g_power_finger_currents[4] = {0};
-volatile uint16_t g_power_autosend_timeout = 0;
+static volatile uint16_t g_power_autosend_timeout = 0;
 volatile float g_power_logic_currents[3] = {0}, 
                g_power_logic_voltages[3] = {0};
 volatile uint16_t g_power_adc_readings[3] = {0};
@@ -193,7 +193,7 @@ void power_idle()
     if (status & TWI_SR_NACK)
     {
       g_power_state = POWER_IDLE;
-      //printf("twi1 received nack\r\n");
+      printf("twi1 received nack\r\n");
       return;
     }
     if (g_power_i2c_rx_cnt == 1) // one more byte to go.
@@ -203,34 +203,40 @@ void power_idle()
     // if we get here, there is a new byte waiting for us in TWI_RHR
     if (!g_power_i2c_rx_ptr) // sanity check...
     {
-      //printf("woah there partner! g_power_i2c_rx_ptr is null!\r\n");
+      printf("woah there partner! g_power_i2c_rx_ptr is null!\r\n");
       return;
     }
     *g_power_i2c_rx_ptr++ = TWI1->TWI_RHR;
     if (--g_power_i2c_rx_cnt == 0)
     {
       g_power_state = POWER_RX_COMPLETE;
+      //printf("idle rxc\r\n");
       //power_i2c_rx_complete(__REV16(g_power_i2c_rx_val));
     }
   }
   else if (g_power_state == POWER_RX_COMPLETE)
   {
-    power_i2c_rx_complete(__REV16(g_power_i2c_rx_val));
+    if (status & TWI_SR_TXCOMP)
+    {
+      g_power_state = POWER_IDLE;
+      power_i2c_rx_complete(__REV16(g_power_i2c_rx_val));
+    }
     /*
     if ((!g_power_txcomp_time) && (status & TWI_SR_TXCOMP))
       g_power_txcomp_time = g_power_systick_value;
-    */
-  }
-}
+    */ 
+  } 
+} 
 
 void power_systick()
 {
   g_power_systick_value++;
-  if (g_power_systick_value % 20 == 0) // 50 hz
-    g_power_poll_req = 1;
+  if (g_power_systick_value % 10 == 0)  // auto-poll, regardless of stream rate
+    g_power_poll_req++;
   if (g_power_autosend_timeout && 
       (g_power_systick_value % g_power_autosend_timeout == 0)) 
-    g_power_status_send_req = 1;
+    g_power_status_send_req++;
+
   /*
   if (g_power_txcomp_time && 
       g_power_systick_value >= g_power_txcomp_time + 2)
@@ -274,8 +280,14 @@ void power_start_poll()
          g_power_adc_readings[1],
          g_power_adc_readings[2]);
   */
-  g_power_autopoll_sensor_idx = 0;
-  power_start_read_finger_sensor_reg(0, 0x04);
+  if (g_power_state == POWER_IDLE)
+  {
+    g_power_autopoll_sensor_idx = 0;
+    power_start_read_finger_sensor_reg(0, 0x04);
+  }
+  else if (g_power_status_send_req == 1) // only print this at low speed...
+    printf("! %d %x %d\r\n", 
+           g_power_state, TWI1->TWI_SR, g_power_i2c_rx_cnt);
 }
 
 void power_i2c_rx_complete(const uint16_t rx_data)
@@ -299,23 +311,24 @@ void power_i2c_rx_complete(const uint16_t rx_data)
       uint8_t status_buf[sizeof(mobo_status_t) + 4];
       *((uint32_t *)(status_buf)) = CMD_ID_MOBO_STATUS;
       mobo_status_t *p = (mobo_status_t *)(status_buf + 4);
+      p->mobo_time_ms = g_power_systick_value; // todo: pull from a HW timer
       for (int i = 0; i < 4; i++)
-        p->finger_milliamps[i] = g_power_finger_currents[i];
+        p->finger_currents[i] = g_power_finger_currents[i] * 0.0001f;
       for (int i = 0; i < 3; i++)
-        p->logic_milliamps[i] = g_power_logic_currents[i] * 1000.0f;
+        p->logic_currents[i] = g_power_logic_currents[i];
       for (int i = 0; i < 3; i++)
         p->mobo_raw_temperatures[i] = g_power_adc_readings[i];
       enet_tx_udp(status_buf, sizeof(mobo_status_t) + 4);
     }
   }
 
+  g_power_autopoll_sensor_idx++;
+
   if (g_power_autopoll_sensor_idx < 4)
     power_start_read_finger_sensor_reg(g_power_autopoll_sensor_idx, 0x04);
   else if (g_power_autopoll_sensor_idx < 7)
     power_start_read_finger_sensor_reg(4, 
                            0x01 + (2 * (g_power_autopoll_sensor_idx - 4)));
-
-  g_power_autopoll_sensor_idx++;
 }
 
 uint16_t power_i2c_read_sync(const uint8_t sensor_idx,
@@ -422,5 +435,18 @@ void power_adc_vector()
   g_power_adc_readings[1] = ADC->ADC_CDR[POWER_ADC_CH_TEMP_1];
   g_power_adc_readings[2] = ADC->ADC_CDR[POWER_ADC_CH_ONCHIP_TEMP];
   ADC->ADC_LCDR; // dummy read to clear interrupt flag
+}
+
+void power_set_mobo_status_rate(const uint16_t rate)
+{
+  if (rate)
+    g_power_autosend_timeout = 1000 / rate;
+  else
+    g_power_autosend_timeout = 0;
+  printf("smsr %d pat = %d pssr %d pasi %d gppr %d gps %d rxc %d stat %04x\r\n", 
+         rate, g_power_autosend_timeout, g_power_status_send_req,
+         g_power_autopoll_sensor_idx, g_power_poll_req,
+         g_power_state, g_power_i2c_rx_cnt, TWI1->TWI_SR);
+    //if (--g_power_i2c_rx_cnt == 0)
 }
 

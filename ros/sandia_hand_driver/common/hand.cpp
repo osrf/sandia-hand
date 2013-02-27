@@ -246,15 +246,16 @@ bool Hand::rx_data(const int sock_idx, const uint8_t *data, const int data_len)
         f_log = fopen("current_log.txt", "w");
       printf("mobo status\n");
       mobo_status_t *p = (mobo_status_t *)(data + 4);
+      fprintf(f_log, "%d ", p->mobo_time_ms);
       for (int i = 0; i < 4; i++)
       {
-        printf("  %d raw current: %d\n", i, p->finger_milliamps[i]);
-        fprintf(f_log, "%d ", (int16_t)p->finger_milliamps[i]);
+        printf("  %d current: %.4f\n", i, p->finger_currents[i]);
+        fprintf(f_log, "%.6f ", p->finger_currents[i]);
       }
       for (int i = 0; i < 3; i++)
       {
-        printf("  %d raw logic current: %d\n", i, p->logic_milliamps[i]);
-        fprintf(f_log, "%d ", (int16_t)p->logic_milliamps[i]);
+        printf("  logic %d current: %.4f\n", i, p->logic_currents[i]);
+        fprintf(f_log, "%.6f ", p->logic_currents[i]);
       }
       for (int i = 0; i < 3; i++)
       {

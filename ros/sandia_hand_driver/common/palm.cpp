@@ -2,7 +2,7 @@
 using namespace sandia_hand;
 
 Palm::Palm(const uint8_t addr)
-: MessageProcessor(addr)
+: SerialMessageProcessor(addr)
 {
 }
 

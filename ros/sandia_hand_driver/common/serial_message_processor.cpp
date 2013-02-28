@@ -1,38 +1,40 @@
 #include <cstdio>
-#include "sandia_hand/message_processor.h"
+#include "sandia_hand/serial_message_processor.h"
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 using namespace sandia_hand;
 
-MessageProcessor::MessageProcessor(const uint8_t addr)
+SerialMessageProcessor::SerialMessageProcessor(const uint8_t addr)
 : addr_(addr)
 {
   outgoing_packet_.resize(MAX_OUTGOING_PACKET_LENGTH);
-  registerRxHandler(PKT_PING, boost::bind(&MessageProcessor::rxPing, this, 
-                                          _1, _2));
+  registerRxHandler(PKT_PING, boost::bind(&SerialMessageProcessor::rxPing, 
+                                          this, _1, _2));
 }
 
-MessageProcessor::~MessageProcessor()
+SerialMessageProcessor::~SerialMessageProcessor()
 {
 }
 
-bool MessageProcessor::ping()
+bool SerialMessageProcessor::ping()
 {
-  printf("MessageProcessor::ping()\n");
+  printf("SerialMessageProcessor::ping()\n");
   return sendTxBuffer(PKT_PING, 0);
 }
 
-void MessageProcessor::rxPing(const uint8_t *data, const uint16_t data_len)
+void SerialMessageProcessor::rxPing(const uint8_t *data, 
+                                    const uint16_t data_len)
 {
-  printf("MessageProcessor::rxPing()\n");
+  printf("SerialMessageProcessor::rxPing()\n");
 }
 
-uint8_t *MessageProcessor::getTxBuffer()
+uint8_t *SerialMessageProcessor::getTxBuffer()
 {
   return (uint8_t *)(&outgoing_packet_[5]);
 }
 
-bool MessageProcessor::sendTxBuffer(const uint8_t pkt_id, uint16_t payload_len)
+bool SerialMessageProcessor::sendTxBuffer(const uint8_t pkt_id, 
+                                          uint16_t payload_len)
 {
   if (!raw_tx_)
     return false;
@@ -67,14 +69,14 @@ bool MessageProcessor::sendTxBuffer(const uint8_t pkt_id, uint16_t payload_len)
   return true;
 }
 
-bool MessageProcessor::rx(const uint8_t *data, const uint16_t data_len)
+bool SerialMessageProcessor::rx(const uint8_t *data, const uint16_t data_len)
 {
   //printf("MessageProcessor::rx(0x%08x, %d)\n", (uint32_t)data, data_len);
   // todo: search rx_map_ and see if we have a handler registered for this msg
   return true;
 }
 
-void MessageProcessor::registerRxHandler(uint8_t msg_id, RxFunctor f)
+void SerialMessageProcessor::registerRxHandler(uint8_t msg_id, RxFunctor f)
 {
   rx_map_[msg_id] = f;
 }

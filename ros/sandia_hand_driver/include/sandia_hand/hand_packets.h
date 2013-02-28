@@ -4,14 +4,15 @@
 #include <stdint.h>
 
 // this file is compiled into both the C++ driver library and the C firmware
-static const uint32_t CMD_ID_SET_FINGER_POWER_STATE  = 1;
-static const uint32_t CMD_ID_SET_FINGER_CONTROL_MODE = 2;
-static const uint32_t CMD_ID_SET_FINGER_JOINT_POS    = 3;
-static const uint32_t CMD_ID_CONFIGURE_CAMERA_STREAM = 4;
-static const uint32_t CMD_ID_FINGER_RAW_TX           = 5; // pass-through
-static const uint32_t CMD_ID_SET_MOBO_STATUS_RATE    = 6;
-static const uint32_t CMD_ID_MOBO_STATUS             = 7;
-static const uint32_t CMD_ID_SET_FINGER_AUTOPOLL     = 8;
+static const uint32_t CMD_ID_SET_FINGER_POWER_STATE      = 1;
+static const uint32_t CMD_ID_SET_FINGER_CONTROL_MODE     = 2;
+static const uint32_t CMD_ID_SET_FINGER_JOINT_POS        = 3;
+static const uint32_t CMD_ID_CONFIGURE_CAMERA_STREAM     = 4;
+static const uint32_t CMD_ID_FINGER_RAW_TX               = 5; // pass-through
+static const uint32_t CMD_ID_SET_MOBO_STATUS_RATE        = 6;
+static const uint32_t CMD_ID_MOBO_STATUS                 = 7;
+static const uint32_t CMD_ID_SET_FINGER_AUTOPOLL         = 8;
+static const uint32_t CMD_ID_SET_ALL_FINGER_POWER_STATES = 9;
 
 typedef struct 
 {
@@ -21,6 +22,11 @@ typedef struct
 static const uint8_t FINGER_POWER_STATE_OFF  = 0;
 static const uint8_t FINGER_POWER_STATE_LOW  = 1;
 static const uint8_t FINGER_POWER_STATE_FULL = 2;
+
+typedef struct
+{
+  uint8_t fps[4];
+} __attribute__((packed)) set_all_finger_power_states_t;
 
 typedef struct
 {

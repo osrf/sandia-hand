@@ -32,6 +32,7 @@ void systick_vector()
 {
   power_systick();
   enet_systick();
+  finger_systick();
 }
 
 void main()
@@ -93,6 +94,7 @@ void main()
   {
     power_idle();
     enet_idle();
+    finger_idle();
     /*
     for (volatile int j = 0; j < 20000000; j++) { }
     printf("tx\r\n");

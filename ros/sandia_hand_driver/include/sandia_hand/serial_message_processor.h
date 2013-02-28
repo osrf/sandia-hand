@@ -1,5 +1,5 @@
-#ifndef SANDIA_HAND_MESSAGE_PROCESSOR
-#define SANDIA_HAND_MESSAGE_PROCESSOR
+#ifndef SANDIA_HAND_SERIAL_MESSAGE_PROCESSOR
+#define SANDIA_HAND_SERIAL_MESSAGE_PROCESSOR
 
 #include <stdint.h>
 #include <boost/function.hpp>
@@ -9,11 +9,11 @@
 namespace sandia_hand
 {
 
-class MessageProcessor
+class SerialMessageProcessor
 {
 public:
-  MessageProcessor(const uint8_t addr);
-  virtual ~MessageProcessor();
+  SerialMessageProcessor(const uint8_t addr);
+  virtual ~SerialMessageProcessor();
   bool rx(const uint8_t *data, const uint16_t data_len);
 
   typedef boost::function<void(const uint8_t *, const uint16_t)> RawTxFunctor;

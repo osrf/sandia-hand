@@ -440,6 +440,12 @@ static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
       return; // buh bye
     power_set(sfp->finger_idx, (power_state_t)sfp->finger_power_state);
   }
+  else if (cmd == CMD_ID_SET_ALL_FINGER_POWER_STATES)
+  {
+    for (int i = 0; i < 4; i++)
+      power_set(i, 
+         (power_state_t)((set_all_finger_power_states_t *)cmd_data)->fps[i]);
+  }
   else if (cmd == CMD_ID_SET_FINGER_CONTROL_MODE)
   {
     set_finger_control_mode_t *p = (set_finger_control_mode_t *)cmd_data;
@@ -471,23 +477,13 @@ static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
     finger_tx_raw(p->finger_idx, p->tx_data, p->tx_data_len);
   }
   else if (cmd == CMD_ID_SET_MOBO_STATUS_RATE)
-  {
-    set_mobo_status_rate_t *p = (set_mobo_status_rate_t *)cmd_data;
-    power_set_mobo_status_rate(p->mobo_status_hz);
-  }
+    power_set_mobo_status_rate(
+                      ((set_mobo_status_rate_t *)cmd_data)->mobo_status_hz);
   else if (cmd == CMD_ID_SET_FINGER_AUTOPOLL)
-  {
-    set_finger_autopoll_t *p = (set_finger_autopoll_t *)cmd_data;
-    printf("sfa %d\r\n", p->finger_autopoll_hz);
-    if (p->finger_autopoll_hz)
-      g_finger_autopoll_timeout = 1000 / p->finger_autopoll_hz;
-    else
-      g_finger_autopoll_timeout = 0; // special case...
-  }
+    finger_set_autopoll_rate(
+                   ((set_finger_autopoll_t *)cmd_data)->finger_autopoll_hz);
   else
-  {
     printf("  unhandled cmd %d\r\n", cmd);
-  }
 }
 
 static void enet_ip_rx(uint8_t *pkt, const uint32_t len)

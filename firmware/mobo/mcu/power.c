@@ -71,7 +71,6 @@ volatile uint16_t g_power_adc_readings[3] = {0};
 #define POWER_ADC_CH_TEMP_0       1
 #define POWER_ADC_CH_TEMP_1      11
 #define POWER_ADC_CH_ONCHIP_TEMP 15
-static volatile uint32_t g_power_txcomp_time = 0;
 static volatile uint32_t g_power_systick_value = 0;
 
 void power_init()
@@ -177,6 +176,7 @@ void power_set(const uint8_t finger_idx, const power_state_t power_state)
       sw[1].pio->PIO_SODR = sw[1].pin_idx; // high voltage on
       sw[0].pio->PIO_CODR = sw[0].pin_idx; // low voltage off
       break;
+    default: return; break; // not sure what's going on...
   }
   g_finger_power_states[finger_idx] = power_state;
 }
@@ -189,18 +189,14 @@ void power_idle()
     power_start_poll();
     return;
   }
-  const uint32_t status = TWI1->TWI_SR;
   if (g_power_state == POWER_RX_COMPLETE)
   {
+    const volatile uint32_t status = TWI1->TWI_SR;
     if (status & TWI_SR_TXCOMP)
     {
       g_power_state = POWER_IDLE;
       power_i2c_rx_complete(__REV16(g_power_i2c_rx_val));
     }
-    /*
-    if ((!g_power_txcomp_time) && (status & TWI_SR_TXCOMP))
-      g_power_txcomp_time = g_power_systick_value;
-    */ 
   } 
 } 
 
@@ -212,20 +208,6 @@ void power_systick()
   if (g_power_autosend_timeout && 
       (g_power_systick_value % g_power_autosend_timeout == 0)) 
     g_power_status_send_req++;
-
-  /*
-  if (g_power_txcomp_time && 
-      g_power_systick_value >= g_power_txcomp_time + 2)
-  {
-    //printf("txct = %d stv = %d\r\n", g_power_txcomp_time, g_power_systick_value);
-    if (g_power_autopoll_sensor_idx < 4)
-      power_start_read_finger_sensor_reg(g_power_autopoll_sensor_idx, 0x04);
-    else if (g_power_autopoll_sensor_idx < 7)
-      power_start_read_finger_sensor_reg(4, 
-                             0x01 + (2 * (g_power_autopoll_sensor_idx - 4)));
-    g_power_txcomp_time = 0;
-  }
-  */
 }
 
 void power_start_read_finger_sensor_reg(const uint8_t finger_idx, 
@@ -423,10 +405,12 @@ void power_set_mobo_status_rate(const uint16_t rate)
     g_power_autosend_timeout = 1000 / rate;
   else
     g_power_autosend_timeout = 0;
+  /*
   printf("smsr %d pat = %d pssr %d pasi %d gppr %d gps %d rxc %d stat %04x\r\n", 
          rate, g_power_autosend_timeout, g_power_status_send_req,
          g_power_autopoll_sensor_idx, g_power_poll_req,
          g_power_state, g_power_i2c_rx_cnt, TWI1->TWI_SR);
+  */
 }
 
 void power_twi1_vector()

@@ -96,6 +96,7 @@ int finger_ping(int argc, char **argv, Hand &hand)
     printf("   OK\n");
   else
     printf("   fail\n");
+  listen_hand(1.0, hand);
   return 0;
 }
 
@@ -155,7 +156,8 @@ int set_joint_position(int argc, char **argv, Hand &hand)
   return 0;
 }
 
-void cam_pgm_cb(uint8_t cam_idx, uint32_t frame_count, uint8_t *img_data)
+void cam_pgm_cb(const uint8_t cam_idx, const uint32_t frame_count, 
+                const uint8_t *img_data)
 {
   printf("cam_pgm_cb\n");
   FILE *f = NULL;
@@ -203,30 +205,52 @@ int test_finger_currents(int argc, char **argv, Hand &hand)
   return 0;
 }
 
+void mobo_status_rx(const uint8_t *data, const uint16_t data_len)
+{
+  static FILE *f_log = NULL;
+  if (!f_log)
+    f_log = fopen("current_log.txt", "w");
+  //printf("mobo status\n");
+  mobo_status_t *p = (mobo_status_t *)(data + 4);
+  fprintf(f_log, "%d ", p->mobo_time_ms);
+  for (int i = 0; i < 4; i++)
+  {
+    //printf("  %d current: %.4f\n", i, p->finger_currents[i]);
+    fprintf(f_log, "%.6f ", p->finger_currents[i]);
+  }
+  for (int i = 0; i < 3; i++)
+  {
+    //printf("  logic %d current: %.4f\n", i, p->logic_currents[i]);
+    fprintf(f_log, "%.6f ", p->logic_currents[i]);
+  }
+  for (int i = 0; i < 3; i++)
+  {
+    //printf("  %d raw temperature: %d\n", i, p->mobo_raw_temperatures[i]);
+    fprintf(f_log, "%d ", (int16_t)p->mobo_raw_temperatures[i]);
+  }
+  fprintf(f_log, "\n");
+}
+
 int test_finger_stream(int argc, char **argv, Hand &hand)
 {
-  printf("testing finger streaming...\n");
+  hand.registerRxHandler(CMD_ID_MOBO_STATUS, mobo_status_rx);
+  printf("turning on mobo status streaming...\n");
   hand.setMoboStatusHz(100);
-  /*
   listen_hand(1.0, hand);
-  for (int i = 0; i < 4; i++)
-    hand.setFingerPower(i, Hand::FPS_LOW);
-  printf("waiting for finger boot...\n");
+  printf("powering finger sockets...\n");
+  hand.setAllFingerPowers(Hand::FPS_LOW);
   listen_hand(0.5, hand);
-  for (int i = 0; i < 4; i++)
-    hand.setFingerPower(i, Hand::FPS_FULL);
+  hand.setAllFingerPowers(Hand::FPS_FULL);
   listen_hand(4.0, hand);
-  printf("turning on hand streaming...\n");
+  printf("turning on finger streaming...\n");
   hand.setFingerAutopollHz(1);
-  */
   while (!g_done)
     listen_hand(0.1, hand);
-  /*
   printf("turning off finger power...\n");
-  for (int i = 0; i < 4; i++)
-    hand.setFingerPower(i, Hand::FPS_OFF);
-  */
+  hand.setAllFingerPowers(Hand::FPS_OFF);
   hand.setMoboStatusHz(0);
+  hand.setFingerAutopollHz(0);
+  usleep(200000);
   printf("bye\n");
   return 0;
 }

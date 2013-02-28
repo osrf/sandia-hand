@@ -2,6 +2,7 @@
 #define SANDIA_HAND_H
 
 #include <vector>
+#include <map>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -29,6 +30,7 @@ public:
                           FPS_LOW  = FINGER_POWER_STATE_LOW,
                           FPS_FULL = FINGER_POWER_STATE_FULL }; 
   bool setFingerPower(const uint8_t finger_idx, const FingerPowerState fps);
+  bool setAllFingerPowers(const FingerPowerState fps);
 
   enum FingerControlMode { FCM_IDLE      = FINGER_CONTROL_MODE_IDLE,
                            FCM_JOINT_POS = FINGER_CONTROL_MODE_JOINT_POS };
@@ -40,7 +42,10 @@ public:
   bool setCameraStreaming(const bool cam_0_streaming, 
                           const bool cam_1_streaming);
   static const int IMG_WIDTH = 720, IMG_HEIGHT = 480, NUM_CAMS = 2;
-  typedef boost::function<void(uint8_t, uint32_t, uint8_t *)> ImageCallback;
+  typedef boost::function<void(const uint8_t, const uint32_t, 
+                               const uint8_t *)> ImageCallback;
+  typedef boost::function<void(const uint8_t *, const uint16_t)> RxFunctor;
+  void registerRxHandler(const uint32_t msg_id, RxFunctor f);
   void setImageCallback(ImageCallback callback);
   bool pingFinger(const uint8_t finger_idx);
   bool setMoboStatusHz(const uint16_t mobo_status_hz);
@@ -59,6 +64,7 @@ private:
   ImageCallback img_cb;
   bool fingerRawTx(const uint8_t finger_idx, 
                    const uint8_t *data, const uint16_t data_len);
+  std::map<uint32_t, RxFunctor> rx_map_;
 };
 
 }

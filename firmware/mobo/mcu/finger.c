@@ -37,7 +37,7 @@
 
 static void finger_broadcast_raw(const uint8_t *data, const uint16_t data_len);
 static uint8_t g_finger_status_request = 0;
-volatile uint8_t g_finger_autopoll_timeout = 0;
+static volatile uint16_t g_finger_autopoll_timeout = 0;
 
 typedef struct { Pio *pio; uint32_t pin_idx; } rs485_de_t;
 // TODO: map finger_idx to rs485 channel indices. have palm be channel 4.
@@ -227,12 +227,15 @@ void finger_idle()
   if (g_finger_status_request)
   {
     g_finger_status_request = 0;
+    printf("fsr\r\n");
     uint8_t pkt[50];
     pkt[0] = 0x42;
     pkt[1] = 10; // generic finger address
     *((uint16_t *)(&pkt[2])) = 0; // no payload
-    pkt[4] = 0x21; // status request
+    //pkt[4] = 0x21; // status request
+    pkt[4] = 0x01;
     *((uint16_t *)(&pkt[5])) = finger_calc_crc(pkt);
+    //finger_tx_raw(0, pkt, 7);
     finger_broadcast_raw(pkt, 7);
   }
 }
@@ -245,5 +248,14 @@ void finger_systick()
     return; // disabled
   if (s_finger_systick_count % g_finger_autopoll_timeout == 0)  
     g_finger_status_request = 1; // schedule query message to fingers
+}
+
+void finger_set_autopoll_rate(uint16_t hz)
+{
+  if (hz)
+    g_finger_autopoll_timeout = 1000 / hz;
+  else
+    g_finger_autopoll_timeout = 0;
+  printf("fsar %d fat = %d\r\n", hz, g_finger_autopoll_timeout);
 }
 

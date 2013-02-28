@@ -83,6 +83,19 @@ bool Hand::setFingerPower(const uint8_t finger_idx, const FingerPowerState fps)
   return true;
 }
 
+bool Hand::setAllFingerPowers(const FingerPowerState fps)
+{
+  uint8_t pkt[50];
+  *((uint32_t *)pkt) = CMD_ID_SET_ALL_FINGER_POWER_STATES;
+  set_all_finger_power_states_t *p = 
+                              (set_all_finger_power_states_t *)(pkt+4);
+  for (int i = 0; i < 4; i++)
+    p->fps[i] = fps;
+  if (!tx_udp(pkt, 4 + sizeof(set_all_finger_power_states_t)))
+    return false;
+  return true;
+}
+
 bool Hand::setFingerControlMode(const uint8_t finger_idx,
                                 const FingerControlMode fcm)
 {
@@ -238,32 +251,11 @@ bool Hand::rx_data(const int sock_idx, const uint8_t *data, const int data_len)
   }
   else if (sock_idx == 0)
   {
-    uint32_t pkt_id = *((uint32_t *)(data));
-    if (pkt_id == CMD_ID_MOBO_STATUS)
-    {
-      static FILE *f_log = NULL;
-      if (!f_log)
-        f_log = fopen("current_log.txt", "w");
-      printf("mobo status\n");
-      mobo_status_t *p = (mobo_status_t *)(data + 4);
-      fprintf(f_log, "%d ", p->mobo_time_ms);
-      for (int i = 0; i < 4; i++)
-      {
-        printf("  %d current: %.4f\n", i, p->finger_currents[i]);
-        fprintf(f_log, "%.6f ", p->finger_currents[i]);
-      }
-      for (int i = 0; i < 3; i++)
-      {
-        printf("  logic %d current: %.4f\n", i, p->logic_currents[i]);
-        fprintf(f_log, "%.6f ", p->logic_currents[i]);
-      }
-      for (int i = 0; i < 3; i++)
-      {
-        printf("  %d raw temperature: %d\n", i, p->mobo_raw_temperatures[i]);
-        fprintf(f_log, "%d ", (int16_t)p->mobo_raw_temperatures[i]);
-      }
-      fprintf(f_log, "\n");
-    }
+    const uint32_t pkt_id = *((uint32_t *)(data));
+    if (rx_map_.find(pkt_id) != rx_map_.end())
+      rx_map_[pkt_id](data + 4, (uint16_t)data_len - 4); // neat.
+    else
+      printf("unhandled packet id: %d\n", pkt_id);
   }
   else if (sock_idx == 3) // rs485 sock
   {
@@ -299,4 +291,8 @@ bool Hand::pingFinger(const uint8_t finger_idx)
   return false; // todo
 }
 
+void Hand::registerRxHandler(const uint32_t msg_id, RxFunctor f)
+{
+  rx_map_[msg_id] = f;
+}
 

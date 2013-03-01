@@ -23,7 +23,6 @@ int b2e(bool b) // convert boolean function return values to exit codes
   return b ? 0 : 1;
 }
 
-
 void parse_finger_idx(uint8_t &finger_idx, const char *s)
 {
   finger_idx = atoi(s);
@@ -99,6 +98,18 @@ int finger_ping(int argc, char **argv, Hand &hand)
   listen_hand(1.0, hand);
   return 0;
 }
+
+int palm_ping(int argc, char **argv, Hand &hand)
+{
+  printf("pinging palm\n");
+  if (hand.palm.ping())
+    printf("   OK\n");
+  else
+    printf("   fail\n");
+  listen_hand(1.0, hand);
+  return 0;
+}
+
 
 int set_single_finger_power(int argc, char **argv, Hand &hand)
 {
@@ -283,6 +294,8 @@ int main(int argc, char **argv)
     return cam_pgm(argc, argv, hand);
   else if (!strcmp(cmd, "fping"))
     return finger_ping(argc, argv, hand);
+  else if (!strcmp(cmd, "palm_ping"))
+    return palm_ping(argc, argv, hand);
   else if (!strcmp(cmd, "test_finger_currents"))
     return test_finger_currents(argc, argv, hand);
   else if (!strcmp(cmd, "test_finger_stream"))

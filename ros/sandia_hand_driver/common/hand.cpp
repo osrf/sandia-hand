@@ -18,7 +18,7 @@ Hand::Hand()
   saddrs[2] = &cam_saddrs[1];
   saddrs[3] = &rs485_saddr;
   for (int i = 0; i < NUM_SOCKS; i++)
-    *socks[0] = 0;
+    *socks[i] = 0;
   for (int i = 0; i < NUM_CAMS; i++)
   {
     img_data[i] = new uint8_t[IMG_WIDTH * IMG_HEIGHT];
@@ -26,6 +26,14 @@ Hand::Hand()
     for (int j = 0; j < IMG_HEIGHT; j++)
       img_rows_recv[i][j] = false;
   }
+  // this is for right hand. todo: load this dynamically one way or another.
+  // depending on if we have a right or left hand.
+  rx_rs485_map_[0] = 4;
+  rx_rs485_map_[1] = 1;
+  rx_rs485_map_[2] = 2;
+  rx_rs485_map_[3] = 3;
+  rx_rs485_map_[4] = 0;
+
   for (int i = 0; i < NUM_FINGERS; i++)
     fingers[i].mm.setRawTx(boost::bind(&Hand::fingerRawTx, this, i, _1, _2));
   palm.setRawTx(boost::bind(&Hand::fingerRawTx, this, 4, _1, _2));
@@ -198,7 +206,7 @@ bool Hand::listen(const float max_seconds)
   FD_ZERO(&rdset);
   for (int i = 0; i < NUM_SOCKS; i++)
     FD_SET(*socks[i], &rdset);
-  if (select(*socks[2]+1, &rdset, NULL, NULL, &timeout) <= 0)
+  if (select(*socks[NUM_SOCKS-1]+1, &rdset, NULL, NULL, &timeout) <= 0)
     return false;
   for (int i = 0; i < NUM_SOCKS; i++)
     if (FD_ISSET(*socks[i], &rdset)) 
@@ -263,15 +271,19 @@ bool Hand::rx_data(const int sock_idx, const uint8_t *data, const int data_len)
     // bytes come in pairs on this socket
     for (int i = 0; i < data_len / 2; i++)
     {
-      const uint8_t rs485_sender_byte = data[i * 2];
-      if (!(rs485_sender_byte & 0x80))
+      const uint8_t rs485_sender_byte = data[i * 2]; 
+      if (!(rs485_sender_byte & 0x80)) // hardware sets high bit. verify.
       {
         printf("WOAH THERE PARTNER. unexpected byte on rs485 sock: 0x%02x\n",
                rs485_sender_byte);
         continue;
       }
       const uint8_t rs485_sender = rs485_sender_byte & ~0x80;
+      if (rx_rs485_map_.find(rs485_sender) == rx_rs485_map_.end())
+        continue; // bogus sender address. maybe garbled packet somehow.
+      const uint8_t remapped_sender = rx_rs485_map_[rs485_sender];
       const uint8_t rs485_byte = data[i * 2 + 1];
+      printf("rs485 sender = %d mapped to %d\n", rs485_sender, remapped_sender);
       if (rs485_sender < 4)
         fingers[rs485_sender].mm.rx(&rs485_byte, 1); // todo: batch this
       else if (rs485_sender == 4)

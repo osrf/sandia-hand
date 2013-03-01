@@ -65,6 +65,7 @@ private:
   bool fingerRawTx(const uint8_t finger_idx, 
                    const uint8_t *data, const uint16_t data_len);
   std::map<uint32_t, RxFunctor> rx_map_;
+  std::map<uint8_t, uint8_t> rx_rs485_map_; // changes in right vs left hands
 };
 
 }

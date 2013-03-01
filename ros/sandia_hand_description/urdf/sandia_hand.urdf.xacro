@@ -159,6 +159,7 @@
     </joint>
 
     <xacro:finger_transmission side="${side}" idx="${idx}" x="${x}" y="${y}" z="${z}" r="${r}" p="${p}" yaw="${yaw}"/>
+    <xacro:finger_gazebo side="${side}" idx="${idx}"/>
   </xacro:macro>
 
   <xacro:macro name="sandia_hand" params="side parent *origin">
@@ -198,9 +199,10 @@
     <xacro:finger side="${side}" idx="3" x="0.03995" y="-0.04383" z="0.014" r="0" p="-1.57079" yaw="-2.3562"/>
 
     <!-- not needed unless simulating the hand by itself
-    <xacro:sandia_hand_gazebo side="${side}" />
+    <xacro:sandia_hand_gazebo_controller side="${side}" />
     -->
 
+    <xacro:sandia_hand_gazebo side="${side}" />
   </xacro:macro>
 </robot>
 

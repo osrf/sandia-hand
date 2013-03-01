@@ -417,9 +417,9 @@
     <xacro:finger side="${side}" idx="3" x="0.03995" y="${-0.04383*reflect}" z="0.014" r="0" p="-${M_pi/2}" yaw="${-2.3562*reflect}" reflect="${reflect}" />
 
     <!-- not needed unless simulating the hand by itself
-    <xacro:sandia_hand_gazebo side="${side}" />
+    <xacro:sandia_hand_gazebo_controller side="${side}" />
     -->
-
+    <xacro:sandia_hand_gazebo side="${side}" />
   </xacro:macro>
 </robot>
 

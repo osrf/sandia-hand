@@ -192,12 +192,13 @@ volatile static emac_tx_descriptor_t __attribute__((aligned(8)))
                    g_enet_tx_desc[ENET_TX_BUFFERS];
 volatile static uint8_t __attribute__((aligned(8)))
                    g_enet_tx_buf[ENET_TX_BUFFERS * ENET_TX_UNITSIZE];
-
+volatile static uint8_t __attribute__((aligned(8)))
+                   g_enet_udp_tx_buf[ENET_MAX_PKT_SIZE];
 
 // todo: read these from flash somewhere, probably in bootloader section
 static uint8_t g_enet_hand_mac[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
 static uint32_t g_enet_hand_ip = 0x0a0a0102; // 10.10.1.2
-static uint32_t g_enet_master_ip = 0x0a0a0101; // 10.10.1.
+static uint32_t g_enet_master_ip = 0x0a0a0101; // 10.10.1.1
 static uint8_t g_enet_master_mac[6] = {0,0,0,0,0,0}; // to request via ARP
 
 void enet_init()
@@ -252,6 +253,7 @@ void enet_init()
   EMAC->EMAC_IER = EMAC_IER_RXUBR | // receive used bit read (overrun?)
                    EMAC_IER_ROVR  | // receive overrun
                    EMAC_IER_RCOMP ; // receive complete
+  NVIC_SetPriority(EMAC_IRQn, 2); // lower priority than i2c
   NVIC_EnableIRQ(EMAC_IRQn);
 }
 
@@ -396,7 +398,6 @@ static void enet_icmp_rx(uint8_t *pkt, const uint32_t len)
   icmp_response->icmp_id = icmp->icmp_id;
   icmp_response->icmp_sequence = icmp->icmp_sequence;
   enet_add_ip_header_checksum(&icmp_response->ip);
-  //icmp_response->icmp_checksum = htons(0x911a); // hardcoded... never changes
   uint8_t *icmp_response_payload = icmp_response_buf + sizeof(icmp_header_t);
   uint8_t *icmp_request_payload = pkt + sizeof(icmp_header_t);
   for (int i = 0; i < icmp_data_len; i++)
@@ -439,6 +440,12 @@ static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
       return; // buh bye
     power_set(sfp->finger_idx, (power_state_t)sfp->finger_power_state);
   }
+  else if (cmd == CMD_ID_SET_ALL_FINGER_POWER_STATES)
+  {
+    for (int i = 0; i < 4; i++)
+      power_set(i, 
+         (power_state_t)((set_all_finger_power_states_t *)cmd_data)->fps[i]);
+  }
   else if (cmd == CMD_ID_SET_FINGER_CONTROL_MODE)
   {
     set_finger_control_mode_t *p = (set_finger_control_mode_t *)cmd_data;
@@ -465,14 +472,18 @@ static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
   else if (cmd == CMD_ID_FINGER_RAW_TX)
   {
     finger_raw_tx_t *p = (finger_raw_tx_t *)cmd_data;
-    if (p->finger_idx > 3 || p->tx_data_len > FINGER_RAW_TX_MAX_LEN)
+    if (p->finger_idx > 4 || p->tx_data_len > FINGER_RAW_TX_MAX_LEN)
       return;
     finger_tx_raw(p->finger_idx, p->tx_data, p->tx_data_len);
   }
+  else if (cmd == CMD_ID_SET_MOBO_STATUS_RATE)
+    power_set_mobo_status_rate(
+                      ((set_mobo_status_rate_t *)cmd_data)->mobo_status_hz);
+  else if (cmd == CMD_ID_SET_FINGER_AUTOPOLL)
+    finger_set_autopoll_rate(
+                   ((set_finger_autopoll_t *)cmd_data)->finger_autopoll_hz);
   else
-  {
     printf("  unhandled cmd %d\r\n", cmd);
-  }
 }
 
 static void enet_ip_rx(uint8_t *pkt, const uint32_t len)
@@ -605,6 +616,36 @@ void enet_systick()
       enet_request_master_mac();
     //printf("enet 1hz systick\r\n");
   }
+}
+
+void enet_tx_udp(const uint8_t *payload, const uint16_t payload_len)
+{
+  udp_header_t *udp = (udp_header_t *)g_enet_udp_tx_buf;
+  for (int i = 0; i < 6; i++)
+  {
+    udp->ip.eth.eth_dest_addr[i]   = g_enet_master_mac[i];
+    udp->ip.eth.eth_source_addr[i] = g_enet_hand_mac[i];
+  }
+  udp->ip.eth.eth_ethertype = htons(IP_ETHERTYPE);
+  udp->ip.ip_header_len = IP_HEADER_LEN;
+  udp->ip.ip_version = IP_VERSION;
+  udp->ip.ip_ecn = 0;
+  udp->ip.ip_diff_serv = 0;
+  udp->ip.ip_len = htons(20 + 8 + payload_len);
+  udp->ip.ip_id = 0;
+  udp->ip.ip_flag_frag = htons(IP_DONT_FRAGMENT);
+  udp->ip.ip_ttl = 64; // no idea
+  udp->ip.ip_proto = IP_PROTO_UDP;
+  udp->ip.ip_checksum = 0;
+  udp->ip.ip_source_addr = htonl(g_enet_hand_ip);
+  udp->ip.ip_dest_addr = htonl(g_enet_master_ip);
+  udp->udp_source_port = htons(UDP_HAND_PORT);
+  udp->udp_dest_port = htons(UDP_HAND_PORT);
+  udp->udp_len = htons(8 + payload_len);
+  udp->udp_checksum = 0; // IPv4 UDP checksum is optional. 
+  enet_add_ip_header_checksum(&udp->ip);
+  memcpy((uint8_t *)udp + sizeof(udp_header_t), payload, payload_len);
+  enet_tx_raw((uint8_t *)udp, sizeof(udp_header_t) + payload_len);
 }
 
 ////////////////////////////////////////////////////////////////////////

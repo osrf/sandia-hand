@@ -20,7 +20,8 @@ boost::shared_ptr<camera_info_manager::CameraInfoManager> g_cinfo[NUM_CAMS];
 image_transport::CameraPublisher *g_image_pub[NUM_CAMS] = {0};
 sensor_msgs::Image g_img_msg[NUM_CAMS];
 
-void image_cb(uint8_t cam_idx, uint32_t frame_count, uint8_t *img_data)
+void image_cb(const uint8_t cam_idx, const uint32_t frame_count, 
+              const uint8_t *img_data)
 {
   if (cam_idx > 1)
     return; // woah

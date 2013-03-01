@@ -25,6 +25,11 @@ typedef enum { POWER_OFF = 0, POWER_LOW = 1, POWER_ON = 2} power_state_t;
 
 void power_init();
 void power_set(const uint8_t finger_idx, const power_state_t power_state);
+void power_idle();
+void power_systick();
+void power_adc_vector();
+void power_set_mobo_status_rate(const uint16_t rate);
+void power_twi1_vector();
 
 #endif
 

@@ -3,18 +3,22 @@
 #include <cstring>
 #include <cmath>
 #include <boost/bind.hpp>
+#include "sandia_hand/hand_packets.h"
 using namespace sandia_hand;
 
 Hand::Hand()
+: palm(10) // default rs485 address of palm
 {
   socks[0] = &control_sock;
   socks[1] = &cam_socks[0];
   socks[2] = &cam_socks[1];
+  socks[3] = &rs485_sock;
   saddrs[0] = &control_saddr;
   saddrs[1] = &cam_saddrs[0];
   saddrs[2] = &cam_saddrs[1];
+  saddrs[3] = &rs485_saddr;
   for (int i = 0; i < NUM_SOCKS; i++)
-    *socks[0] = 0;
+    *socks[i] = 0;
   for (int i = 0; i < NUM_CAMS; i++)
   {
     img_data[i] = new uint8_t[IMG_WIDTH * IMG_HEIGHT];
@@ -22,12 +26,24 @@ Hand::Hand()
     for (int j = 0; j < IMG_HEIGHT; j++)
       img_rows_recv[i][j] = false;
   }
+  // this is for right hand. todo: load this dynamically one way or another.
+  // depending on if we have a right or left hand.
+  rx_rs485_map_[0] = 4;
+  rx_rs485_map_[1] = 1;
+  rx_rs485_map_[2] = 2;
+  rx_rs485_map_[3] = 3;
+  rx_rs485_map_[4] = 0;
+
   for (int i = 0; i < NUM_FINGERS; i++)
     fingers[i].mm.setRawTx(boost::bind(&Hand::fingerRawTx, this, i, _1, _2));
+  palm.setRawTx(boost::bind(&Hand::fingerRawTx, this, 4, _1, _2));
 }
 
 Hand::~Hand()
 {
+  for (int i = 0; i < NUM_SOCKS; i++)
+    if (*socks[i])
+      close(*socks[i]);
 }
 
 bool Hand::init(const char *ip)
@@ -75,6 +91,19 @@ bool Hand::setFingerPower(const uint8_t finger_idx, const FingerPowerState fps)
   return true;
 }
 
+bool Hand::setAllFingerPowers(const FingerPowerState fps)
+{
+  uint8_t pkt[50];
+  *((uint32_t *)pkt) = CMD_ID_SET_ALL_FINGER_POWER_STATES;
+  set_all_finger_power_states_t *p = 
+                              (set_all_finger_power_states_t *)(pkt+4);
+  for (int i = 0; i < 4; i++)
+    p->fps[i] = fps;
+  if (!tx_udp(pkt, 4 + sizeof(set_all_finger_power_states_t)))
+    return false;
+  return true;
+}
+
 bool Hand::setFingerControlMode(const uint8_t finger_idx,
                                 const FingerControlMode fcm)
 {
@@ -107,7 +136,8 @@ bool Hand::setFingerJointPos(const uint8_t finger_idx,
   return true;
 }
 
-bool Hand::setCameraStreaming(bool cam_0_streaming, bool cam_1_streaming)
+bool Hand::setCameraStreaming(const bool cam_0_streaming, 
+                              const bool cam_1_streaming)
 {
   uint8_t pkt[50];
   *((uint32_t *)pkt) = CMD_ID_CONFIGURE_CAMERA_STREAM;
@@ -117,12 +147,32 @@ bool Hand::setCameraStreaming(bool cam_0_streaming, bool cam_1_streaming)
   return tx_udp(pkt, 4 + sizeof(configure_camera_stream_t));
 }
 
+bool Hand::setMoboStatusHz(const uint16_t mobo_status_hz)
+{
+  uint8_t pkt[50];
+  *((uint32_t *)pkt) = CMD_ID_SET_MOBO_STATUS_RATE;
+  set_mobo_status_rate_t *p = (set_mobo_status_rate_t *)(pkt+4);
+  p->mobo_status_hz = mobo_status_hz;
+  return tx_udp(pkt, 4 + sizeof(set_mobo_status_rate_t));
+}
+
+bool Hand::setFingerAutopollHz(const uint16_t autopoll_hz)
+{
+  uint8_t pkt[50];
+  *((uint32_t *)pkt) = CMD_ID_SET_FINGER_AUTOPOLL;
+  set_finger_autopoll_t *p = (set_finger_autopoll_t *)(pkt+4);
+  p->finger_autopoll_hz = autopoll_hz;
+  return tx_udp(pkt, 4 + sizeof(set_finger_autopoll_t));
+}
+
 bool Hand::fingerRawTx(const uint8_t finger_idx, 
                        const uint8_t *data, const uint16_t data_len)
 {
+  /*
   printf("Hand::fingerRawTx(%d, x, %d)\n", finger_idx, data_len);
   for (int i = 0; i < data_len; i++)
     printf("  %02d:0x%02x\n", i, data[i]);
+  */
   uint8_t pkt[FINGER_RAW_TX_MAX_LEN+20];
   *((uint32_t *)pkt) = CMD_ID_FINGER_RAW_TX;
   finger_raw_tx_t *p = (finger_raw_tx_t *)(pkt + 4);
@@ -154,11 +204,11 @@ bool Hand::listen(const float max_seconds)
   timeout.tv_usec = (suseconds_t)((max_seconds - timeout.tv_sec) * 1e6);
   fd_set rdset;
   FD_ZERO(&rdset);
-  for (int i = 0; i < 3; i++)
+  for (int i = 0; i < NUM_SOCKS; i++)
     FD_SET(*socks[i], &rdset);
-  if (select(*socks[2]+1, &rdset, NULL, NULL, &timeout) <= 0)
+  if (select(*socks[NUM_SOCKS-1]+1, &rdset, NULL, NULL, &timeout) <= 0)
     return false;
-  for (int i = 0; i < 3; i++)
+  for (int i = 0; i < NUM_SOCKS; i++)
     if (FD_ISSET(*socks[i], &rdset)) 
     {
       //printf("%d set\n", i);
@@ -173,7 +223,7 @@ bool Hand::listen(const float max_seconds)
         perror("recvfrom"); // find a better way to report this...
         return false;
       }
-      if (!rx_data(i, recv_buf, bytes_recv))
+      if (!rx_data(i, recv_buf, bytes_recv)) // just to reduce indenting...
         return false;
     }
   return true; // no errors
@@ -207,6 +257,39 @@ bool Hand::rx_data(const int sock_idx, const uint8_t *data, const int data_len)
         img_cb(cam_idx, frame_count, img_data[cam_idx]);
     }
   }
+  else if (sock_idx == 0)
+  {
+    const uint32_t pkt_id = *((uint32_t *)(data));
+    if (rx_map_.find(pkt_id) != rx_map_.end())
+      rx_map_[pkt_id](data + 4, (uint16_t)data_len - 4); // neat.
+    else
+      printf("unhandled packet id: %d\n", pkt_id);
+  }
+  else if (sock_idx == 3) // rs485 sock
+  {
+    printf("rs485 sock received %d bytes\n", data_len);
+    // bytes come in pairs on this socket
+    for (int i = 0; i < data_len / 2; i++)
+    {
+      const uint8_t rs485_sender_byte = data[i * 2]; 
+      if (!(rs485_sender_byte & 0x80)) // hardware sets high bit. verify.
+      {
+        printf("WOAH THERE PARTNER. unexpected byte on rs485 sock: 0x%02x\n",
+               rs485_sender_byte);
+        continue;
+      }
+      const uint8_t rs485_sender = rs485_sender_byte & ~0x80;
+      if (rx_rs485_map_.find(rs485_sender) == rx_rs485_map_.end())
+        continue; // bogus sender address. maybe garbled packet somehow.
+      const uint8_t remapped_sender = rx_rs485_map_[rs485_sender];
+      const uint8_t rs485_byte = data[i * 2 + 1];
+      printf("rs485 sender = %d mapped to %d\n", rs485_sender, remapped_sender);
+      if (rs485_sender < 4)
+        fingers[rs485_sender].mm.rx(&rs485_byte, 1); // todo: batch this
+      else if (rs485_sender == 4)
+        palm.rx(&rs485_byte, 1);
+    }
+  }
   return true;
 }
 
@@ -218,5 +301,10 @@ void Hand::setImageCallback(ImageCallback callback)
 bool Hand::pingFinger(const uint8_t finger_idx)
 {
   return false; // todo
+}
+
+void Hand::registerRxHandler(const uint32_t msg_id, RxFunctor f)
+{
+  rx_map_[msg_id] = f;
 }
 

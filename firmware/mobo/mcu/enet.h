@@ -27,6 +27,7 @@ void enet_tx_raw(const uint8_t *pkt, uint16_t pkt_len);
 uint8_t enet_tx_avail();
 void enet_idle(); // handle non time-critical ethernet tasks
 void enet_systick();
+void enet_tx_udp(const uint8_t *payload, const uint16_t payload_len);
 
 #endif
 

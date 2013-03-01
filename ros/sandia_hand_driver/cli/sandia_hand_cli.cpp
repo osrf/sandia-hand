@@ -8,16 +8,19 @@
 #include "ros/time.h"
 using namespace sandia_hand;
 
-int b2e(bool b) // convert boolean function return values to exit codes
-{
-  return b ? 0 : 1;
-}
-
 static bool g_done = false;
 void signal_handler(int signum)
 {
   if (signum == SIGINT)
     g_done = true;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// some helper functions to condense everything....
+
+int b2e(bool b) // convert boolean function return values to exit codes
+{
+  return b ? 0 : 1;
 }
 
 void parse_finger_idx(uint8_t &finger_idx, const char *s)
@@ -27,6 +30,17 @@ void parse_finger_idx(uint8_t &finger_idx, const char *s)
   {
     printf("finger_idx must be in {0,1,2,3}\n");
     exit(1);
+  }
+}
+
+void listen_hand(const float duration, Hand &hand)
+{
+  ros::Time t_start(ros::Time::now());
+  while (!g_done)
+  {
+    hand.listen(0.01);
+    if ((ros::Time::now() - t_start).toSec() > duration)
+      break;
   }
 }
 
@@ -40,6 +54,9 @@ bool verify_argc(const int argc, const int min_argc, const char *usage_text)
   }
   return true;
 }
+
+//////////////////////////////////////////////////////////////////////////////
+// command handlers
 
 int set_all_finger_powers(int argc, char **argv, Hand &hand)
 {
@@ -78,8 +95,21 @@ int finger_ping(int argc, char **argv, Hand &hand)
     printf("   OK\n");
   else
     printf("   fail\n");
+  listen_hand(1.0, hand);
   return 0;
 }
+
+int palm_ping(int argc, char **argv, Hand &hand)
+{
+  printf("pinging palm\n");
+  if (hand.palm.ping())
+    printf("   OK\n");
+  else
+    printf("   fail\n");
+  listen_hand(1.0, hand);
+  return 0;
+}
+
 
 int set_single_finger_power(int argc, char **argv, Hand &hand)
 {
@@ -137,7 +167,8 @@ int set_joint_position(int argc, char **argv, Hand &hand)
   return 0;
 }
 
-void cam_pgm_cb(uint8_t cam_idx, uint32_t frame_count, uint8_t *img_data)
+void cam_pgm_cb(const uint8_t cam_idx, const uint32_t frame_count, 
+                const uint8_t *img_data)
 {
   printf("cam_pgm_cb\n");
   FILE *f = NULL;
@@ -165,6 +196,75 @@ int cam_pgm(int argc, char **argv, Hand &hand)
   return 0;
 }
 
+int test_finger_currents(int argc, char **argv, Hand &hand)
+{
+  printf("testing finger currents during boot cycle...\n");
+  hand.setMoboStatusHz(1);
+  ros::Time t_start(ros::Time::now());
+  bool finger_states[4] = {false, false, false, false};
+  int next_finger_powerup = 0;
+  while (!g_done)
+  {
+    hand.listen(1.0);
+    if (((ros::Time::now() - t_start).toSec() > next_finger_powerup * 5) &&
+        !finger_states[next_finger_powerup])
+    {
+      // turn on a finger to observe current ramp
+    }
+  }
+  hand.setMoboStatusHz(0);
+  return 0;
+}
+
+void mobo_status_rx(const uint8_t *data, const uint16_t data_len)
+{
+  static FILE *f_log = NULL;
+  if (!f_log)
+    f_log = fopen("current_log.txt", "w");
+  //printf("mobo status\n");
+  mobo_status_t *p = (mobo_status_t *)(data + 4);
+  fprintf(f_log, "%d ", p->mobo_time_ms);
+  for (int i = 0; i < 4; i++)
+  {
+    //printf("  %d current: %.4f\n", i, p->finger_currents[i]);
+    fprintf(f_log, "%.6f ", p->finger_currents[i]);
+  }
+  for (int i = 0; i < 3; i++)
+  {
+    //printf("  logic %d current: %.4f\n", i, p->logic_currents[i]);
+    fprintf(f_log, "%.6f ", p->logic_currents[i]);
+  }
+  for (int i = 0; i < 3; i++)
+  {
+    //printf("  %d raw temperature: %d\n", i, p->mobo_raw_temperatures[i]);
+    fprintf(f_log, "%d ", (int16_t)p->mobo_raw_temperatures[i]);
+  }
+  fprintf(f_log, "\n");
+}
+
+int test_finger_stream(int argc, char **argv, Hand &hand)
+{
+  hand.registerRxHandler(CMD_ID_MOBO_STATUS, mobo_status_rx);
+  printf("turning on mobo status streaming...\n");
+  hand.setMoboStatusHz(100);
+  listen_hand(1.0, hand);
+  printf("powering finger sockets...\n");
+  hand.setAllFingerPowers(Hand::FPS_LOW);
+  listen_hand(0.5, hand);
+  hand.setAllFingerPowers(Hand::FPS_FULL);
+  listen_hand(4.0, hand);
+  printf("turning on finger streaming...\n");
+  hand.setFingerAutopollHz(1);
+  while (!g_done)
+    listen_hand(0.1, hand);
+  printf("turning off finger power...\n");
+  hand.setAllFingerPowers(Hand::FPS_OFF);
+  hand.setMoboStatusHz(0);
+  hand.setFingerAutopollHz(0);
+  usleep(200000);
+  printf("bye\n");
+  return 0;
+}
 
 int main(int argc, char **argv)
 {
@@ -194,6 +294,12 @@ int main(int argc, char **argv)
     return cam_pgm(argc, argv, hand);
   else if (!strcmp(cmd, "fping"))
     return finger_ping(argc, argv, hand);
+  else if (!strcmp(cmd, "palm_ping"))
+    return palm_ping(argc, argv, hand);
+  else if (!strcmp(cmd, "test_finger_currents"))
+    return test_finger_currents(argc, argv, hand);
+  else if (!strcmp(cmd, "test_finger_stream"))
+    return test_finger_stream(argc, argv, hand);
   printf("unknown command: [%s]\n", cmd);
   return 1;
 }

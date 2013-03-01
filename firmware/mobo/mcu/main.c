@@ -30,9 +30,10 @@
 
 void systick_vector()
 {
+  power_systick();
   enet_systick();
+  finger_systick();
 }
-
 
 void main()
 {
@@ -57,14 +58,14 @@ void main()
   fpga_spi_txrx(FPGA_SPI_REG_MDIO_CFG | FPGA_SPI_WRITE, 4); // assert PHY_RESET
   for (volatile int j = 0; j < 2000000; j++) { } // wait a while
   fpga_spi_txrx(FPGA_SPI_REG_MDIO_CFG | FPGA_SPI_WRITE, 0); // release PHY_RESET
-  for (volatile int j = 0; j < 4000000; j++) { } // wait a longer while
+  for (volatile int j = 0; j < 2000000; j++) { } // wait a longer while
   printf("requesting PHY software reset\r\n");
   // now do a software reset of the PHY 
   fpga_spi_txrx(FPGA_SPI_REG_MDIO_WDATA | FPGA_SPI_WRITE, 
                 0x9000); // set SW reset bit and auto-negotiate bit
   fpga_spi_txrx(FPGA_SPI_REG_MDIO_CFG | FPGA_SPI_WRITE,
                 0x0001); // start write of register zero
-  for (volatile int j = 0; j < 4000000; j++) { } // wait a longer while
+  for (volatile int j = 0; j < 2000000; j++) { } // wait a longer while
   printf("entering main loop\r\n");
   /*
   #define TEST_PKT_LEN 60
@@ -91,7 +92,9 @@ void main()
 
   while (1)
   {
+    power_idle();
     enet_idle();
+    finger_idle();
     /*
     for (volatile int j = 0; j < 20000000; j++) { }
     printf("tx\r\n");

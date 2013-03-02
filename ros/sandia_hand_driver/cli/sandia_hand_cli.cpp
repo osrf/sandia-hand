@@ -95,7 +95,6 @@ int finger_ping(int argc, char **argv, Hand &hand)
     printf("   OK\n");
   else
     printf("   fail\n");
-  listen_hand(1.0, hand);
   return 0;
 }
 
@@ -245,21 +244,26 @@ void mobo_status_rx(const uint8_t *data, const uint16_t data_len)
 int test_finger_stream(int argc, char **argv, Hand &hand)
 {
   hand.registerRxHandler(CMD_ID_MOBO_STATUS, mobo_status_rx);
-  printf("turning on mobo status streaming...\n");
-  hand.setMoboStatusHz(100);
-  listen_hand(1.0, hand);
+  //printf("turning on mobo status streaming...\n");
+  //hand.setMoboStatusHz(100);
+  //listen_hand(1.0, hand);
   printf("powering finger sockets...\n");
   hand.setAllFingerPowers(Hand::FPS_LOW);
   listen_hand(0.5, hand);
   hand.setAllFingerPowers(Hand::FPS_FULL);
   listen_hand(4.0, hand);
+  printf("turning on phalange bus...\n");
+  hand.fingers[0].mm.setPhalangeBusPower(true);
+  listen_hand(4.0, hand);
+  hand.fingers[0].mm.setPhalangeAutopoll(true);
+
   printf("turning on finger streaming...\n");
   hand.setFingerAutopollHz(1);
   while (!g_done)
     listen_hand(0.1, hand);
   printf("turning off finger power...\n");
   hand.setAllFingerPowers(Hand::FPS_OFF);
-  hand.setMoboStatusHz(0);
+  //hand.setMoboStatusHz(0);
   hand.setFingerAutopollHz(0);
   usleep(200000);
   printf("bye\n");

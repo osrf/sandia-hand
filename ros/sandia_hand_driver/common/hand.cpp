@@ -35,7 +35,10 @@ Hand::Hand()
   rx_rs485_map_[4] = 0;
 
   for (int i = 0; i < NUM_FINGERS; i++)
+  {
     fingers[i].mm.setRawTx(boost::bind(&Hand::fingerRawTx, this, i, _1, _2));
+    fingers[i].mm.registerListenHandler(boost::bind(&Hand::listen, this, _1));
+  }
   palm.setRawTx(boost::bind(&Hand::fingerRawTx, this, 4, _1, _2));
 }
 
@@ -267,15 +270,17 @@ bool Hand::rx_data(const int sock_idx, const uint8_t *data, const int data_len)
   }
   else if (sock_idx == 3) // rs485 sock
   {
-    printf("rs485 sock received %d bytes\n", data_len);
+    //printf("rs485 sock received %d bytes\n", data_len);
     // bytes come in pairs on this socket
     for (int i = 0; i < data_len / 2; i++)
     {
       const uint8_t rs485_sender_byte = data[i * 2]; 
       if (!(rs485_sender_byte & 0x80)) // hardware sets high bit. verify.
       {
-        printf("WOAH THERE PARTNER. unexpected byte on rs485 sock: 0x%02x\n",
-               rs485_sender_byte);
+        //printf("WOAH THERE PARTNER. unexpected byte on rs485 sock: 0x%02x\n",
+        //       rs485_sender_byte);
+        // actually... this happens as needed to align the UDP payloads on 
+        // quadword boundaries, for easier checksum generation in the fpga.
         continue;
       }
       const uint8_t rs485_sender = rs485_sender_byte & ~0x80;
@@ -283,10 +288,11 @@ bool Hand::rx_data(const int sock_idx, const uint8_t *data, const int data_len)
         continue; // bogus sender address. maybe garbled packet somehow.
       const uint8_t remapped_sender = rx_rs485_map_[rs485_sender];
       const uint8_t rs485_byte = data[i * 2 + 1];
-      printf("rs485 sender = %d mapped to %d\n", rs485_sender, remapped_sender);
-      if (rs485_sender < 4)
-        fingers[rs485_sender].mm.rx(&rs485_byte, 1); // todo: batch this
-      else if (rs485_sender == 4)
+      // printf("rs485 sender = %d mapped to %d\n", 
+      //        rs485_sender, remapped_sender);
+      if (remapped_sender < 4)
+        fingers[remapped_sender].mm.rx(&rs485_byte, 1); // todo: batch this
+      else if (remapped_sender == 4)
         palm.rx(&rs485_byte, 1);
     }
   }

@@ -38,6 +38,7 @@
 static void finger_broadcast_raw(const uint8_t *data, const uint16_t data_len);
 static uint8_t g_finger_status_request = 0;
 static volatile uint16_t g_finger_autopoll_timeout = 0;
+static void finger_mobo_udp_rs485_enable(uint8_t enable);
 
 typedef struct { Pio *pio; uint32_t pin_idx; } rs485_de_t;
 // TODO: map finger_idx to rs485 channel indices. have palm be channel 4.
@@ -155,6 +156,7 @@ void finger_tx_raw(const uint8_t finger_idx,
   for (int i = 0; i < data_len; i++)
     printf("  %d: 0x%02x\r\n", i, data[i]);
   */
+  finger_mobo_udp_rs485_enable(0); // disable UDP relay of rs485
   // assert RS485_SEL so that the ARM has control of the rs485 transceivers
   PIOA->PIO_SODR = PIO_PA15;
   // typedef struct { Pio *pio; uint32_t pin_idx; } rs485_de_t;
@@ -186,6 +188,8 @@ void finger_tx_raw(const uint8_t finger_idx,
   for (volatile int i = 0; i < 10; i++) { } // wait a bit (why?)
   // release the rs485 channel
   de->pio->PIO_CODR = de->pin_idx;
+  for (volatile int i = 0; i < 10; i++) { } // wait for rise time
+  finger_mobo_udp_rs485_enable(1); // re-enable UDP relay of rs485
   // TEMPORARY HACK: blast out on all rs485 channels
   /*
   for (int i = 0; i < 5; i++)
@@ -200,6 +204,7 @@ void finger_tx_raw(const uint8_t finger_idx,
 
 void finger_broadcast_raw(const uint8_t *data, const uint16_t data_len)
 {
+  finger_mobo_udp_rs485_enable(0);
   PIOA->PIO_SODR = PIO_PA15; // assert ARM control of rs485 channels
   for (int i = 0; i < 5; i++)
   {
@@ -220,6 +225,8 @@ void finger_broadcast_raw(const uint8_t *data, const uint16_t data_len)
     const rs485_de_t *de = &g_finger_rs485_de[i];
     de->pio->PIO_CODR = de->pin_idx;
   }
+  for (volatile int i = 0; i < 10; i++) { } // wait for rise time
+  finger_mobo_udp_rs485_enable(1); // re-enable rs485 relay
 }
 
 void finger_idle()
@@ -232,10 +239,8 @@ void finger_idle()
     pkt[0] = 0x42;
     pkt[1] = 10; // generic finger address
     *((uint16_t *)(&pkt[2])) = 0; // no payload
-    //pkt[4] = 0x21; // status request
-    pkt[4] = 0x01;
+    pkt[4] = 0x21; // status request
     *((uint16_t *)(&pkt[5])) = finger_calc_crc(pkt);
-    //finger_tx_raw(0, pkt, 7);
     finger_broadcast_raw(pkt, 7);
   }
 }
@@ -257,5 +262,12 @@ void finger_set_autopoll_rate(uint16_t hz)
   else
     g_finger_autopoll_timeout = 0;
   printf("fsar %d fat = %d\r\n", hz, g_finger_autopoll_timeout);
+}
+
+void finger_mobo_udp_rs485_enable(uint8_t enable)
+{
+  //printf("rs485 enable(%d)\r\n", enable);
+  fpga_spi_txrx(FPGA_SPI_REG_RS485_UDP_TX | FPGA_SPI_WRITE, 
+                enable ? 0x1f : 0);
 }
 

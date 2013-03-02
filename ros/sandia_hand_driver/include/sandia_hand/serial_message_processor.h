@@ -21,11 +21,15 @@ public:
   typedef boost::function<void(const uint8_t *, const uint16_t)> RxFunctor;
   void registerRxHandler(uint8_t msg_id, RxFunctor f);
   bool ping();
+  typedef boost::function<void(const float)> ListenFunctor;
+  void registerListenHandler(ListenFunctor functor);
 
 protected:
   RawTxFunctor raw_tx_;
   uint8_t *getTxBuffer();
   bool sendTxBuffer(const uint8_t pkt_id, uint16_t payload_len);
+  bool listenFor(const uint8_t listen_pkt_type, const float max_seconds);
+  void stopListening();
 private:
   static const uint32_t MAX_PACKET_LENGTH = 512;
   uint8_t addr_;
@@ -39,6 +43,9 @@ private:
   static const uint8_t  PKT_PING = 0x01;
   void rxPing(const uint8_t *payload, const uint16_t payload_len);
   void rxByte(const uint8_t b);
+  ListenFunctor listen_functor_;
+  bool done_listening_;
+  uint8_t listen_pkt_type_;
 };
 
 }

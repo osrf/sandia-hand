@@ -2,11 +2,13 @@
 #include "sandia_hand/serial_message_processor.h"
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
+#include <ros/time.h>
 using namespace sandia_hand;
 
 SerialMessageProcessor::SerialMessageProcessor(const uint8_t addr)
 : addr_(addr), rx_pkt_addr_(0), rx_pkt_type_(0), rx_pkt_write_idx_(0),
-  rx_pkt_len_(0), rx_pkt_crc_(0), rx_pkt_parser_state_(ST_IDLE)
+  rx_pkt_len_(0), rx_pkt_crc_(0), rx_pkt_parser_state_(ST_IDLE),
+  listen_pkt_type_(0)
 {
   outgoing_packet_.resize(MAX_PACKET_LENGTH);
   registerRxHandler(PKT_PING, boost::bind(&SerialMessageProcessor::rxPing, 
@@ -22,6 +24,10 @@ bool SerialMessageProcessor::ping()
   printf("SerialMessageProcessor::ping()\n");
   if (!sendTxBuffer(PKT_PING, 0))
     return false;
+  if (listenFor(PKT_PING, 1.0))
+    printf("SMP::ping ok\n");
+  else
+    printf("SMP::ping fail\n");
   return true;
 }
 
@@ -74,7 +80,7 @@ bool SerialMessageProcessor::sendTxBuffer(const uint8_t pkt_id,
 
 bool SerialMessageProcessor::rx(const uint8_t *data, const uint16_t data_len)
 {
-  printf("MessageProcessor::rx  %d bytes\n", data_len);
+  //printf("SerialMessageProcessor::rx  %d bytes\n", data_len);
   for (int i = 0; i < data_len; i++)
     rxByte(data[i]);
   return true;
@@ -174,13 +180,51 @@ void SerialMessageProcessor::rxByte(const uint8_t b)
       }
       if (rx_map_.find(rx_pkt_type_) != rx_map_.end())
         rx_map_[rx_pkt_type_](&rx_pkt_data_[0], rx_pkt_len_);
-      printf("received packet type 0x%02x with payload length %d\n",
-             rx_pkt_addr_, rx_pkt_len_);
+      //printf("listening for type 0x%02x\n", listen_pkt_type_);
+      if (listen_pkt_type_ == rx_pkt_type_)
+        stopListening();
+      //printf("received packet type 0x%02x with payload length %d\n",
+      //       rx_pkt_type_, rx_pkt_len_);
       break;
     }
     default:
       rx_pkt_parser_state_ = ST_IDLE;
       break;
   }
+}
+
+void SerialMessageProcessor::registerListenHandler(ListenFunctor f)
+{
+  listen_functor_ = f;
+}
+
+bool SerialMessageProcessor::listenFor(const uint8_t listen_pkt_type,
+                                       const float max_seconds)
+{
+  //printf("SMP::listenFor(%d, %.6f)\n", listen_pkt_type, max_seconds);
+  if (!listen_functor_)
+  {
+    printf("WOAH THERE PARTNER. called listenFor without listen_functor_ set");
+    return false;
+  }
+  done_listening_ = false;
+  listen_pkt_type_ = listen_pkt_type;
+  ros::Time t_start(ros::Time::now());
+  for (ros::Time t_start(ros::Time::now());
+       (ros::Time::now() - t_start).toSec() < max_seconds;)
+  {
+    //printf("elapsed duration: %.6f\n", (ros::Time::now() - t_start).toSec());
+    //printf("listening for %d\n", listen_pkt_type_);
+    listen_functor_(0.01);
+    if (done_listening_)
+      return true;
+  }
+  return false;
+}
+
+void SerialMessageProcessor::stopListening()
+{
+  //printf("SMP::stopListening()\n");
+  done_listening_ = true;
 }
 

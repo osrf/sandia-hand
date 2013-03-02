@@ -39,6 +39,7 @@
 #define FPGA_SPI_REG_ETH_DEST_ADDR_2    15
 #define FPGA_SPI_REG_CAM_MAX_ROWS       16
 #define FPGA_SPI_REG_FINGER_BAUD_DIV    17
+#define FPGA_SPI_REG_RS485_UDP_TX       18
 
 #define FPGA_SPI_WRITE                0x80
 

@@ -34,7 +34,7 @@ bool SerialMessageProcessor::ping()
 void SerialMessageProcessor::rxPing(const uint8_t *data, 
                                     const uint16_t data_len)
 {
-  printf("SerialMessageProcessor::rxPing()\n");
+  //printf("SerialMessageProcessor::rxPing()\n");
 }
 
 uint8_t *SerialMessageProcessor::getTxBuffer()

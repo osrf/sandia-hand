@@ -41,3 +41,10 @@ void MotorModule::rxFingerStatus(const uint8_t *payload,
   printf("\n");
 }
 
+bool MotorModule::pollFingerStatus()
+{
+  if (!sendTxBuffer(PKT_FINGER_STATUS, 0))
+    return false;
+  return listenFor(PKT_FINGER_STATUS, 0.5);
+}
+

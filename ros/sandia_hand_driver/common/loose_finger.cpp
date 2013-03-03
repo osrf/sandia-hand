@@ -42,10 +42,12 @@ bool LooseFinger::init(const char *serial_device)
 
 bool LooseFinger::tx(const uint8_t *pkt, const uint16_t pkt_len)
 {
+  /*
   printf("tx %d bytes:\n  ", pkt_len);
   for (int i = 0; i < pkt_len; i++)
     printf("0x%02x ", pkt[i]);
   printf("\n");
+  */
   if (!serial_)
   {
     printf("WOAH THERE PARTNER. serial device not initialized\n");
@@ -75,11 +77,12 @@ bool LooseFinger::listen(const float max_seconds)
       ros::Duration(0.0001).sleep();
     else
     {
+      /*
       printf("rx %d bytes:\n  ", nread);
       for (int i = 0; i < nread; i++)
         printf("0x%02x ", buf[i]);
       printf("\n");
-
+      */
       mm.rx(buf, nread);
     }
   }

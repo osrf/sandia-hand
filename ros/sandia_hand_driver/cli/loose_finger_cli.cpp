@@ -50,11 +50,50 @@ bool verify_argc(const int argc, const int min_argc, const char *usage_text)
 
 int ping(int argc, char **argv, LooseFinger &lf)
 {
-  printf("  motor module: ");
   if (lf.mm.ping())
-    printf("   OK\n");
+    printf("   motor module ping OK\n");
   else
-    printf("   fail\n");
+    printf("   motor module ping fail\n");
+  return 0;
+}
+
+int status(int argc, char **argv, LooseFinger &lf)
+{
+  if (lf.mm.pollFingerStatus())
+    printf("finger status poll ok\n");
+  else
+    printf("finger status poll fail\n");
+  return 0;
+}
+
+int pb(int argc, char **argv, LooseFinger &lf)
+{
+  const char *usage = "usage: loose_finger_cli SERIAL_DEV pb { ON | OFF }\n";
+  verify_argc(argc, 4, usage);
+  const char *s = argv[3];
+  if (!strcmp(s, "on"))
+    lf.mm.setPhalangeBusPower(true);
+  else if (!strcmp(s, "off"))
+    lf.mm.setPhalangeBusPower(false);
+  else
+    printf("%s\n", usage);
+  return 0;
+}
+
+int stream(int argc, char **argv, LooseFinger &lf)
+{
+  if (!lf.mm.setPhalangeAutopoll(true))
+  {
+    printf("couldn't start phalange autopoll\n");
+    return 1;
+  }
+  while (!g_done)
+  {
+    listen_loose_finger(0.5, lf);
+    lf.mm.pollFingerStatus();
+
+  }
+  lf.mm.setPhalangeAutopoll(false);
   return 0;
 }
 
@@ -139,6 +178,12 @@ int main(int argc, char **argv)
   const char *cmd = argv[2];
   if (!strcmp(cmd, "ping"))
     return ping(argc, argv, lf);
+  if (!strcmp(cmd, "status"))
+    return status(argc, argv, lf);
+  if (!strcmp(cmd, "stream"))
+    return stream(argc, argv, lf);
+  if (!strcmp(cmd, "pb"))
+    return pb(argc, argv, lf);
   printf("unknown command: [%s]\n", cmd);
   return 1;
 }

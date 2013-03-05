@@ -15,7 +15,7 @@
         <mass value="0.250"/> <!-- (2.303 - 1.303) / 4 -->
         <origin xyz="0 0 0"/>
         <!-- model as sphere with radius of 1cm -->
-        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+        <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
       </inertial>
     </link>
     <link name="${side}_f${idx}_fixed_accel">
@@ -23,7 +23,7 @@
       <inertial>
         <mass value="0.01"/>
         <origin xyz="0 0 0"/>
-        <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+        <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
       </inertial>
     </link>
     <link name="${side}_f${idx}_0">
@@ -32,7 +32,7 @@
         <mass value="0.106"/> <!-- F1 -->
         <origin xyz="0 0 0"/>
         <!-- solid cylinder -->
-        <inertia ixx="0.011505" izz="0.0011925" ixy="0" ixz="0" iyy="0.011505" iyz="0"/>
+        <inertia izz="0.000011925" ixy="0" ixz="0" iyy="0.00011505" iyz="0" ixx="0.00011505"/>
       </inertial>
       <!-- begin simple shape approximation of f0 -->
       <collision group="default">
@@ -94,7 +94,7 @@
         <mass value="0.033"/> <!-- F2 -->
         <origin xyz="0 0 0"/>
         <!-- solid cylinder -->
-        <inertia ixx="0.000165" ixy="0" ixz="0" iyy="0.001316975" iyz="0" izz="0.001316975"/>
+        <inertia ixx="0.00000165" ixy="0" ixz="0" iyy="0.00001316975" iyz="0" izz="0.00001316975"/>
       </inertial>
       <!-- begin simple shape approximation of f1 -->
       <collision group="default">
@@ -140,7 +140,7 @@
       <inertial>
         <mass value="0.01"/>
         <origin xyz="0 0 0"/>
-        <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+        <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
       </inertial>
     </link>
     <link name="${side}_f${idx}_2">
@@ -149,7 +149,7 @@
         <mass value="0.033"/>  <!-- F3 -->
         <origin xyz="0 0 0"/>
         <!-- solid cylinder -->
-        <inertia ixx="0.00013365" ixy="0" ixz="0" iyy="0.0009603" iyz="0" izz="0.0009603"/>
+        <inertia ixx="0.0000013365" ixy="0" ixz="0" iyy="0.000009603" iyz="0" izz="0.000009603"/>
       </inertial>
       <!-- begin simple shape approximation of f2 -->
       <collision group="default">
@@ -209,7 +209,7 @@
       <inertial>
         <mass value="0.01"/>
         <origin xyz="0 0 0"/>
-        <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+        <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
       </inertial>
     </link>
 
@@ -222,18 +222,18 @@
       <axis xyz="0 0 ${reflect}"/>
       <parent link="${side}_f${idx}_base"/>
       <child link="${side}_f${idx}_0"/>
-      <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="1" velocity="1"/>
+      <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="11" velocity="1"/>
       <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
-      <dynamics damping="0.01"/>
+      <dynamics damping="30.0"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
     </joint>
     <joint name="${side}_f${idx}_j1" type="revolute">
       <axis xyz="0 0 1"/>
       <parent link="${side}_f${idx}_0"/>
       <child link="${side}_f${idx}_1"/>
-      <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="1" velocity="1"/>
+      <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="28" velocity="1"/>
       <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
-      <dynamics damping="0.01"/>
+      <dynamics damping="30.0"/>
       <origin xyz="0.028 0 0" rpy="${M_pi/2} 0 0"/>
     </joint>
     <joint name="${side}_f${idx}_j2" type="revolute">
@@ -242,8 +242,8 @@
       <child link="${side}_f${idx}_2"/>
       <origin xyz="0.05 0 0" rpy="0 0 0"/>
       <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
-      <dynamics damping="0.01"/>
-      <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="1" velocity="1"/>
+      <dynamics damping="30.0"/>
+      <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="28" velocity="1"/>
     </joint>
 
     <joint name="${side}_f${idx}_fixed_accel" type="fixed">
@@ -262,8 +262,8 @@
       <origin xyz="0.04 0 0" rpy="-${M_pi/2} 0 0"/>
     </joint>
 
-    <xacro:finger_gazebo side="${side}" idx="${idx}"/>
     <xacro:finger_transmission side="${side}" idx="${idx}" x="${x}" y="${y}" z="${z}" r="${r}" p="${p}" yaw="${yaw}"/>
+    <xacro:finger_gazebo side="${side}" idx="${idx}"/>
   </xacro:macro>
 
   <xacro:macro name="sandia_hand" params="side parent reflect *origin">
@@ -417,9 +417,9 @@
     <xacro:finger side="${side}" idx="3" x="0.03995" y="${-0.04383*reflect}" z="0.014" r="0" p="-${M_pi/2}" yaw="${-2.3562*reflect}" reflect="${reflect}" />
 
     <!-- not needed unless simulating the hand by itself
-    <xacro:sandia_hand_gazebo side="${side}" />
+    <xacro:sandia_hand_gazebo_controller side="${side}" />
     -->
-
+    <xacro:sandia_hand_gazebo side="${side}" />
   </xacro:macro>
 </robot>
 

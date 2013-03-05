@@ -90,6 +90,7 @@ void MotorModule::rxFingerStatus(const uint8_t *payload,
          p->fmcb_hall_tgt[0], p->fmcb_hall_tgt[1], p->fmcb_hall_tgt[2]);
   printf("hall positions: %d %d %d\n", 
          p->fmcb_hall_pos[0], p->fmcb_hall_pos[1], p->fmcb_hall_pos[2]);
+  printf("fmcb time: %d\n", p->fmcb_time);
   printf("\n");
 }
 

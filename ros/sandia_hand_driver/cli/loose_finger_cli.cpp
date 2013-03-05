@@ -89,9 +89,8 @@ int stream(int argc, char **argv, LooseFinger &lf)
   }
   while (!g_done)
   {
-    listen_loose_finger(0.5, lf);
+    listen_loose_finger(0.01, lf);
     lf.mm.pollFingerStatus();
-
   }
   lf.mm.setPhalangeAutopoll(false);
   return 0;

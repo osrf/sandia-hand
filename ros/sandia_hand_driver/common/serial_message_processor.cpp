@@ -6,9 +6,10 @@
 using namespace sandia_hand;
 
 SerialMessageProcessor::SerialMessageProcessor(const uint8_t addr)
-: addr_(addr), rx_pkt_addr_(0), rx_pkt_type_(0), rx_pkt_write_idx_(0),
+: print_parser_debris_(false), 
+  addr_(addr), rx_pkt_addr_(0), rx_pkt_type_(0), rx_pkt_write_idx_(0),
   rx_pkt_len_(0), rx_pkt_crc_(0), rx_pkt_parser_state_(ST_IDLE),
-  listen_pkt_type_(0), print_parser_debris_(false)
+  listen_pkt_type_(0)
 {
   outgoing_packet_.resize(MAX_PACKET_LENGTH);
   registerRxHandler(PKT_PING, boost::bind(&SerialMessageProcessor::rxPing, 

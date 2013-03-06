@@ -32,6 +32,7 @@ public:
 protected:
   static const uint32_t MAX_PACKET_LENGTH = 512;
   RawTxFunctor raw_tx_;
+  bool print_parser_debris_;
   uint8_t *getTxBuffer();
   bool sendTxBuffer(const uint8_t pkt_id, uint16_t payload_len = 0);
   bool listenFor(const uint8_t listen_pkt_type, const float max_seconds);
@@ -45,7 +46,6 @@ protected:
   void serializeUint32(const uint32_t x, uint8_t *p);
   void serializeFloat32(const float x, uint8_t *p);
   void resetParser();
-  bool print_parser_debris_;
 
 private:
   uint8_t addr_;

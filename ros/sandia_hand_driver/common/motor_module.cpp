@@ -3,12 +3,15 @@
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 using namespace sandia_hand;
+using std::vector;
 
 MotorModule::MotorModule(const uint8_t addr)
 : SerialMessageProcessor(addr)
 {
   registerRxHandler(PKT_FINGER_STATUS, 
                     boost::bind(&MotorModule::rxFingerStatus, this, _1, _2));
+  registerRxHandler(PKT_PHALANGE_TXRX,
+                    boost::bind(&MotorModule::rxPhalangeTxRx, this, _1, _2));
 }
 
 MotorModule::~MotorModule()
@@ -25,7 +28,6 @@ bool MotorModule::setPhalangeBusPower(bool on)
 
 bool MotorModule::setPhalangeAutopoll(bool on)
 {
-  // this doesn't do anything yet :(
   getTxBuffer()[0] = on ? 1 : 0;
   if (!sendTxBuffer(PKT_PHALANGE_AUTOPOLL, 1))
     return false;
@@ -99,5 +101,41 @@ bool MotorModule::pollFingerStatus()
   if (!sendTxBuffer(PKT_FINGER_STATUS, 0))
     return false;
   return listenFor(PKT_FINGER_STATUS, 0.5);
+}
+
+bool MotorModule::phalangeTxRx(const uint8_t *data, const uint16_t data_len)
+{
+  if (!data || data_len > MAX_PACKET_LENGTH - 10)
+    return false;
+  serializeUint16(data_len, getTxBuffer());
+  serializeUint16(10, getTxBuffer()+2);
+  memcpy(getTxBuffer()+4, data, data_len);
+  return sendTxBuffer(PKT_PHALANGE_TXRX, data_len + 4);
+}
+/*  
+                               const uint16_t timeout_ms)
+  if (listenFor(PKT_PHALANGE_TXRX, 0.1f + 0.001f * timeout_ms))
+  {
+    printf("phalange last payload: %d bytes\n", (int)phalange_rx.size());
+    return true;
+  }
+  printf("no response to phalange txrx\n");
+  return false;
+}
+*/
+
+void MotorModule::rxPhalangeTxRx(const uint8_t *data, const uint16_t data_len)
+{
+  uint16_t pkt_load = deserializeUint16(data);
+  if (pkt_load >= MAX_PACKET_LENGTH || pkt_load > data_len - 2) // sanity check
+    return;
+  for (vector<RxFunctor>::iterator it = phalange_rx_functors.begin();
+       it != phalange_rx_functors.end(); ++it)
+    (*it)(data + 2, pkt_load); // neato
+}
+
+void MotorModule::addPhalangeRxFunctor(RxFunctor f)
+{
+  phalange_rx_functors.push_back(f);
 }
 

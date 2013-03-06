@@ -2,6 +2,7 @@
 #define SANDIA_HAND_FINGER_H
 
 #include "sandia_hand/motor_module.h"
+#include "sandia_hand/proximal_phalange.h"
 
 namespace sandia_hand
 {
@@ -13,6 +14,7 @@ public:
   virtual ~Finger();
 
   MotorModule mm;
+  ProximalPhalange pp;
 };
 
 }

@@ -96,6 +96,125 @@ int stream(int argc, char **argv, LooseFinger &lf)
   return 0;
 }
 
+int pping(int argc, char **argv, LooseFinger &lf)
+{
+  if (lf.pp.ping())
+    printf("proximal phalange ping ok\n");
+  else
+    printf("proximal phalange ping fail\n");
+  return 0;
+}
+
+int pdump(int argc, char **argv, LooseFinger &lf)
+{
+  printf("powering down phalange bus...\n");
+  lf.mm.setPhalangeBusPower(false);
+  listen_loose_finger(1.0, lf);
+  printf("powering up phalange bus...\n");
+  lf.mm.setPhalangeBusPower(true);
+  listen_loose_finger(2.0, lf);
+  if (lf.pp.blHaltAutoboot())
+    printf("autoboot halted\n");
+  else
+    printf("couldn't halt autoboot\n");
+  FILE *f = fopen("image.bin", "wb");
+  for (int page_num = 0; page_num < 16; page_num++)
+  {
+    bool page_read = false;
+    for (int attempt = 0; !page_read && attempt < 10; attempt++)
+    {
+      printf("reading page %d attempt %d...\n", page_num, attempt);
+      uint8_t page_buf[1024] = {0};
+      if (lf.pp.blReadFlashPage(page_num, page_buf))
+      {
+        printf("read page 32:\n");
+        page_read = true;
+        if (256 != fwrite(page_buf, 1, 256, f))
+        {
+          printf("weird fwrite result\n");
+        }
+      }
+      /*
+      for (int i = 0; i < 256; i++)
+      {
+        printf("%02x  ", page_buf[i]);
+        if (i % 8 == 7)
+          printf("\n");
+      }
+      printf("\n");
+      */
+    }
+    if (!page_read)
+    {
+      printf("couldn't read page %d\n", page_num);
+      break;
+    }
+  }
+  if (lf.pp.blBoot())
+    printf("booted proximal phalange\n");
+  else
+    printf("failed to boot proximal phalange\n");
+  return 0;
+}
+
+int pburn(int argc, char **argv, LooseFinger &lf)
+{
+  verify_argc(argc, 4, "usage: pburn FILENAME");
+  const char *fn = argv[3];
+  printf("burning binary image %s to proximal phalange...\n", fn);
+  FILE *f = fopen(fn, "rb");
+  if (!f)
+  {
+    printf("couldn't open file %s\n", fn);
+    return 1;
+  }
+  if (fseek(f, 32 * 256, SEEK_SET))
+  {
+    printf("couldn't seek to application image in %s\n", fn);
+    return 1;
+  }
+  printf("powering down phalange bus...\n");
+  lf.mm.setPhalangeBusPower(false);
+  listen_loose_finger(1.0, lf);
+  printf("powering up phalange bus...\n");
+  lf.mm.setPhalangeBusPower(true);
+  listen_loose_finger(2.0, lf);
+  if (!lf.pp.blHaltAutoboot())
+  {
+    printf("couldn't halt autoboot\n");
+    return 1;
+  }
+  printf("autoboot halted\n");
+  for (int page_num = 32; !g_done && !feof(f) && page_num < 256; page_num++)
+  {
+    bool page_written = false;
+    uint8_t page_buf[1024] = {0};
+    size_t nread = 0;
+    nread = fread(page_buf, 1, 256, f);
+    if (nread <= 0)
+    {
+      printf("couldn't read a flash page from %s: returned %d\n", 
+             fn, (int)nread);
+      break;
+    }
+    else if (nread < 256)
+      printf("partial page: %d bytes, hopefully last flash page?\n", 
+             (int)nread);
+    if (lf.pp.blWriteFlashPage(page_num, page_buf, false))
+      page_written = true;
+    if (!page_written)
+    {
+      printf("couldn't write page %d\n", page_num);
+      break;
+    }
+  }
+  if (lf.pp.blBoot())
+    printf("booted proximal phalange\n");
+  else
+    printf("failed to boot proximal phalange\n");
+  return 0;
+}
+
 /*
 int set_finger_control_mode(int argc, char **argv, Hand &hand)
 {
@@ -183,6 +302,12 @@ int main(int argc, char **argv)
     return stream(argc, argv, lf);
   if (!strcmp(cmd, "pb"))
     return pb(argc, argv, lf);
+  if (!strcmp(cmd, "pping"))
+    return pping(argc, argv, lf);
+  if (!strcmp(cmd, "pdump"))
+    return pdump(argc, argv, lf);
+  if (!strcmp(cmd, "pburn"))
+    return pburn(argc, argv, lf);
   printf("unknown command: [%s]\n", cmd);
   return 1;
 }

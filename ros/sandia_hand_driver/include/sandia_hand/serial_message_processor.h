@@ -23,15 +23,31 @@ public:
   bool ping();
   typedef boost::function<void(const float)> ListenFunctor;
   void registerListenHandler(ListenFunctor functor);
+  bool blHaltAutoboot();
+  bool blBoot();
+  bool blReadFlashPage(const uint16_t page_num, uint8_t *page_buf);
+  bool blWriteFlashPage(const uint16_t page_num, const uint8_t *page_buf, 
+                        bool chop);
 
 protected:
+  static const uint32_t MAX_PACKET_LENGTH = 512;
   RawTxFunctor raw_tx_;
   uint8_t *getTxBuffer();
-  bool sendTxBuffer(const uint8_t pkt_id, uint16_t payload_len);
+  bool sendTxBuffer(const uint8_t pkt_id, uint16_t payload_len = 0);
   bool listenFor(const uint8_t listen_pkt_type, const float max_seconds);
   void stopListening();
+
+  uint16_t deserializeUint16(const uint8_t *p);
+  uint32_t deserializeUint32(const uint8_t *p);
+  float    deserializeFloat32(const uint8_t *p);
+  void serializeUint16(const uint16_t x, uint8_t *p);
+  void serializeInt16 (const  int16_t x, uint8_t *p);
+  void serializeUint32(const uint32_t x, uint8_t *p);
+  void serializeFloat32(const float x, uint8_t *p);
+  void resetParser();
+  bool print_parser_debris_;
+
 private:
-  static const uint32_t MAX_PACKET_LENGTH = 512;
   uint8_t addr_;
   uint8_t rx_pkt_addr_, rx_pkt_type_;
   uint16_t rx_pkt_write_idx_, rx_pkt_len_, rx_pkt_crc_;
@@ -40,7 +56,13 @@ private:
   std::vector<uint8_t> rx_pkt_data_;
   std::map<uint8_t, RxFunctor> rx_map_;
   std::vector<uint8_t> outgoing_packet_;
-  static const uint8_t  PKT_PING = 0x01;
+  static const uint8_t PKT_PING                  = 0x01;
+  static const uint8_t PKT_BL_HALT_AUTOBOOT      = 0x0c;
+  static const uint8_t PKT_BL_BOOT               = 0x08;
+  static const uint8_t PKT_BL_READ_FLASH_PAGE    = 0x0a;
+  static const uint8_t PKT_BL_WRITE_FLASH_PAGE   = 0x0b;
+  static const uint8_t PKT_BL_SET_FLASH_BUF_WORD = 0x0d;
+  static const uint8_t PKT_BL_WRITE_FLASH_BUF    = 0x0e;
   void rxPing(const uint8_t *payload, const uint16_t payload_len);
   void rxByte(const uint8_t b);
   ListenFunctor listen_functor_;

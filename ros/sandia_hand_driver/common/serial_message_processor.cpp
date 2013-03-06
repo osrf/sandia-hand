@@ -299,6 +299,13 @@ bool SerialMessageProcessor::blBoot()
   return listenFor(PKT_BL_BOOT, 0.5);
 }
 
+bool SerialMessageProcessor::reset()
+{
+  if (!sendTxBuffer(PKT_RESET))
+    return false;
+  return listenFor(PKT_RESET, 0.5);
+}
+
 bool SerialMessageProcessor::blReadFlashPage(const uint16_t page_num, 
                                              uint8_t *page_buf)
 {

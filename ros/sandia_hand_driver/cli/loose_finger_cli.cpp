@@ -215,68 +215,232 @@ int pburn(int argc, char **argv, LooseFinger &lf)
   return 0;
 }
 
-/*
-int set_finger_control_mode(int argc, char **argv, Hand &hand)
+int dping(int argc, char **argv, LooseFinger &lf)
 {
-  verify_argc(argc, 4, "usage: hand_cli fcm FINGER_IDX CONTROL_MODE\n"
-                       "  where CONTROL_MODE = {idle, joint_pos}\n");
-  uint8_t finger_idx = 0;
-  parse_finger_idx(finger_idx, argv[2]);
-  const char *fcm_str = argv[3];
-  Hand::FingerControlMode fcm;
-  if (!strcmp(fcm_str, "idle"))
-    fcm = Hand::FCM_IDLE;
-  else if (!strcmp(fcm_str, "joint_pos"))
-    fcm = Hand::FCM_JOINT_POS;
+  if (lf.dp.ping())
+    printf("distal phalange ping ok\n");
   else
+    printf("distal phalange ping fail\n");
+  return 0;
+}
+
+int ddump(int argc, char **argv, LooseFinger &lf)
+{
+  printf("powering down phalange bus...\n");
+  lf.mm.setPhalangeBusPower(false);
+  listen_loose_finger(1.0, lf);
+  printf("powering up phalange bus...\n");
+  lf.mm.setPhalangeBusPower(true);
+  listen_loose_finger(2.0, lf);
+  if (lf.dp.blHaltAutoboot())
+    printf("distal autoboot halted\n");
+  else
+    printf("couldn't halt distal autoboot\n");
+  FILE *f = fopen("image.bin", "wb");
+  for (int page_num = 0; page_num < 16; page_num++)
   {
-    printf("unrecognized finger control state [%s]\n", fcm_str);
-    printf("finger control state must be in {idle, joint_pos}\n");
+    bool page_read = false;
+    for (int attempt = 0; !page_read && attempt < 10; attempt++)
+    {
+      printf("reading page %d attempt %d...\n", page_num, attempt);
+      uint8_t page_buf[1024] = {0};
+      if (lf.dp.blReadFlashPage(page_num, page_buf))
+      {
+        printf("read page 32:\n");
+        page_read = true;
+        if (256 != fwrite(page_buf, 1, 256, f))
+        {
+          printf("weird fwrite result\n");
+        }
+      }
+      /*
+      for (int i = 0; i < 256; i++)
+      {
+        printf("%02x  ", page_buf[i]);
+        if (i % 8 == 7)
+          printf("\n");
+      }
+      printf("\n");
+      */
+    }
+    if (!page_read)
+    {
+      printf("couldn't read page %d\n", page_num);
+      break;
+    }
+  }
+  if (lf.dp.blBoot())
+    printf("booted distal phalange\n");
+  else
+    printf("failed to boot distal phalange\n");
+  return 0;
+}
+
+int dburn(int argc, char **argv, LooseFinger &lf)
+{
+  verify_argc(argc, 4, "usage: dburn FILENAME");
+  const char *fn = argv[3];
+  printf("burning binary image %s to distal phalange...\n", fn);
+  FILE *f = fopen(fn, "rb");
+  if (!f)
+  {
+    printf("couldn't open file %s\n", fn);
     return 1;
   }
-  hand.setFingerControlMode(finger_idx, fcm);
+  if (fseek(f, 32 * 256, SEEK_SET))
+  {
+    printf("couldn't seek to application image in %s\n", fn);
+    return 1;
+  }
+  printf("powering down phalange bus...\n");
+  lf.mm.setPhalangeBusPower(false);
+  listen_loose_finger(1.0, lf);
+  printf("powering up phalange bus...\n");
+  lf.mm.setPhalangeBusPower(true);
+  listen_loose_finger(2.0, lf);
+  if (!lf.dp.blHaltAutoboot())
+  {
+    printf("couldn't halt distal autoboot\n");
+    return 1;
+  }
+  printf("distal autoboot halted\n");
+  for (int page_num = 32; !g_done && !feof(f) && page_num < 256; page_num++)
+  {
+    bool page_written = false;
+    uint8_t page_buf[1024] = {0};
+    size_t nread = 0;
+    nread = fread(page_buf, 1, 256, f);
+    if (nread <= 0)
+    {
+      printf("couldn't read a flash page from %s: returned %d\n", 
+             fn, (int)nread);
+      break;
+    }
+    else if (nread < 256)
+      printf("partial page: %d bytes, hopefully last flash page?\n", 
+             (int)nread);
+    if (lf.dp.blWriteFlashPage(page_num, page_buf, false))
+      page_written = true;
+    if (!page_written)
+    {
+      printf("couldn't write page %d\n", page_num);
+      break;
+    }
+  }
+  if (lf.dp.blBoot())
+    printf("booted distal phalange\n");
+  else
+    printf("failed to boot distal phalange\n");
   return 0;
 }
 
-int set_joint_position(int argc, char **argv, Hand &hand)
+int dump(int argc, char **argv, LooseFinger &lf)
 {
-  verify_argc(argc, 6, "usage: hand_cli jp FINGER_IDX J0 J1 J2\n");
-  uint8_t finger_idx = 0;
-  parse_finger_idx(finger_idx, argv[2]);
-  float j0 = atof(argv[3]), j1 = atof(argv[4]), j2 = atof(argv[5]);
-  hand.setFingerJointPos(finger_idx, j0, j1, j2);
+  printf("resetting motor module...\n");
+  lf.mm.reset();
+  listen_loose_finger(2.0, lf);
+  if (lf.mm.blHaltAutoboot())
+    printf("motor module autoboot halted\n");
+  else
+    printf("couldn't halt motor module autoboot\n");
+  FILE *f = fopen("image.bin", "wb");
+  for (int page_num = 0; page_num < 256; page_num++)
+  {
+    bool page_read = false;
+    for (int attempt = 0; !page_read && attempt < 10; attempt++)
+    {
+      printf("reading page %d attempt %d...\n", page_num, attempt);
+      uint8_t page_buf[1024] = {0};
+      if (lf.mm.blReadFlashPage(page_num, page_buf))
+      {
+        printf("read page 32:\n");
+        page_read = true;
+        if (256 != fwrite(page_buf, 1, 256, f))
+        {
+          printf("weird fwrite result\n");
+        }
+      }
+      /*
+      for (int i = 0; i < 256; i++)
+      {
+        printf("%02x  ", page_buf[i]);
+        if (i % 8 == 7)
+          printf("\n");
+      }
+      printf("\n");
+      */
+    }
+    if (!page_read)
+    {
+      printf("couldn't read page %d\n", page_num);
+      break;
+    }
+  }
+  /*
+  if (lf.mm.blBoot())
+    printf("booted motor module\n");
+  else
+    printf("failed to boot motor module\n");
+  */
   return 0;
 }
 
-int test_finger_stream(int argc, char **argv, Hand &hand)
+int burn(int argc, char **argv, LooseFinger &lf)
 {
-  hand.registerRxHandler(CMD_ID_MOBO_STATUS, mobo_status_rx);
-  //printf("turning on mobo status streaming...\n");
-  //hand.setMoboStatusHz(100);
-  //listen_hand(1.0, hand);
-  printf("powering finger sockets...\n");
-  hand.setAllFingerPowers(Hand::FPS_LOW);
-  listen_hand(0.5, hand);
-  hand.setAllFingerPowers(Hand::FPS_FULL);
-  listen_hand(4.0, hand);
-  printf("turning on phalange bus...\n");
-  hand.fingers[0].mm.setPhalangeBusPower(true);
-  listen_hand(4.0, hand);
-  hand.fingers[0].mm.setPhalangeAutopoll(true);
-
-  printf("turning on finger streaming...\n");
-  hand.setFingerAutopollHz(1);
-  while (!g_done)
-    listen_hand(0.1, hand);
-  printf("turning off finger power...\n");
-  hand.setAllFingerPowers(Hand::FPS_OFF);
-  //hand.setMoboStatusHz(0);
-  hand.setFingerAutopollHz(0);
-  usleep(200000);
-  printf("bye\n");
+  verify_argc(argc, 4, "usage: burn FILENAME");
+  const char *fn = argv[3];
+  printf("burning binary image %s to motor module...\n", fn);
+  FILE *f = fopen(fn, "rb");
+  if (!f)
+  {
+    printf("couldn't open file %s\n", fn);
+    return 1;
+  }
+  if (fseek(f, 32 * 256, SEEK_SET))
+  {
+    printf("couldn't seek to application image in %s\n", fn);
+    return 1;
+  }
+  printf("resetting motor module...\n");
+  lf.mm.reset();
+  listen_loose_finger(2.0, lf);
+  if (!lf.mm.blHaltAutoboot())
+  {
+    printf("couldn't halt motor module autoboot\n");
+    return 1;
+  }
+  printf("distal autoboot halted\n");
+  for (int page_num = 32; !g_done && !feof(f) && page_num < 256; page_num++)
+  {
+    bool page_written = false;
+    uint8_t page_buf[1024] = {0};
+    size_t nread = 0;
+    nread = fread(page_buf, 1, 256, f);
+    if (nread <= 0)
+    {
+      printf("couldn't read a flash page from %s: returned %d\n", 
+             fn, (int)nread);
+      break;
+    }
+    else if (nread < 256)
+      printf("partial page: %d bytes, hopefully last flash page?\n", 
+             (int)nread);
+    if (lf.mm.blWriteFlashPage(page_num, page_buf, false))
+      page_written = true;
+    if (!page_written)
+    {
+      printf("couldn't write page %d\n", page_num);
+      break;
+    }
+  }
+  if (lf.mm.blBoot())
+    printf("booted motor module\n");
+  else
+    printf("failed to boot motor module\n");
   return 0;
 }
-*/
+
+
 
 int main(int argc, char **argv)
 {
@@ -308,6 +472,17 @@ int main(int argc, char **argv)
     return pdump(argc, argv, lf);
   if (!strcmp(cmd, "pburn"))
     return pburn(argc, argv, lf);
+  if (!strcmp(cmd, "dping"))
+    return dping(argc, argv, lf);
+  if (!strcmp(cmd, "ddump"))
+    return ddump(argc, argv, lf);
+  if (!strcmp(cmd, "dburn"))
+    return dburn(argc, argv, lf);
+  if (!strcmp(cmd, "dump"))
+    return dump(argc, argv, lf);
+  if (!strcmp(cmd, "burn"))
+    return burn(argc, argv, lf);
+
   printf("unknown command: [%s]\n", cmd);
   return 1;
 }

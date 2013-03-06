@@ -3,6 +3,7 @@
 
 #include "sandia_hand/motor_module.h"
 #include "sandia_hand/proximal_phalange.h"
+#include "sandia_hand/distal_phalange.h"
 
 namespace sandia_hand
 {
@@ -15,6 +16,7 @@ public:
 
   MotorModule mm;
   ProximalPhalange pp;
+  DistalPhalange dp;
 };
 
 }

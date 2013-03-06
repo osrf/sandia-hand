@@ -28,6 +28,7 @@ public:
   bool blReadFlashPage(const uint16_t page_num, uint8_t *page_buf);
   bool blWriteFlashPage(const uint16_t page_num, const uint8_t *page_buf, 
                         bool chop);
+  bool reset();
 
 protected:
   static const uint32_t MAX_PACKET_LENGTH = 512;
@@ -59,6 +60,7 @@ private:
   static const uint8_t PKT_PING                  = 0x01;
   static const uint8_t PKT_BL_HALT_AUTOBOOT      = 0x0c;
   static const uint8_t PKT_BL_BOOT               = 0x08;
+  static const uint8_t PKT_RESET                 = 0x09;
   static const uint8_t PKT_BL_READ_FLASH_PAGE    = 0x0a;
   static const uint8_t PKT_BL_WRITE_FLASH_PAGE   = 0x0b;
   static const uint8_t PKT_BL_SET_FLASH_BUF_WORD = 0x0d;

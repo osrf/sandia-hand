@@ -7,7 +7,9 @@ Finger::Finger()
 : mm(10)
 {
   mm.addPhalangeRxFunctor(boost::bind(&ProximalPhalange::rx, &pp, _1, _2));
+  mm.addPhalangeRxFunctor(boost::bind(&DistalPhalange::rx, &dp, _1, _2));
   pp.setRawTx(boost::bind(&MotorModule::phalangeTxRx, &mm, _1, _2));
+  dp.setRawTx(boost::bind(&MotorModule::phalangeTxRx, &mm, _1, _2));
 }
 
 Finger::~Finger()

@@ -3,44 +3,16 @@
 
 const int __attribute__((section (".rs485_addr"))) g_rs485_addr = 1;
 
-void bl_init()
-{
-  PMC->PMC_PCER0 = (1 << ID_PIOA) | (1 << ID_PIOB) | (1 << ID_PIOC) |
-                   (1 << ID_USART0);
-  PIOA->PIO_CODR = PIOA->PIO_OER = PIOA->PIO_PER = PIO_PA22; // led
-  PIOC->PIO_CODR = PIOC->PIO_OER = PIOC->PIO_PER = PIO_PC9;  // rs485 DE
-  PIOA->PIO_OER  =  PIO_PA22;
-  PIOA->PIO_PDR  = PIO_PA5A_RXD0 | PIO_PA6A_TXD0;
-  PIOA->PIO_ABCDSR[0] &= ~(PIO_PA5A_RXD0 | PIO_PA6A_TXD0);
-  PIOA->PIO_ABCDSR[1] &= ~(PIO_PA5A_RXD0 | PIO_PA6A_TXD0);
-  USART0->US_CR = US_CR_RSTRX | US_CR_RSTTX |
-                  US_CR_RXDIS | US_CR_TXDIS; // reset uart
-  USART0->US_MR = US_MR_CHRL_8_BIT | US_MR_PAR_NO |
-                  US_MR_MAN | US_MR_OVER | US_MR_MODSYNC;
-                  USART0->US_BRGR = 64000000 / 2000000 / 16;
-  USART0->US_MAN = US_MAN_TX_PL(1) | US_MAN_TX_PP_ALL_ONE |
-                   US_MAN_RX_PL(1) | US_MAN_RX_PP_ALL_ONE |
-                   US_MAN_TX_MPOL | US_MAN_RX_MPOL |
-                   US_MAN_DRIFT | US_MAN_STUCKTO1;
-  USART0->US_PTCR = US_PTCR_RXTDIS | US_PTCR_TXTDIS; // disable DMA
-  USART0->US_CR = US_CR_TXEN | US_CR_RXEN; // enable TX and RX
-}
+#define BL_LED_PIO           PIOA
+#define BL_LED_PIN           PIO_PA22
 
-void bl_led(bl_led_state_t state)
-{   
-  switch (state)
-  {
-    case BL_LED_OFF: PIOA->PIO_CODR = PIO_PA22; break;
-    case BL_LED_ON : PIOA->PIO_SODR = PIO_PA22; break;
-    case BL_LED_TOGGLE:
-      if (PIOA->PIO_ODSR & PIO_PA22)
-        PIOA->PIO_CODR = PIO_PA22; 
-      else
-        PIOA->PIO_SODR = PIO_PA22;
-      break;
-    default: break;
-  }
-} 
+#define BL_USART_IDX         0
+#define BL_RS485_DE_PIO      PIOC
+#define BL_RS485_DE_PIN      PIO_PC9
+#define BL_RS485_MANCHESTER
+
+#include "bl_led.c"
+#include "bl_init.c"
 
 int bl_uart_byte_ready()
 {

@@ -2,9 +2,12 @@
 
 #define MAKE_ID(NAME) ID_ ## NAME
 
-#if BL_USART_IDX == 0
+#if   BL_USART_IDX == 0
   #define BL_USART    USART0
   #define BL_USART_ID ID_USART0
+#elif BL_USART_IDX == 1
+  #define BL_USART    USART1
+  #define BL_USART_ID ID_USART1
 #else
   #error unhandled BL_USART definition.
 #endif
@@ -33,6 +36,10 @@ void bl_init()
   PIOA->PIO_PDR  = PIO_PA5A_RXD0 | PIO_PA6A_TXD0;
   PIOA->PIO_ABCDSR[0] &= ~(PIO_PA5A_RXD0 | PIO_PA6A_TXD0);
   PIOA->PIO_ABCDSR[1] &= ~(PIO_PA5A_RXD0 | PIO_PA6A_TXD0);
+#elif BL_USART_IDX == 1
+  PIOA->PIO_PDR  = PIO_PA21A_RXD1 | PIO_PA22A_TXD1;
+  PIOA->PIO_ABCDSR[0] &= ~(PIO_PA21A_RXD1 | PIO_PA22A_TXD1);
+  PIOA->PIO_ABCDSR[1] &= ~(PIO_PA21A_RXD1 | PIO_PA22A_TXD1);
 #endif
 
 #ifdef BL_RS485_MANCHESTER

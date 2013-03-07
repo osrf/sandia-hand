@@ -27,56 +27,12 @@
 
 #define BL_LED_PIO PIOA
 #define BL_LED_PIN 23
-#define BL_RS485_DE_PIO PIOB
-#define BL_RS485_DE_PIN 25
-#define PIN_A_RS485_RO 12
-#define PIN_A_RS485_DI 13
 
-// make up something for the motherboard...
-#define RS485_ADDRESS 20
+extern uint32_t _sfixed, _szero, _ezero;
+bool write_flash_page(uint16_t page_num, uint8_t *data, uint8_t *write_error);
 
-#if (!defined(BL_LED_PIO) || !defined(BL_LED_PIN))
-  #error bootloader LED port or pin not defined
-#endif
-
-#if (!defined(BL_RS485_DE_PIO) || !defined(BL_RS485_DE_PIN))
-  #error bootloader rs485 driver-enable port not defined
-#endif
-
-extern uint32_t _bl_sfixed;
-extern uint32_t _bl_szero;
-extern uint32_t _bl_ezero;
-void bl_main() __attribute__ ((section (".bl_text")));
-//void bl_rs485_send_block() __attribute__ ((section (".bl_text")));
-void bl_rs485_send_packet(uint8_t pkt_type, uint16_t payload_len) 
-       __attribute__ ((section (".bl_text")));
-void bl_rs485_handle_byte(uint8_t b) __attribute__ ((section (".bl_text")));
-void bl_rs485_process_packet() __attribute__ ((section (".bl_text")));
-//void bl_disable_irq() __attribute__ ((section(".bl_text")));
-//void bl_nvic_disable_irq(IRQn_Type IRQn) __attribute__ ((section(".bl_text")));
-bool bl_write_flash_page(uint16_t page_num, uint8_t *data, uint8_t *write_error) __attribute__ ((section(".bl_text")));
-int __attribute__((section (".bl_id"))) g_bl_rs485_address = RS485_ADDRESS;
-uint8_t  __attribute__((section (".bl_bss"))) __attribute__((aligned(16))) bl_pkt_data[MAX_BL_RX_LEN];
-uint8_t  __attribute__((section (".bl_bss"))) __attribute__((aligned(16))) bl_tx_pkt_buf[MAX_BL_TX_LEN];
-
-enum bl_parser_state_t { BL_ST_IDLE = 0, BL_ST_HEADER = 1,
-                                BL_ST_ADDRESS = 2, BL_ST_LEN_1 = 3,
-                                BL_ST_LEN_2 = 4, BL_ST_TYPE = 5,
-                                BL_ST_DATA = 6, BL_ST_CRC_1 = 7,
-                                BL_ST_CRC_2 = 8 };
-static enum bl_parser_state_t __attribute__((section(".bl_bss"))) bl_parser_state;
-static uint32_t __attribute__((section(".bl_bss"))) bl_pkt_start_time;
-//static uint8_t  __attribute__((section(".bl_bss"))) bl_pkt_streaming;
-static uint8_t  __attribute__((section(".bl_bss"))) bl_pkt_addr;
-static uint16_t __attribute__((section(".bl_bss"))) bl_pkt_len;
-static uint8_t  __attribute__((section(".bl_bss"))) bl_pkt_type;
-static uint16_t __attribute__((section(".bl_bss"))) bl_pkt_write_idx;
-static uint16_t __attribute__((section(".bl_bss"))) bl_pkt_crc;
-static int      __attribute__((section(".bl_bss"))) bl_boot_requested;
-static int      __attribute__((section(".bl_bss"))) bl_autoboot_countdown;
-static int      __attribute__((section(".bl_bss"))) bl_autoboot_enabled;
-static uint8_t  __attribute__((section(".bl_bss"))) bl_flash_page_buf[256];
-static uint8_t  __attribute__((section(".bl_bss"))) bl_flash_word_ready[64];
+static int      g_boot_requested, g_autoboot_countdown, g_autoboot_enabled;
+static uint8_t  g_flash_page_buf[256];
 
 void bl_main() 
 {

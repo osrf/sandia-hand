@@ -12,11 +12,9 @@ SECTIONS
     .text 0x400000 :
     {
       . = ALIGN(4);
-      _bl_sfixed = .;
-      KEEP(*bootloader_startup.o(*.text))
-      KEEP(*(.text*))  /**bootloader.o(.bl_text))*/
-      /*KEEP(*bl_text .bl_text.*)*/
-      /*KEEP(*(.bl_id))*/
+      _sfixed = .;
+      KEEP(*bl_sam3s_startup.S.o(*.text))
+      KEEP(*(.text*))  
       . = 0x1ffc;
       _sid = .;
       KEEP(*(.rs485_addr))

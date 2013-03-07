@@ -50,7 +50,7 @@ endif()
 #add_custom_target(openocd_build
 #                  ALL DEPENDS ${OPENOCD_PATH}/bin/openocd)
 
-set(CMAKE_SYSTEM_NAME arm_baremetal)
+set(CMAKE_SYSTEM_NAME arm_baremetal) # heavy metal = awesome
 set(CMAKE_SYSTEM_VERSION 1)
 set(CMAKE_C_COMPILER ${ARM_GCC_ROOT}/bin/arm-none-eabi-gcc)
 set(CMAKE_ASM_COMPILER ${ARM_GCC_ROOT}/bin/arm-none-eabi-gcc)
@@ -60,7 +60,7 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)  # search only target
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)  # search only target
 set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 set(CMAKE_C_FLAGS "-O2 -std=c99 -g -mcpu=cortex-m3 -mthumb -Dprintf=iprintf")
-set(CMAKE_AS_FLAGS "-mcpu=cortex-m3 -mthumb -g")
+set(CMAKE_ASM_FLAGS "-mcpu=cortex-m3 -mthumb -g")
 set(SAM3X_APPLICATION_FLAGS "-g -mthumb -mcpu=cortex-m3 -T\"${CMAKE_CURRENT_SOURCE_DIR}/common_sam3x/sam3x8e.ld\" -Wl,-Map=memory.map -Wl,--cref --entry=_bootloader_start -Wl,--no-gc-sections -Wl,--warn-common -Wl,--unresolved-symbols=report-all -Wl,--no-undefined -Wl,--start-group -lc -lgcc -Wl,--end-group")
 
 include_directories(asf-3.5.1_partial/sam/utils/cmsis/sam3x/include)

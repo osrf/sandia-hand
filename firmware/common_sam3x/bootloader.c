@@ -501,13 +501,10 @@ bool bl_write_flash_page(const uint16_t page_num, uint8_t *data, uint8_t *err)
     *write_addr++ = *read_addr++;
   while ((efc->EEFC_FSR & EEFC_FSR_FRDY) != EEFC_FSR_FRDY) { } // spin...
   // gratuitous hack to jump to the IAP function in ROM to write a flash page
-#define CHIP_FLASH_IAP_ADDRESS (IROM_ADDR + 8)
-  const static uint32_t (*IAP_PerformCommand)( uint32_t, uint32_t ) ;
-  IAP_PerformCommand = (uint32_t (*)( uint32_t, uint32_t )) *((uint32_t*)CHIP_FLASH_IAP_ADDRESS ) ;
-  IAP_PerformCommand(bank_id,
-                     EEFC_FCR_FKEY(0x5A) | 
-                     EEFC_FCR_FARG(page_num) | 
-                     EEFC_FCR_FCMD(0x03)); // erase and write page command
+  typedef uint32_t (*iap_fp)(uint32_t, uint32_t);
+  iap_fp iap = *((iap_fp *)(IROM_ADDR + 8)); // magic IAP pointer in ROM.
+  iap(bank_id, EEFC_FCR_FKEY(0x5A) | EEFC_FCR_FARG(page_num) | 
+               EEFC_FCR_FCMD(0x03));
   while ((efc->EEFC_FSR & EEFC_FSR_FRDY) != EEFC_FSR_FRDY) { } // spin...
   EFC0->EEFC_FMR = EEFC_FMR_FWS(3); // reset it so we can run faster now
   EFC1->EEFC_FMR = EEFC_FMR_FWS(3); // reset it so we can run faster now

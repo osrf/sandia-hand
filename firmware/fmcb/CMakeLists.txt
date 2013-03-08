@@ -2,6 +2,7 @@ set(CMAKE_C_LINK_FLAGS ${SAM3S_APP_LINK_FLAGS})
 add_definitions(-Dsam3s4)
 
 set(fmcb_apps minimal)
+#set(fmcb_apps minimal std)
 add_definitions(-Dsam3s4)
 include_directories(${PROJECT_SOURCE_DIR}/common_sam3s/include)
 

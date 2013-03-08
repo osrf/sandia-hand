@@ -83,11 +83,11 @@ void reset_vector()
   for ( pDest = &_szero ; pDest < &_ezero ; ) // wipe out bss
     *pDest++ = 0;
   pSrc = (uint32_t *)&_sfixed; // aim VTOR at the vector table
-  SCB->VTOR = ( (uint32_t)pSrc & SCB_VTOR_TBLOFF_Msk ) ;
+  SCB->VTOR = ((uint32_t)pSrc & SCB_VTOR_TBLOFF_Msk);
   if (((uint32_t)pSrc >= IRAM_ADDR) && ((uint32_t)pSrc < IRAM_ADDR+IRAM_SIZE))
     SCB->VTOR |= 1 << SCB_VTOR_TBLBASE_Pos ;
   __libc_init_array(); // set up libc
   main(); // finally, call main
-  while (1); // if main exits, hang out here.
+  while (1) { } // if main exits, hang out here.
 }
 

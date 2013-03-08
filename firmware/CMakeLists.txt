@@ -74,9 +74,11 @@ add_definitions(-DF_CPU=64000000) # todo: figure out a better system
 
 add_definitions(-DDONT_USE_CMSIS_INIT)
 add_subdirectory(common_sam3x)
+add_subdirectory(common_sam3s)
 add_subdirectory(mobo)
 add_subdirectory(bl_sam3s)
 add_subdirectory(fmcb)
+add_subdirectory(f2)
 
 #add_custom_target(load_fpga
 #                  COMMAND . ${ISEDIR}/settings64.sh && impact -b ${ARM_GCC_ROOT}/bin/arm-none-eabi-gdb ${CMAKE_CURRENT_BINARY_DIR}/mobo_mcu.elf)

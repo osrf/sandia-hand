@@ -83,7 +83,7 @@ void rs485_init()
   NVIC_SetPriority(USART0_IRQn, 1);
   NVIC_EnableIRQ(USART0_IRQn);
   PIO_Clear(&pin_rs485_de);
-  g_rs485_address = *((uint32_t *)&_sid);
+  g_rs485_address = *((uint32_t *)0x0401ffc); // magic, defined in bootloader
 }
 
 void rs485_send_block(uint8_t *block, uint32_t len)

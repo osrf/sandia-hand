@@ -7,54 +7,31 @@
 #include "i2c_sensors.h"
 #include "adc.h"
 
-/* Stack Configuration */  
 #define STACK_SIZE       0x2000     /** Stack size (in DWords) */
 __attribute__ ((aligned(8),section(".stack")))
 uint32_t pdwStack[STACK_SIZE] ;     
 
-/* Initialize segments */
-extern uint32_t _sfixed;
-extern uint32_t _efixed;
-extern uint32_t _etext;
-extern uint32_t _srelocate;
-extern uint32_t _erelocate;
-extern uint32_t _szero;
-extern uint32_t _ezero;
+extern uint32_t _sfixed, _efixed, _etext;
+extern uint32_t _srelocate, _erelocate, _szero, _ezero;
 
 extern int main( void ) ;
 extern void rs485_irq(void);
-extern void usart1_irq(void);
-extern void mci_irq(void);
 extern void systick_irq(void);
-extern void adc_irq(void);
 
-void ResetException( void ) ;
+void reset_vector( void ) ;
 extern void __libc_init_array( void ) ;
-void unmapped_error(void);
 
 void unmapped_error(void)
 {
   while (1) { }
 }
 
-void (*NMI_Handler)(void)       = unmapped_error;
-void (*HardFault_Handler)(void) = unmapped_error;
-void (*MemManage_Handler)(void) = unmapped_error;
-
-
-/*------------------------------------------------------------------------------
- *         Exception Table
- *------------------------------------------------------------------------------*/
-
 typedef void (*IntFunc)(void);
 
 __attribute__((section(".vectors")))
 IntFunc exception_table[] = {
-
-    /* Configure Initial Stack Pointer, using linker-generated symbols */
     (IntFunc)(&pdwStack[STACK_SIZE-1]),
-    ResetException,
-    //0x004000d1,     //_bootloader_start,
+    reset_vector,
     unmapped_error, //NMI_Handler,
     unmapped_error, //HardFault_Handler,
     unmapped_error, //MemManage_Handler,
@@ -107,53 +84,23 @@ IntFunc exception_table[] = {
     unmapped_error, //IrqHandlerNotUsed   /* 35 not used */
 };
 
-/**
- * \brief This is the code that gets called on processor reset.
- * To initialize the device, and call the main() routine.
- */
-void ResetException( void )
+void reset_vector( void )
 {
-    uint32_t *pSrc, *pDest ;
-
-    /* Low level Initialize */
-    //LowLevelInit() ;
-    EFC->EEFC_FMR = EEFC_FMR_FWS(3);
-    // TODO: power up PLL, switch to main oscillator
-
-    /* Initialize the relocate segment */
-    pSrc = &_etext ;
-    pDest = &_srelocate ;
-
-    if ( pSrc != pDest )
-    {
-        for ( ; pDest < &_erelocate ; )
-        {
-            *pDest++ = *pSrc++ ;
-        }
-    }
-
-    /* Clear the zero segment */
-    for ( pDest = &_szero ; pDest < &_ezero ; )
-    {
-        *pDest++ = 0;
-    }
-
-    /* Set the vector table base address */
-    pSrc = (uint32_t *)&_sfixed;
-    SCB->VTOR = ( (uint32_t)pSrc & SCB_VTOR_TBLOFF_Msk ) ;
-    
-    if ( ((uint32_t)pSrc >= IRAM_ADDR) && ((uint32_t)pSrc < IRAM_ADDR+IRAM_SIZE) )
-    {
-	    SCB->VTOR |= 1 << SCB_VTOR_TBLBASE_Pos ;
-    }
-
-    /* Initialize the C library */
-    __libc_init_array() ;
-
-    /* Branch to main function */
-    main() ;
-
-    /* Infinite loop */
-    while ( 1 ) ;
+  uint32_t *pSrc, *pDest ;
+  EFC->EEFC_FMR = EEFC_FMR_FWS(3);
+  pSrc = &_etext;
+  pDest = &_srelocate;
+  if (pSrc != pDest)
+    for (; pDest < &_erelocate;)
+      *pDest++ = *pSrc++ ;
+  for (pDest = &_szero; pDest < &_ezero;)
+    *pDest++ = 0;
+  pSrc = (uint32_t *)&_sfixed;
+  SCB->VTOR = ((uint32_t)pSrc & SCB_VTOR_TBLOFF_Msk);
+  if (((uint32_t)pSrc >= IRAM_ADDR) && ((uint32_t)pSrc < IRAM_ADDR+IRAM_SIZE))
+    SCB->VTOR |= 1 << SCB_VTOR_TBLBASE_Pos;
+  __libc_init_array();
+  main();
+  while (1) { }
 }
 

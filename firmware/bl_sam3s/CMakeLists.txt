@@ -1,7 +1,6 @@
 set(CMAKE_C_LINK_FLAGS "-g -mthumb -mcpu=cortex-m3 -T\"${CMAKE_CURRENT_SOURCE_DIR}/bl_sam3s.ld\" -Wl,-Map=memory.map -Wl,--cref --entry=_bootloader_start -Wl,--no-gc-sections -Wl,--warn-common -Wl,--unresolved-symbols=report-all -Wl,--no-undefined -nostdlib")
 add_definitions(-Dsam3s4)
 include_directories(${PROJECT_SOURCE_DIR}/common_sam3s/include)
-set(SAM3S_OPENOCD_INIT ${OPENOCD} -f ${PROJECT_SOURCE_DIR}/openocd/jtagkey.cfg -f ${PROJECT_SOURCE_DIR}/openocd/sam3s.cfg -c init -c halt)
 
 set(bootloaders f2 f3 fmcb rpalm lpalm)
 foreach(bl ${bootloaders})

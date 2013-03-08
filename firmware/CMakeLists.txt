@@ -63,6 +63,10 @@ set(CMAKE_C_FLAGS "-O2 -std=c99 -g -mcpu=cortex-m3 -mthumb -Dprintf=iprintf")
 set(CMAKE_ASM_FLAGS "-mcpu=cortex-m3 -mthumb -g")
 set(SAM3X_APPLICATION_FLAGS "-g -mthumb -mcpu=cortex-m3 -T\"${CMAKE_CURRENT_SOURCE_DIR}/common_sam3x/sam3x8e.ld\" -Wl,-Map=memory.map -Wl,--cref --entry=_bootloader_start -Wl,--no-gc-sections -Wl,--warn-common -Wl,--unresolved-symbols=report-all -Wl,--no-undefined -Wl,--start-group -lc -lgcc -Wl,--end-group")
 
+# sam3s common stuff
+set(SAM3S_APP_LINK_FLAGS "-g -mthumb -mcpu=cortex-m3 -T\"${PROJECT_SOURCE_DIR}/common_sam3s/sam3s_app.ld\" -Wl,-Map=memory.map -Wl,--cref --entry=reset_vector -Wl,--no-gc-sections -Wl,--warn-common -Wl,--unresolved-symbols=report-all -Wl,--no-undefined")
+set(SAM3S_OPENOCD_INIT ${OPENOCD} -f ${PROJECT_SOURCE_DIR}/openocd/jtagkey.cfg -f ${PROJECT_SOURCE_DIR}/openocd/sam3s.cfg -c init -c halt)
+
 include_directories(asf-3.5.1_partial/sam/utils/cmsis/sam3x/include)
 include_directories(asf-3.5.1_partial/thirdparty/CMSIS/Include)
 include_directories(.)
@@ -72,6 +76,7 @@ add_definitions(-DDONT_USE_CMSIS_INIT)
 add_subdirectory(common_sam3x)
 add_subdirectory(mobo)
 add_subdirectory(bl_sam3s)
+add_subdirectory(fmcb)
 
 #add_custom_target(load_fpga
 #                  COMMAND . ${ISEDIR}/settings64.sh && impact -b ${ARM_GCC_ROOT}/bin/arm-none-eabi-gdb ${CMAKE_CURRENT_BINARY_DIR}/mobo_mcu.elf)

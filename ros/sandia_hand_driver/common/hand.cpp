@@ -4,6 +4,7 @@
 #include <cmath>
 #include <boost/bind.hpp>
 #include "sandia_hand/hand_packets.h"
+#include <ros/time.h>
 using namespace sandia_hand;
 
 Hand::Hand()
@@ -209,8 +210,11 @@ bool Hand::listen(const float max_seconds)
   FD_ZERO(&rdset);
   for (int i = 0; i < NUM_SOCKS; i++)
     FD_SET(*socks[i], &rdset);
-  if (select(*socks[NUM_SOCKS-1]+1, &rdset, NULL, NULL, &timeout) <= 0)
-    return false;
+  int rv = select(*socks[NUM_SOCKS-1]+1, &rdset, NULL, NULL, &timeout);
+  if (rv < 0)
+    return false; // select returned some error. need better way to bubble up
+  if (rv == 0)
+    return true; // no errors, but nothing happened. bail.
   for (int i = 0; i < NUM_SOCKS; i++)
     if (FD_ISSET(*socks[i], &rdset)) 
     {
@@ -312,5 +316,68 @@ bool Hand::pingFinger(const uint8_t finger_idx)
 void Hand::registerRxHandler(const uint32_t msg_id, RxFunctor f)
 {
   rx_map_[msg_id] = f;
+}
+
+bool Hand::programMotorModuleAppFile(const uint8_t finger_idx, FILE *bin_file)
+{
+  if (finger_idx >= 4 || !bin_file)
+    return false; // sanity check
+  // important! this function assumes that the FILE* is either created for
+  // application image space (0x040200) or it is already advanced via fseek() 
+  Finger *finger = &fingers[finger_idx];
+  // do a hard reset of the finger socket to ensure the bootloader is running
+  if (!setFingerPower(finger_idx, FPS_OFF)) return false;
+  if (!listenForDuration(1.0)) 
+  {
+    printf("couldn't listen\n");
+    return false; // wait for power caps to drain
+  }
+  if (!setFingerPower(finger_idx, FPS_LOW)) return false;
+  if (!listenForDuration(2.0)) return false; // wait for bootloader startup
+  if (!finger->mm.blHaltAutoboot())
+  {
+    printf("unable to halt autoboot\n");
+    return false;
+  }
+  printf("finger %d motor module autoboot halted.\n", finger_idx);
+  for (int page_num = 32; !feof(bin_file) && page_num < 1024; page_num++)
+  {
+    bool page_written = false;
+    uint8_t page_buf[256] = {0};
+    size_t nread = 0;
+    nread = fread(page_buf, 1, 256, bin_file);
+    if (nread == 0)
+    {
+      printf("couldn't read a flash page from FILE: returned %d\n",
+             (int)nread);
+      return false;
+    }
+    else if (nread < 256)
+      printf("partial page: %d bytes, hopefully last flash page?\n",
+             (int)nread);
+    if (finger->mm.blWriteFlashPage(page_num, page_buf, false))
+      page_written = true;
+    if (!page_written)
+    {
+      printf("couldn't write page %d\n", page_num);
+      return false;
+    }
+  }
+  if (!finger->mm.blBoot())
+  {
+    printf("failed to boot finger %d motor module\n", finger_idx);
+    return false;
+  }
+  printf("successfully booted finger %d motor module\n", finger_idx);
+  return true;
+}
+
+bool Hand::listenForDuration(float seconds)
+{
+  for (ros::Time t_start(ros::Time::now()); 
+       (ros::Time::now() - t_start).toSec() < seconds;)
+    if (!this->listen(0.01))
+      return false;
+  return true;
 }
 

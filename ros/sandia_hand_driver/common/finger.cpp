@@ -4,7 +4,7 @@
 using namespace sandia_hand;
 
 Finger::Finger()
-: mm(10)
+: mm(10) // default finger address in firmware (historical...)
 {
   mm.addPhalangeRxFunctor(boost::bind(&ProximalPhalange::rx, &pp, _1, _2));
   mm.addPhalangeRxFunctor(boost::bind(&DistalPhalange::rx, &dp, _1, _2));

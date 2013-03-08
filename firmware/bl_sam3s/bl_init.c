@@ -42,22 +42,22 @@ void bl_init()
   PIOA->PIO_ABCDSR[1] &= ~(PIO_PA21A_RXD1 | PIO_PA22A_TXD1);
 #endif
 
-#ifdef BL_RS485_MANCHESTER
   BL_USART->US_CR   = US_CR_RSTRX | US_CR_RSTTX |
                       US_CR_RXDIS | US_CR_TXDIS; // reset uart
+#ifdef BL_RS485_MANCHESTER
   BL_USART->US_MR   = US_MR_CHRL_8_BIT | US_MR_PAR_NO |
                       US_MR_MAN | US_MR_OVER | US_MR_MODSYNC;
-                      USART0->US_BRGR = 64000000 / 2000000 / 16;
+  USART0->US_BRGR = 64000000 / 2000000 / 16;
   BL_USART->US_MAN  = US_MAN_TX_PL(1) | US_MAN_TX_PP_ALL_ONE |
                       US_MAN_RX_PL(1) | US_MAN_RX_PP_ALL_ONE |
                       US_MAN_TX_MPOL | US_MAN_RX_MPOL |
                       US_MAN_DRIFT | US_MAN_STUCKTO1;
   BL_USART->US_PTCR = US_PTCR_RXTDIS | US_PTCR_TXTDIS; // disable DMA
-  BL_USART->US_CR   = US_CR_TXEN | US_CR_RXEN; // enable TX and RX
 #else
   BL_USART->US_MR   = US_MR_CHRL_8_BIT | US_MR_PAR_NO; // 8N1, normal mode
   BL_USART->US_BRGR = 64000000 / 2000000 / 16;
 #endif
+  BL_USART->US_CR   = US_CR_TXEN | US_CR_RXEN; // enable TX and RX
 
 #ifdef BL_CHAIN_INIT
   (BL_CHAIN_INIT)();

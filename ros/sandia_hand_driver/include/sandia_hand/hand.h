@@ -50,6 +50,7 @@ public:
   bool pingFinger(const uint8_t finger_idx);
   bool setMoboStatusHz(const uint16_t mobo_status_hz);
   bool setFingerAutopollHz(const uint16_t finger_autopoll_hz);
+  bool programMotorModuleAppFile(const uint8_t finger_idx, FILE *bin_file);
 private:
   static const int NUM_SOCKS = 4;
   static const uint16_t HAND_BASE_PORT = 12321; // i love palindromes
@@ -66,6 +67,7 @@ private:
                    const uint8_t *data, const uint16_t data_len);
   std::map<uint32_t, RxFunctor> rx_map_;
   std::map<uint8_t, uint8_t> rx_rs485_map_; // changes in right vs left hands
+  bool listenForDuration(float seconds);
 };
 
 }

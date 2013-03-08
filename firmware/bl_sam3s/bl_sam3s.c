@@ -89,11 +89,6 @@ void main()
     for (i = 0; i < 100000; i++) { }
     bl_led(BL_LED_TOGGLE);
   }
-#ifdef BL_MANCHESTER
-#else
-  USART0->US_MR = US_MR_CHRL_8_BIT | US_MR_PAR_NO; // 8N1, normal mode
-  USART0->US_BRGR = F_CPU / 2000000 / 16;
-#endif
   g_autoboot_enabled = 1;
   g_autoboot_countdown = BL_AUTOBOOT_COUNT;
   // see if there is even an application image we could load if we wanted to

@@ -270,6 +270,54 @@ int test_finger_stream(int argc, char **argv, Hand &hand)
   return 0;
 }
 
+int mmburn(int argc, char **argv, Hand &hand)
+{
+  verify_argc(argc, 4, "usage: mmburn FINGER_IDX MM_BIN_FILE\n");
+  uint8_t finger_idx = 0;
+  parse_finger_idx(finger_idx, argv[2]);
+  const char *fn = argv[3];
+  FILE *f = fopen(fn, "rb");
+  if (!f)
+  {
+    printf("couldn't open motor module application image %s\n", fn);
+    return 1;
+  }
+  if (!hand.programMotorModuleAppFile(finger_idx, f))
+  {
+    printf("failed to program motor module with image %s\n", fn);
+    return 1;
+  }
+  printf("successfully programmed motor module %d with image %s\n", 
+         finger_idx, fn);
+  return 0;
+}
+
+int mmburn_all(int argc, char **argv, Hand &hand) // todo: merge with previous
+{
+  verify_argc(argc, 3, "usage: mmburn MM_BIN_FILE\n");
+  const char *fn = argv[2];
+  for (uint8_t finger_idx = 0; finger_idx < 4; finger_idx++)
+  {
+    FILE *f = fopen(fn, "rb");
+    if (!f)
+    {
+      printf("couldn't open motor module application image %s\n", fn);
+      return 1;
+    }
+    printf("programming finger %d...\n", finger_idx);
+    if (!hand.programMotorModuleAppFile(finger_idx, f))
+    {
+      printf("failed to program motor module %d with image %s\n", 
+             finger_idx, fn);
+      return 1;
+    }
+    printf("successfully programmed motor module %d with image %s\n", 
+           finger_idx, fn);
+    fclose(f);
+  }
+  return 0;
+}
+
 int main(int argc, char **argv)
 {
   if (argc < 2)
@@ -304,6 +352,10 @@ int main(int argc, char **argv)
     return test_finger_currents(argc, argv, hand);
   else if (!strcmp(cmd, "test_finger_stream"))
     return test_finger_stream(argc, argv, hand);
+  else if (!strcmp(cmd, "mmburn"))
+    return mmburn(argc, argv, hand);
+  else if (!strcmp(cmd, "mmburn_all"))
+    return mmburn_all(argc, argv, hand);
   printf("unknown command: [%s]\n", cmd);
   return 1;
 }

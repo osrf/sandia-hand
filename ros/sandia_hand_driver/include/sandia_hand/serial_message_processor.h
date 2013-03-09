@@ -30,6 +30,10 @@ public:
                         bool chop);
   bool reset();
 
+  typedef boost::function<bool()> PowerFunctor;
+  bool programAppFile(FILE *bin_file, 
+                      PowerFunctor power_on, PowerFunctor power_off);
+
 protected:
   static const uint32_t MAX_PACKET_LENGTH = 512;
   RawTxFunctor raw_tx_;
@@ -37,6 +41,7 @@ protected:
   uint8_t *getTxBuffer();
   bool sendTxBuffer(const uint8_t pkt_id, uint16_t payload_len = 0);
   bool listenFor(const uint8_t listen_pkt_type, const float max_seconds);
+  bool listenFor(float seconds);
   void stopListening();
 
   uint16_t deserializeUint16(const uint8_t *p);

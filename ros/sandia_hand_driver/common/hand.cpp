@@ -38,7 +38,7 @@ Hand::Hand()
   for (int i = 0; i < NUM_FINGERS; i++)
   {
     fingers[i].mm.setRawTx(boost::bind(&Hand::fingerRawTx, this, i, _1, _2));
-    fingers[i].mm.registerListenHandler(boost::bind(&Hand::listen, this, _1));
+    fingers[i].registerListenHandler(boost::bind(&Hand::listen, this, _1));
   }
   palm.setRawTx(boost::bind(&Hand::fingerRawTx, this, 4, _1, _2));
 }
@@ -322,54 +322,19 @@ bool Hand::programMotorModuleAppFile(const uint8_t finger_idx, FILE *bin_file)
 {
   if (finger_idx >= 4 || !bin_file)
     return false; // sanity check
-  // important! this function assumes that the FILE* is either created for
-  // application image space (0x040200) or it is already advanced via fseek() 
   Finger *finger = &fingers[finger_idx];
-  // do a hard reset of the finger socket to ensure the bootloader is running
-  if (!setFingerPower(finger_idx, FPS_OFF)) return false;
-  if (!listenForDuration(1.0)) 
-  {
-    printf("couldn't listen\n");
-    return false; // wait for power caps to drain
-  }
-  if (!setFingerPower(finger_idx, FPS_LOW)) return false;
-  if (!listenForDuration(2.0)) return false; // wait for bootloader startup
-  if (!finger->mm.blHaltAutoboot())
-  {
-    printf("unable to halt autoboot\n");
-    return false;
-  }
-  printf("finger %d motor module autoboot halted.\n", finger_idx);
-  for (int page_num = 32; !feof(bin_file) && page_num < 1024; page_num++)
-  {
-    bool page_written = false;
-    uint8_t page_buf[256] = {0};
-    size_t nread = 0;
-    nread = fread(page_buf, 1, 256, bin_file);
-    if (nread == 0)
-    {
-      printf("couldn't read a flash page from FILE: returned %d\n",
-             (int)nread);
-      return false;
-    }
-    else if (nread < 256)
-      printf("partial page: %d bytes, hopefully last flash page?\n",
-             (int)nread);
-    if (finger->mm.blWriteFlashPage(page_num, page_buf, false))
-      page_written = true;
-    if (!page_written)
-    {
-      printf("couldn't write page %d\n", page_num);
-      return false;
-    }
-  }
-  if (!finger->mm.blBoot())
-  {
-    printf("failed to boot finger %d motor module\n", finger_idx);
-    return false;
-  }
-  printf("successfully booted finger %d motor module\n", finger_idx);
-  return true;
+  return finger->mm.programAppFile(bin_file,
+            boost::bind(&Hand::setFingerPower, this, finger_idx, FPS_OFF),
+            boost::bind(&Hand::setFingerPower, this, finger_idx, FPS_LOW));
+}
+
+bool Hand::programDistalPhalangeAppFile(const uint8_t finger_idx, 
+                                        FILE *bin_file)
+{
+  if (finger_idx >= 4 || !bin_file)
+    return false; // sanity check
+  Finger *finger = &fingers[finger_idx];
+  return finger->programDistalPhalangeAppFile(bin_file);
 }
 
 bool Hand::listenForDuration(float seconds)

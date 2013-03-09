@@ -279,6 +279,22 @@ bool SerialMessageProcessor::listenFor(const uint8_t listen_pkt_type,
   return false;
 }
 
+bool SerialMessageProcessor::listenFor(float seconds)
+{
+  if (!listen_functor_)
+  {
+    printf("WOAH THERE PARTNER. called listenFor without listen_functor_ set");
+    return false;
+  }
+  done_listening_ = false;
+  listen_pkt_type_ = 0xff;
+  ros::Time t_start(ros::Time::now());
+  for (ros::Time t_start(ros::Time::now());
+       (ros::Time::now() - t_start).toSec() < seconds;)
+    listen_functor_(0.01);
+  return true;
+}
+
 void SerialMessageProcessor::stopListening()
 {
   //printf("SMP::stopListening()\n");
@@ -402,5 +418,54 @@ bool SerialMessageProcessor::blWriteFlashPage(const uint16_t page_num,
 void SerialMessageProcessor::resetParser()
 {
   rx_pkt_parser_state_ = ST_IDLE;
+}
+
+bool SerialMessageProcessor::programAppFile(FILE *bin_file, 
+                                            PowerFunctor power_off, 
+                                            PowerFunctor power_on)
+{
+  // important! this function assumes that the FILE* is either created for
+  // application image space (0x0402000) or it is already advanced via fseek() 
+  // first, do a power-cycle hard reset to ensure the bootloader is running
+  if (!power_off()) return false;
+  if (!listenFor(1.0)) return false; // wait for power off
+  if (!power_on()) return false;
+  if (!listenFor(2.0)) return false; // wait for bootloader init
+  if (!blHaltAutoboot())
+  {
+    printf("unable to halt autoboot\n");
+    return false;
+  }
+  printf("autoboot halted.\n");
+  for (int page_num = 32; !feof(bin_file) && page_num < 1024; page_num++)
+  {
+    bool page_written = false;
+    uint8_t page_buf[256] = {0};
+    size_t nread = 0;
+    nread = fread(page_buf, 1, 256, bin_file);
+    if (nread == 0)
+    {
+      printf("couldn't read a flash page from FILE: returned %d\n",
+             (int)nread);
+      return false;
+    }
+    else if (nread < 256)
+      printf("partial page: %d bytes, hopefully last flash page?\n",
+             (int)nread);
+    if (blWriteFlashPage(page_num, page_buf, false))
+      page_written = true;
+    if (!page_written)
+    {
+      printf("couldn't write page %d\n", page_num);
+      return false;
+    }
+  }
+  if (!blBoot())
+  {
+    printf("failed to boot\n");
+    return false;
+  }
+  printf("successfully booted after app write\n");
+  return true;
 }
 

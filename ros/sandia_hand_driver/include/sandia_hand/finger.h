@@ -17,6 +17,13 @@ public:
   MotorModule mm;
   ProximalPhalange pp;
   DistalPhalange dp;
+
+  bool programDistalPhalangeAppFile(FILE *bin_file);
+  typedef boost::function<void(const float)> ListenFunctor;
+  void registerListenHandler(ListenFunctor functor);
+protected:
+  void listen(const float max_seconds);
+  ListenFunctor listen_functor_;
 };
 
 }

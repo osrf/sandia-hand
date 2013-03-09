@@ -11,8 +11,6 @@ LooseFinger::LooseFinger() :
 {
   mm.setRawTx(boost::bind(&LooseFinger::tx, this, _1, _2));
   mm.registerListenHandler(boost::bind(&LooseFinger::listen, this, _1));
-  pp.registerListenHandler(boost::bind(&LooseFinger::listen, this, _1));
-  dp.registerListenHandler(boost::bind(&LooseFinger::listen, this, _1));
 }
 
 LooseFinger::~LooseFinger()

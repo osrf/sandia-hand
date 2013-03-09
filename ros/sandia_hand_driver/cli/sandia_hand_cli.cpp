@@ -134,6 +134,26 @@ int set_single_finger_power(int argc, char **argv, Hand &hand)
   return 0;
 }
 
+int pp(int argc, char **argv, Hand &hand)
+{
+  verify_argc(argc, 4, "usage: hand_cli pp FINGER_IDX POWER_STATE\n"
+                       "  where POWER_STATE = {off, on}\n");
+  uint8_t finger_idx = 0;
+  parse_finger_idx(finger_idx, argv[2]);
+  const char *fp_str = argv[3];
+  if (!strcmp(fp_str, "off"))
+    hand.fingers[finger_idx].mm.setPhalangeBusPower(false);
+  else if (!strcmp(fp_str, "on"))
+    hand.fingers[finger_idx].mm.setPhalangeBusPower(true);
+  else
+  {
+    printf("unrecognized phalange power state [%s]\n", fp_str);
+    printf("power_state must be in {off, on}\n");
+    return 1;
+  }
+  return 0;
+}
+
 int set_finger_control_mode(int argc, char **argv, Hand &hand)
 {
   verify_argc(argc, 4, "usage: hand_cli fcm FINGER_IDX CONTROL_MODE\n"
@@ -270,6 +290,27 @@ int test_finger_stream(int argc, char **argv, Hand &hand)
   return 0;
 }
 
+int f2burn(int argc, char **argv, Hand &hand)
+{
+  verify_argc(argc, 4, "usage: f2burn FINGER_IDX MM_BIN_FILE\n");
+  uint8_t finger_idx = 0;
+  parse_finger_idx(finger_idx, argv[2]);
+  const char *fn = argv[3];
+  FILE *f = fopen(fn, "rb");
+  if (!f)
+  {
+    printf("couldn't open application image %s\n", fn);
+    return 1;
+  }
+  if (!hand.programDistalPhalangeAppFile(finger_idx, f))
+  {
+    printf("failed to program with image %s\n", fn);
+    return 1;
+  }
+  printf("successfully programmed image %s\n", fn);
+  return 0;
+}
+
 int mmburn(int argc, char **argv, Hand &hand)
 {
   verify_argc(argc, 4, "usage: mmburn FINGER_IDX MM_BIN_FILE\n");
@@ -338,6 +379,8 @@ int main(int argc, char **argv)
     return set_all_finger_powers(argc, argv, hand);
   else if (!strcmp(cmd, "fp")) 
     return set_single_finger_power(argc, argv, hand);
+  else if (!strcmp(cmd, "pp"))
+    return pp(argc, argv, hand);
   else if (!strcmp(cmd, "fcm")) 
     return set_finger_control_mode(argc, argv, hand);
   else if (!strcmp(cmd, "jp")) // set joint position
@@ -356,6 +399,8 @@ int main(int argc, char **argv)
     return mmburn(argc, argv, hand);
   else if (!strcmp(cmd, "mmburn_all"))
     return mmburn_all(argc, argv, hand);
+  else if (!strcmp(cmd, "f2burn"))
+    return f2burn(argc, argv, hand);
   printf("unknown command: [%s]\n", cmd);
   return 1;
 }

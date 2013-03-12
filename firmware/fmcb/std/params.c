@@ -105,10 +105,10 @@ void params_save_all_to_flash()
   dest = (uint32_t *)(0x400000 + 256 * PARAM_FLASH_START_PAGE);
   for (i = 0; i < 64; i++)
     *dest++ = page_buf[i];
-  IAP_PerformCommand = (uint32_t (*)( uint32_t, uint32_t )) *((uint32_t *)CHIP_FLASH_IAP_ADDRESS ) ;
-  IAP_PerformCommand(0, EEFC_FCR_FKEY(0x5A) | 
-                        EEFC_FCR_FARG(PARAM_FLASH_START_PAGE) | 
-                        EEFC_FCR_FCMD(EFC_FCMD_EWP));
+  typedef uint32_t (*iap_fp)(uint32_t, uint32_t);
+  iap_fp iap = *((iap_fp *)0x00800008); // magic IAP pointer in ROM.
+  iap(0, EEFC_FCR_FKEY(0x5A) | EEFC_FCR_FARG(PARAM_FLASH_START_PAGE) |
+         EEFC_FCR_FCMD(EFC_FCMD_EWP));
   while ((EFC->EEFC_FSR & EEFC_FSR_FRDY) != EEFC_FSR_FRDY) { } // spin...
   EFC->EEFC_FMR = EEFC_FMR_FWS(2); // reset it so we can run faster now
   __enable_irq();

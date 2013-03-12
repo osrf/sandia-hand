@@ -70,7 +70,6 @@ set(SAM3S_OPENOCD_INIT ${OPENOCD} -f ${PROJECT_SOURCE_DIR}/openocd/jtagkey.cfg -
 include_directories(asf-3.5.1_partial/sam/utils/cmsis/sam3x/include)
 include_directories(asf-3.5.1_partial/thirdparty/CMSIS/Include)
 include_directories(.)
-add_definitions(-DF_CPU=64000000) # todo: figure out a better system
 
 add_definitions(-DDONT_USE_CMSIS_INIT)
 add_subdirectory(common_sam3x)
@@ -79,6 +78,7 @@ add_subdirectory(mobo)
 add_subdirectory(bl_sam3s)
 add_subdirectory(fmcb)
 add_subdirectory(f2)
+add_subdirectory(psu)
 
 #add_custom_target(load_fpga
 #                  COMMAND . ${ISEDIR}/settings64.sh && impact -b ${ARM_GCC_ROOT}/bin/arm-none-eabi-gdb ${CMAKE_CURRENT_BINARY_DIR}/mobo_mcu.elf)

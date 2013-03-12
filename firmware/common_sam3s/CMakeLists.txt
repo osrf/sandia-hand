@@ -1,4 +1,5 @@
 macro(sam3s_create_apps board apps)
+  add_definitions(-DF_CPU=64000000) 
   include_directories(${PROJECT_SOURCE_DIR}/common_sam3s/include)
   add_definitions(-Dsam3s4)
   set(CMAKE_C_LINK_FLAGS ${SAM3S_APP_LINK_FLAGS})

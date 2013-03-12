@@ -10,6 +10,7 @@ macro(chain_build pkg_name)
                         CMAKE_ARGS
                           -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
                           -DSANDIA_HAND_VERSION:STRING=${SANDIA_HAND_VERSION}
+                          ${CATKIN_BUILD_BINARY_PACKAGE_STRING}
                         INSTALL_COMMAND ""
                         DEPENDS ${ARGV1} ${ARGV2} ${ARGV3} ${ARGV4} ${ARGV5})
   else()
@@ -19,6 +20,7 @@ macro(chain_build pkg_name)
                         CMAKE_ARGS
                           -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
                           -DSANDIA_HAND_VERSION:STRING=${SANDIA_HAND_VERSION}
+                          ${CATKIN_BUILD_BINARY_PACKAGE_STRING}
                         INSTALL_COMMAND "")
   endif()
   install(CODE "execute_process(COMMAND make -C ${CMAKE_CURRENT_BINARY_DIR}/${pkg_name} install)")

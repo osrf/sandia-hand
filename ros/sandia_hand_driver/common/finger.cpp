@@ -27,6 +27,13 @@ bool Finger::programDistalPhalangeAppFile(FILE *bin_file)
               boost::bind(&MotorModule::setPhalangeBusPower, &mm, true));
 }
 
+bool Finger::programProximalPhalangeAppFile(FILE *bin_file)
+{
+  return pp.programAppFile(bin_file,
+              boost::bind(&MotorModule::setPhalangeBusPower, &mm, false),
+              boost::bind(&MotorModule::setPhalangeBusPower, &mm, true));
+}
+
 void Finger::listen(const float max_seconds)
 {
   if (!listen_functor_)

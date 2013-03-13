@@ -337,6 +337,15 @@ bool Hand::programDistalPhalangeAppFile(const uint8_t finger_idx,
   return finger->programDistalPhalangeAppFile(bin_file);
 }
 
+bool Hand::programProximalPhalangeAppFile(const uint8_t finger_idx, 
+                                          FILE *bin_file)
+{
+  if (finger_idx >= 4 || !bin_file)
+    return false; // sanity check
+  Finger *finger = &fingers[finger_idx];
+  return finger->programProximalPhalangeAppFile(bin_file);
+}
+
 bool Hand::listenForDuration(float seconds)
 {
   for (ros::Time t_start(ros::Time::now()); 

@@ -19,6 +19,7 @@ public:
   DistalPhalange dp;
 
   bool programDistalPhalangeAppFile(FILE *bin_file);
+  bool programProximalPhalangeAppFile(FILE *bin_file);
   typedef boost::function<void(const float)> ListenFunctor;
   void registerListenHandler(ListenFunctor functor);
 protected:

@@ -22,14 +22,9 @@ SerialMessageProcessor::~SerialMessageProcessor()
 
 bool SerialMessageProcessor::ping()
 {
-  printf("SerialMessageProcessor::ping()\n");
   if (!sendTxBuffer(PKT_PING))
     return false;
-  if (listenFor(PKT_PING, 1.0))
-    printf("SMP::ping ok\n");
-  else
-    printf("SMP::ping fail\n");
-  return true;
+  return listenFor(PKT_PING, 0.2);
 }
 
 void SerialMessageProcessor::rxPing(const uint8_t *data, 

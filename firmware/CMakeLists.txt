@@ -78,6 +78,7 @@ add_subdirectory(mobo)
 add_subdirectory(bl_sam3s)
 add_subdirectory(fmcb)
 add_subdirectory(f2)
+add_subdirectory(f3)
 add_subdirectory(psu)
 
 #add_custom_target(load_fpga

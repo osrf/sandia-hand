@@ -92,9 +92,19 @@ int finger_ping(int argc, char **argv, Hand &hand)
   printf("pinging finger %d:\n", finger_idx);
   printf("  motor module: ");
   if (hand.fingers[finger_idx].mm.ping())
-    printf("   OK\n");
+    printf("OK\n");
   else
-    printf("   fail\n");
+    printf("fail\n");
+  printf("  proximal phalange: ");
+  if (hand.fingers[finger_idx].pp.ping())
+    printf("OK\n");
+  else
+    printf("fail\n");
+  printf("  distal phalange: ");
+  if (hand.fingers[finger_idx].dp.ping())
+    printf("OK\n");
+  else
+    printf("fail\n");
   return 0;
 }
 
@@ -141,16 +151,21 @@ int pp(int argc, char **argv, Hand &hand)
   uint8_t finger_idx = 0;
   parse_finger_idx(finger_idx, argv[2]);
   const char *fp_str = argv[3];
+  bool bus_on;
   if (!strcmp(fp_str, "off"))
-    hand.fingers[finger_idx].mm.setPhalangeBusPower(false);
+    bus_on = false;
   else if (!strcmp(fp_str, "on"))
-    hand.fingers[finger_idx].mm.setPhalangeBusPower(true);
+    bus_on = true;
   else
   {
     printf("unrecognized phalange power state [%s]\n", fp_str);
     printf("power_state must be in {off, on}\n");
     return 1;
   }
+  if (!hand.fingers[finger_idx].mm.setPhalangeBusPower(bus_on))
+    printf("couldn't set bus power to %d\n", (int)bus_on);
+  else
+    printf("set bus power to %d\n", (int)bus_on);
   return 0;
 }
 
@@ -290,9 +305,9 @@ int test_finger_stream(int argc, char **argv, Hand &hand)
   return 0;
 }
 
-int f2burn(int argc, char **argv, Hand &hand)
+int f3burn(int argc, char **argv, Hand &hand)
 {
-  verify_argc(argc, 4, "usage: f2burn FINGER_IDX MM_BIN_FILE\n");
+  verify_argc(argc, 4, "usage: f3burn FINGER_IDX F3_BIN_FILE\n");
   uint8_t finger_idx = 0;
   parse_finger_idx(finger_idx, argv[2]);
   const char *fn = argv[3];
@@ -303,6 +318,27 @@ int f2burn(int argc, char **argv, Hand &hand)
     return 1;
   }
   if (!hand.programDistalPhalangeAppFile(finger_idx, f))
+  {
+    printf("failed to program with image %s\n", fn);
+    return 1;
+  }
+  printf("successfully programmed image %s\n", fn);
+  return 0;
+}
+
+int f2burn(int argc, char **argv, Hand &hand)
+{
+  verify_argc(argc, 4, "usage: f2burn FINGER_IDX F2_BIN_FILE\n");
+  uint8_t finger_idx = 0;
+  parse_finger_idx(finger_idx, argv[2]);
+  const char *fn = argv[3];
+  FILE *f = fopen(fn, "rb");
+  if (!f)
+  {
+    printf("couldn't open application image %s\n", fn);
+    return 1;
+  }
+  if (!hand.programProximalPhalangeAppFile(finger_idx, f))
   {
     printf("failed to program with image %s\n", fn);
     return 1;
@@ -401,6 +437,8 @@ int main(int argc, char **argv)
     return mmburn_all(argc, argv, hand);
   else if (!strcmp(cmd, "f2burn"))
     return f2burn(argc, argv, hand);
+  else if (!strcmp(cmd, "f3burn"))
+    return f3burn(argc, argv, hand);
   printf("unknown command: [%s]\n", cmd);
   return 1;
 }

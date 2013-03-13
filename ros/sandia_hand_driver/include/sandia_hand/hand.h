@@ -52,6 +52,7 @@ public:
   bool setFingerAutopollHz(const uint16_t finger_autopoll_hz);
   bool programMotorModuleAppFile(const uint8_t finger_idx, FILE *bin_file);
   bool programDistalPhalangeAppFile(const uint8_t finger_idx, FILE *bin_file);
+  bool programProximalPhalangeAppFile(const uint8_t finger_idx, FILE *bin_file);
 private:
   static const int NUM_SOCKS = 4;
   static const uint16_t HAND_BASE_PORT = 12321; // i love palindromes

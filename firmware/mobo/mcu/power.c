@@ -1,6 +1,6 @@
 /*  Software License Agreement (Apache License)
  *
- *  Copyright 2012 Open Source Robotics Foundation
+ *  Copyright 2013 Open Source Robotics Foundation
  *  Author: Morgan Quigley
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -80,13 +80,12 @@ void power_init()
                     (1 << ID_TWI1);
   const uint32_t pioa_pins = PIO_PA2 | PIO_PA4 | PIO_PA6 | 
                              PIO_PA16 | PIO_PA21;
-  const uint32_t piob_pins = PIO_PB17 | PIO_PB19;
+  const uint32_t piob_pins = PIO_PB16 | PIO_PB17 | PIO_PB19;
   const uint32_t pioc_pins = PIO_PC19;
   PIOA->PIO_PER = PIOA->PIO_OER = PIOA->PIO_CODR = pioa_pins;
-  PIOB->PIO_PER = PIOB->PIO_OER = PIOB->PIO_CODR = piob_pins | PIO_PB16;
+  PIOB->PIO_PER = PIOB->PIO_OER = PIOB->PIO_CODR = piob_pins;
   PIOC->PIO_PER = PIOC->PIO_OER = PIOC->PIO_CODR = pioc_pins;
-  // turn on 9v rail
-  PIOB->PIO_SODR = PIO_PB16;
+  power_enable_lowvolt_regulator(1);
   // set up TWI bus to talk to current sensors
   PIOB->PIO_ABSR &= ~(PIO_PB12A_TWD1 | PIO_PB13A_TWCK1);
   PIOB->PIO_PDR = PIO_PB12A_TWD1 | PIO_PB13A_TWCK1;
@@ -435,5 +434,13 @@ void power_twi1_vector()
     //printf("idle rxc\r\n");
     //power_i2c_rx_complete(__REV16(g_power_i2c_rx_val));
   }
+}
+
+void power_enable_lowvolt_regulator(const uint8_t enable)
+{
+  if (enable)
+    PIOB->PIO_SODR = PIO_PB16;
+  else
+    PIOB->PIO_CODR = PIO_PB16;
 }
 

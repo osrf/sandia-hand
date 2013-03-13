@@ -30,6 +30,7 @@ void power_systick();
 void power_adc_vector();
 void power_set_mobo_status_rate(const uint16_t rate);
 void power_twi1_vector();
+void power_enable_lowvolt_regulator(const uint8_t enable);
 
 #endif
 

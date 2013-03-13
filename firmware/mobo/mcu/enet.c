@@ -429,6 +429,8 @@ static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
   uint32_t udp_payload_len = len - sizeof(udp_header_t);
   uint32_t cmd = *((uint32_t *)udp_payload);
   uint8_t *cmd_data = (uint8_t *)(udp_payload+4);
+  // todo: this if..else if block has become way too large. factor it out
+  // somehow into something more clean and efficient 
   if (cmd == CMD_ID_SET_FINGER_POWER_STATE)
   {
     set_finger_power_state_t *sfp = (set_finger_power_state_t *)cmd_data;
@@ -482,6 +484,9 @@ static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
   else if (cmd == CMD_ID_SET_FINGER_AUTOPOLL)
     finger_set_autopoll_rate(
                    ((set_finger_autopoll_t *)cmd_data)->finger_autopoll_hz);
+  else if (cmd == CMD_ID_ENABLE_LOWVOLT_REGULATOR)
+    power_enable_lowvolt_regulator(
+                    ((enable_lowvolt_regulator_t *)cmd_data)->enable ? 1 : 0);
   else
     printf("  unhandled cmd %d\r\n", cmd);
 }

@@ -31,6 +31,7 @@ public:
                           FPS_FULL = FINGER_POWER_STATE_FULL }; 
   bool setFingerPower(const uint8_t finger_idx, const FingerPowerState fps);
   bool setAllFingerPowers(const FingerPowerState fps);
+  bool enableLowvoltRegulator(const bool on);
 
   enum FingerControlMode { FCM_IDLE      = FINGER_CONTROL_MODE_IDLE,
                            FCM_JOINT_POS = FINGER_CONTROL_MODE_JOINT_POS };
@@ -50,9 +51,11 @@ public:
   bool pingFinger(const uint8_t finger_idx);
   bool setMoboStatusHz(const uint16_t mobo_status_hz);
   bool setFingerAutopollHz(const uint16_t finger_autopoll_hz);
+  // todo: bake all of these SAM3S bootloader burns into a single function
   bool programMotorModuleAppFile(const uint8_t finger_idx, FILE *bin_file);
   bool programDistalPhalangeAppFile(const uint8_t finger_idx, FILE *bin_file);
   bool programProximalPhalangeAppFile(const uint8_t finger_idx, FILE *bin_file);
+  bool programPalmAppFile(FILE *bin_file);
 private:
   static const int NUM_SOCKS = 4;
   static const uint16_t HAND_BASE_PORT = 12321; // i love palindromes

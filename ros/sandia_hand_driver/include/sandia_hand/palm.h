@@ -9,7 +9,7 @@ namespace sandia_hand
 class Palm : public SerialMessageProcessor
 {
 public:
-  Palm(const uint8_t addr);
+  Palm(const uint8_t addr = 1);
   virtual ~Palm();
 };
 

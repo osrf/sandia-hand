@@ -8,7 +8,6 @@
 using namespace sandia_hand;
 
 Hand::Hand()
-: palm(10) // default rs485 address of palm
 {
   socks[0] = &control_sock;
   socks[1] = &cam_socks[0];
@@ -41,6 +40,7 @@ Hand::Hand()
     fingers[i].registerListenHandler(boost::bind(&Hand::listen, this, _1));
   }
   palm.setRawTx(boost::bind(&Hand::fingerRawTx, this, 4, _1, _2));
+  palm.registerListenHandler(boost::bind(&Hand::listen, this, _1));
 }
 
 Hand::~Hand()
@@ -78,6 +78,17 @@ bool Hand::init(const char *ip)
     }
     saddrs[i]->sin_port = htons(HAND_BASE_PORT + i);
   }
+  return true;
+}
+
+bool Hand::enableLowvoltRegulator(const bool on)
+{
+  uint8_t pkt[50];
+  *((uint32_t *)pkt) = CMD_ID_ENABLE_LOWVOLT_REGULATOR;
+  enable_lowvolt_regulator_t *p = (enable_lowvolt_regulator_t *)(pkt+4);
+  p->enable = on ? 1 : 0;
+  if (!tx_udp(pkt, 4 + sizeof(enable_lowvolt_regulator_t)))
+    return false;
   return true;
 }
 
@@ -177,6 +188,7 @@ bool Hand::fingerRawTx(const uint8_t finger_idx,
   for (int i = 0; i < data_len; i++)
     printf("  %02d:0x%02x\n", i, data[i]);
   */
+  // note: finger_idx of 4 means the palm
   uint8_t pkt[FINGER_RAW_TX_MAX_LEN+20];
   *((uint32_t *)pkt) = CMD_ID_FINGER_RAW_TX;
   finger_raw_tx_t *p = (finger_raw_tx_t *)(pkt + 4);
@@ -344,6 +356,13 @@ bool Hand::programProximalPhalangeAppFile(const uint8_t finger_idx,
     return false; // sanity check
   Finger *finger = &fingers[finger_idx];
   return finger->programProximalPhalangeAppFile(bin_file);
+}
+
+bool Hand::programPalmAppFile(FILE *bin_file)
+{
+  return palm.programAppFile(bin_file,
+               boost::bind(&Hand::enableLowvoltRegulator, this, false),
+               boost::bind(&Hand::enableLowvoltRegulator, this, true));
 }
 
 bool Hand::listenForDuration(float seconds)

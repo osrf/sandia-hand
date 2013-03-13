@@ -4,15 +4,16 @@
 #include <stdint.h>
 
 // this file is compiled into both the C++ driver library and the C firmware
-static const uint32_t CMD_ID_SET_FINGER_POWER_STATE      = 1;
-static const uint32_t CMD_ID_SET_FINGER_CONTROL_MODE     = 2;
-static const uint32_t CMD_ID_SET_FINGER_JOINT_POS        = 3;
-static const uint32_t CMD_ID_CONFIGURE_CAMERA_STREAM     = 4;
-static const uint32_t CMD_ID_FINGER_RAW_TX               = 5; // pass-through
-static const uint32_t CMD_ID_SET_MOBO_STATUS_RATE        = 6;
-static const uint32_t CMD_ID_MOBO_STATUS                 = 7;
-static const uint32_t CMD_ID_SET_FINGER_AUTOPOLL         = 8;
-static const uint32_t CMD_ID_SET_ALL_FINGER_POWER_STATES = 9;
+static const uint32_t CMD_ID_SET_FINGER_POWER_STATE      =  1;
+static const uint32_t CMD_ID_SET_FINGER_CONTROL_MODE     =  2;
+static const uint32_t CMD_ID_SET_FINGER_JOINT_POS        =  3;
+static const uint32_t CMD_ID_CONFIGURE_CAMERA_STREAM     =  4;
+static const uint32_t CMD_ID_FINGER_RAW_TX               =  5; // pass-through
+static const uint32_t CMD_ID_SET_MOBO_STATUS_RATE        =  6;
+static const uint32_t CMD_ID_MOBO_STATUS                 =  7;
+static const uint32_t CMD_ID_SET_FINGER_AUTOPOLL         =  8;
+static const uint32_t CMD_ID_SET_ALL_FINGER_POWER_STATES =  9;
+static const uint32_t CMD_ID_ENABLE_LOWVOLT_REGULATOR    = 10;
 
 typedef struct 
 {
@@ -81,5 +82,11 @@ typedef struct
 {
   uint16_t finger_autopoll_hz;
 } __attribute__((packed)) set_finger_autopoll_t;
+
+typedef struct
+{
+  uint8_t enable;
+} __attribute__((packed)) enable_lowvolt_regulator_t;
+
 
 #endif

@@ -395,6 +395,26 @@ int mmburn_all(int argc, char **argv, Hand &hand) // todo: merge with previous
   return 0;
 }
 
+int palmburn(int argc, char **argv, Hand &hand)
+{
+  verify_argc(argc, 3, "usage: palmburn PALM_BIN_FILE\n");
+  const char *fn = argv[2];
+  FILE *f = fopen(fn, "rb");
+  if (!f)
+  {
+    printf("couldn't open application image %s\n", fn);
+    return 1;
+  }
+  if (!hand.programPalmAppFile(f))
+  {
+    printf("failed to program with image %s\n", fn);
+    return 1;
+  }
+  printf("successfully programmed image %s\n", fn);
+  return 0;
+}
+
+
 int main(int argc, char **argv)
 {
   if (argc < 2)
@@ -439,6 +459,8 @@ int main(int argc, char **argv)
     return f2burn(argc, argv, hand);
   else if (!strcmp(cmd, "f3burn"))
     return f3burn(argc, argv, hand);
+  else if (!strcmp(cmd, "palmburn"))
+    return palmburn(argc, argv, hand);
   printf("unknown command: [%s]\n", cmd);
   return 1;
 }

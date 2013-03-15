@@ -5,7 +5,7 @@ SANDIA_HAND=~/sandia-hand
 FIRMWARE=$SANDIA_HAND/firmware
 DRIVER=$SANDIA_HAND/ros/sandia_hand_driver
 CLI=$DRIVER/bin/sandia_hand_cli
-$CLI fp 0 low
+$CLI fp 0 on
 sleep 5
 $CLI pp 0 on
 sleep 1

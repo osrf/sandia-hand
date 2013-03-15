@@ -26,7 +26,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
+#include "flash.h"
 
 void systick_vector()
 {
@@ -43,6 +43,7 @@ void main()
   enet_init();
   finger_init();
   cam_init();
+  flash_init();
   printf("hello, world!\r\n");
   // blink the FPGA LED a few times
   for (int i = 0; i < 4; i++)

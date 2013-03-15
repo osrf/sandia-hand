@@ -25,6 +25,7 @@
 #include "finger.h"
 #include "cam.h"
 #include "fpga_spi.h"
+#include "flash.h"
 
 // hardware connections:
 //   PB0 = EREFCK
@@ -487,7 +488,13 @@ static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
   else if (cmd == CMD_ID_ENABLE_LOWVOLT_REGULATOR)
     power_enable_lowvolt_regulator(
                     ((enable_lowvolt_regulator_t *)cmd_data)->enable ? 1 : 0);
-  else
+  else if (cmd == CMD_ID_READ_FPGA_FLASH_PAGE)
+  {
+    fpga_flash_page_t page;
+    page.page_num = ((read_fpga_flash_page_t *)cmd_data)->page_num;
+    flash_read_page(page.page_num, page.page_data);
+    enet_tx_packet(CMD_ID_FPGA_FLASH_PAGE, (uint8_t *)&page, sizeof(page));
+  }
     printf("  unhandled cmd %d\r\n", cmd);
 }
 
@@ -651,6 +658,39 @@ void enet_tx_udp(const uint8_t *payload, const uint16_t payload_len)
   enet_add_ip_header_checksum(&udp->ip);
   memcpy((uint8_t *)udp + sizeof(udp_header_t), payload, payload_len);
   enet_tx_raw((uint8_t *)udp, sizeof(udp_header_t) + payload_len);
+}
+
+// todo: when the dust settles, combine this functionality with prior function
+void enet_tx_packet(const uint32_t packet_id, 
+                    const uint8_t *packet, const uint16_t packet_len)
+{
+  udp_header_t *udp = (udp_header_t *)g_enet_udp_tx_buf;
+  for (int i = 0; i < 6; i++)
+  {
+    udp->ip.eth.eth_dest_addr[i]   = g_enet_master_mac[i];
+    udp->ip.eth.eth_source_addr[i] = g_enet_hand_mac[i];
+  }
+  udp->ip.eth.eth_ethertype = htons(IP_ETHERTYPE);
+  udp->ip.ip_header_len = IP_HEADER_LEN;
+  udp->ip.ip_version = IP_VERSION;
+  udp->ip.ip_ecn = 0;
+  udp->ip.ip_diff_serv = 0;
+  udp->ip.ip_len = htons(20 + 8 + 4 + packet_len);
+  udp->ip.ip_id = 0;
+  udp->ip.ip_flag_frag = htons(IP_DONT_FRAGMENT);
+  udp->ip.ip_ttl = 64; // no idea
+  udp->ip.ip_proto = IP_PROTO_UDP;
+  udp->ip.ip_checksum = 0;
+  udp->ip.ip_source_addr = htonl(g_enet_hand_ip);
+  udp->ip.ip_dest_addr = htonl(g_enet_master_ip);
+  udp->udp_source_port = htons(UDP_HAND_PORT);
+  udp->udp_dest_port = htons(UDP_HAND_PORT);
+  udp->udp_len = htons(8 + 4 + packet_len);
+  udp->udp_checksum = 0; // IPv4 UDP checksum is optional. 
+  enet_add_ip_header_checksum(&udp->ip);
+  *((uint32_t *)((uint32_t *)udp + sizeof(udp_header_t))) = packet_id;
+  memcpy((uint8_t *)udp + sizeof(udp_header_t) + 4, packet, packet_len);
+  enet_tx_raw((uint8_t *)udp, sizeof(udp_header_t) + 4 + packet_len);
 }
 
 ////////////////////////////////////////////////////////////////////////

@@ -14,6 +14,8 @@ static const uint32_t CMD_ID_MOBO_STATUS                 =  7;
 static const uint32_t CMD_ID_SET_FINGER_AUTOPOLL         =  8;
 static const uint32_t CMD_ID_SET_ALL_FINGER_POWER_STATES =  9;
 static const uint32_t CMD_ID_ENABLE_LOWVOLT_REGULATOR    = 10;
+static const uint32_t CMD_ID_READ_FPGA_FLASH_PAGE        = 11;
+static const uint32_t CMD_ID_FPGA_FLASH_PAGE             = 12;
 
 typedef struct 
 {
@@ -88,5 +90,15 @@ typedef struct
   uint8_t enable;
 } __attribute__((packed)) enable_lowvolt_regulator_t;
 
+typedef struct
+{
+  uint32_t page_num;
+} __attribute__((packed)) read_fpga_flash_page_t;
+
+typedef struct
+{
+  uint32_t page_num;
+  uint8_t page_data[256];
+} __attribute__((packed)) fpga_flash_page_t;
 
 #endif

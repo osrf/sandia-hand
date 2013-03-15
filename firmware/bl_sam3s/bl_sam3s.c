@@ -4,7 +4,7 @@
 
 #define MAX_BL_RX_LEN 1024
 #define MAX_BL_TX_LEN 1024
-#define BL_AUTOBOOT_COUNT 2000000
+#define BL_AUTOBOOT_COUNT 3000000
 
 #include "bl_stubs.h"
 
@@ -161,7 +161,7 @@ void main()
     --g_autoboot_countdown;
     if (g_autoboot_enabled && g_autoboot_countdown == 0)
       g_boot_requested = 1;
-    if (g_autoboot_countdown % 20000 == 0)
+    if (g_autoboot_countdown % 40000 == 0)
       bl_led(BL_LED_TOGGLE);
   }
 }

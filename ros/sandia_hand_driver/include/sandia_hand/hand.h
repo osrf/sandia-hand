@@ -11,6 +11,7 @@
 #include <boost/function.hpp>
 #include <sandia_hand/finger.h>
 #include <sandia_hand/palm.h>
+#include <ros/time.h>
 
 namespace sandia_hand
 {
@@ -56,6 +57,9 @@ public:
   bool programDistalPhalangeAppFile(const uint8_t finger_idx, FILE *bin_file);
   bool programProximalPhalangeAppFile(const uint8_t finger_idx, FILE *bin_file);
   bool programPalmAppFile(FILE *bin_file);
+  bool readMoboFlashPage(const uint32_t page_num, std::vector<uint8_t> &page);
+  bool writeMoboFlashPage(const uint32_t page_num, std::vector<uint8_t> &page);
+  bool eraseMoboFlashSector(const uint32_t page_num); // erases ENTIRE sector!
 private:
   static const int NUM_SOCKS = 4;
   static const uint16_t HAND_BASE_PORT = 12321; // i love palindromes
@@ -71,8 +75,45 @@ private:
   bool fingerRawTx(const uint8_t finger_idx, 
                    const uint8_t *data, const uint16_t data_len);
   std::map<uint32_t, RxFunctor> rx_map_;
+  std::map<uint32_t, std::vector< std::vector< uint8_t > > > rx_flags_;
   std::map<uint8_t, uint8_t> rx_rs485_map_; // changes in right vs left hands
   bool listenForDuration(float seconds);
+
+  // this feels really inelegant. goal is just to reduce repetitive code...
+  uint32_t last_packet_id_;
+  std::vector<uint8_t> last_packet_data_;
+  template <class T> bool listenForPacketId(const uint32_t id,
+                                            const float max_seconds,
+                                            T &response)
+  {
+    last_packet_id_ = 0;
+    for (ros::Time t_start(ros::Time::now()); 
+         (ros::Time::now() - t_start).toSec() < max_seconds;)
+    {
+      if (!this->listen(0.01))
+        return false;
+      if (last_packet_id_ != id)
+        continue;
+      if (last_packet_data_.size() != sizeof(T))
+        continue;
+      memcpy(&response, &last_packet_data_[0], sizeof(T)); // populate response
+      return true;
+    }
+    return false;
+  }
+
+  // feels inelegant to put it here, but templates make the calling code nice
+  template <class T> bool txPacket(const uint32_t id, const T &pkt)
+  {
+    static std::vector<uint8_t> s_txBuf; // ugly. the idea is to save alloc time
+    s_txBuf.resize(4 + sizeof(T));
+    *((uint32_t *)&s_txBuf[0]) = id;
+    memcpy(&s_txBuf[4], &pkt, sizeof(T));
+    if (-1 == sendto(control_sock, &s_txBuf[0], sizeof(T) + 4, 0, 
+                     (sockaddr *)&control_saddr, sizeof(sockaddr)))
+      return false;
+    return true;
+  }
 };
 
 }

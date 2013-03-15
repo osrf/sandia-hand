@@ -16,6 +16,8 @@ static const uint32_t CMD_ID_SET_ALL_FINGER_POWER_STATES =  9;
 static const uint32_t CMD_ID_ENABLE_LOWVOLT_REGULATOR    = 10;
 static const uint32_t CMD_ID_READ_FPGA_FLASH_PAGE        = 11;
 static const uint32_t CMD_ID_FPGA_FLASH_PAGE             = 12;
+static const uint32_t CMD_ID_FPGA_FLASH_ERASE_SECTOR     = 13;
+static const uint32_t CMD_ID_FPGA_FLASH_ERASE_SECTOR_ACK = 14;
 
 typedef struct 
 {
@@ -95,10 +97,25 @@ typedef struct
   uint32_t page_num;
 } __attribute__((packed)) read_fpga_flash_page_t;
 
+#define FPGA_FLASH_PAGE_SIZE 256
 typedef struct
 {
   uint32_t page_num;
-  uint8_t page_data[256];
+  uint32_t page_status;
+  uint8_t page_data[FPGA_FLASH_PAGE_SIZE];
 } __attribute__((packed)) fpga_flash_page_t;
+static const uint8_t FPGA_FLASH_PAGE_STATUS_READ      = 1;
+static const uint8_t FPGA_FLASH_PAGE_STATUS_WRITE_REQ = 2;
+static const uint8_t FPGA_FLASH_PAGE_STATUS_WRITE_ACK = 3;
+
+typedef struct
+{
+  uint32_t sector_page_num; // erases the _entire_ sector holding this page!
+} __attribute__((packed)) fpga_flash_erase_sector_t;
+
+typedef struct
+{
+  uint32_t sector_page_num; 
+} __attribute__((packed)) fpga_flash_erase_sector_ack_t;
 
 #endif

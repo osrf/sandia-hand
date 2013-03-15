@@ -435,12 +435,10 @@ static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
   if (cmd == CMD_ID_SET_FINGER_POWER_STATE)
   {
     set_finger_power_state_t *sfp = (set_finger_power_state_t *)cmd_data;
-    //printf("sfp finger %d state %d\r\n", 
-    //       sfp->finger_idx, sfp->finger_power_state);
     if (sfp->finger_idx > 3)
-      return; // buh bye
+      return; 
     if (sfp->finger_power_state > (uint8_t)POWER_ON)
-      return; // buh bye
+      return;
     power_set(sfp->finger_idx, (power_state_t)sfp->finger_power_state);
   }
   else if (cmd == CMD_ID_SET_ALL_FINGER_POWER_STATES)
@@ -452,8 +450,6 @@ static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
   else if (cmd == CMD_ID_SET_FINGER_CONTROL_MODE)
   {
     set_finger_control_mode_t *p = (set_finger_control_mode_t *)cmd_data;
-    //printf("sfcm finger %d mode %d\r\n",
-    //       p->finger_idx, p->finger_control_mode);
     if (p->finger_idx > 3 || 
         p->finger_control_mode > FINGER_CONTROL_MODE_JOINT_POS)
       return;
@@ -492,9 +488,30 @@ static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
   {
     fpga_flash_page_t page;
     page.page_num = ((read_fpga_flash_page_t *)cmd_data)->page_num;
+    page.page_status = FPGA_FLASH_PAGE_STATUS_READ;
     flash_read_page(page.page_num, page.page_data);
     enet_tx_packet(CMD_ID_FPGA_FLASH_PAGE, (uint8_t *)&page, sizeof(page));
   }
+  else if (cmd == CMD_ID_FPGA_FLASH_PAGE)
+  {
+    fpga_flash_page_t *page = (fpga_flash_page_t *)cmd_data;
+    if (page->page_status == FPGA_FLASH_PAGE_STATUS_WRITE_REQ)
+    {
+      flash_write_page(page->page_num, page->page_data);
+      page->page_status = FPGA_FLASH_PAGE_STATUS_WRITE_ACK;
+      enet_tx_packet(CMD_ID_FPGA_FLASH_PAGE, (uint8_t *)page, sizeof(*page));
+    }
+  }
+  else if (cmd == CMD_ID_FPGA_FLASH_ERASE_SECTOR)
+  {
+    fpga_flash_erase_sector_t *req = (fpga_flash_erase_sector_t *)cmd_data;
+    flash_erase_sector(req->sector_page_num);
+    fpga_flash_erase_sector_ack_t res;
+    res.sector_page_num = req->sector_page_num;
+    enet_tx_packet(CMD_ID_FPGA_FLASH_ERASE_SECTOR_ACK, 
+                   (uint8_t *)&res, sizeof(res));
+  }
+  else
     printf("  unhandled cmd %d\r\n", cmd);
 }
 

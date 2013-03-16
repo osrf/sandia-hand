@@ -4,9 +4,15 @@
 #include <cstring>
 #include <unistd.h>
 #include <boost/function.hpp>
+#include <boost/bind.hpp>
+#include <boost/foreach.hpp>
 #include "sandia_hand/hand.h"
 #include "ros/time.h"
+#include <string>
 using namespace sandia_hand;
+using std::vector;
+using std::string;
+using std::map;
 
 static bool g_done = false;
 void signal_handler(int signum)
@@ -58,7 +64,8 @@ bool verify_argc(const int argc, const int min_argc, const char *usage_text)
 //////////////////////////////////////////////////////////////////////////////
 // command handlers
 
-int set_all_finger_powers(int argc, char **argv, Hand &hand)
+// set all finger powers
+int p(int argc, char **argv, Hand &hand)
 {
   verify_argc(argc, 3, "usage: hand_cli p POWER_STATE\n"
                        "  where POWER_STATE = {off, low, on}\n");
@@ -84,7 +91,8 @@ int set_all_finger_powers(int argc, char **argv, Hand &hand)
   return 0;
 }
 
-int finger_ping(int argc, char **argv, Hand &hand)
+// fping
+int fping(int argc, char **argv, Hand &hand)
 {
   verify_argc(argc, 3, "usage: fping FINGER_IDX\n");
   uint8_t finger_idx = 0;
@@ -119,8 +127,8 @@ int palm_ping(int argc, char **argv, Hand &hand)
   return 0;
 }
 
-
-int set_single_finger_power(int argc, char **argv, Hand &hand)
+// set single finger power
+int fp(int argc, char **argv, Hand &hand)
 {
   verify_argc(argc, 4, "usage: hand_cli fp FINGER_IDX POWER_STATE\n"
                        "  where POWER_STATE = {off, low, on}\n");
@@ -169,7 +177,8 @@ int pp(int argc, char **argv, Hand &hand)
   return 0;
 }
 
-int set_finger_control_mode(int argc, char **argv, Hand &hand)
+// set finger control mode
+int fcm(int argc, char **argv, Hand &hand)
 {
   verify_argc(argc, 4, "usage: hand_cli fcm FINGER_IDX CONTROL_MODE\n"
                        "  where CONTROL_MODE = {idle, joint_pos}\n");
@@ -191,7 +200,8 @@ int set_finger_control_mode(int argc, char **argv, Hand &hand)
   return 0;
 }
 
-int set_joint_position(int argc, char **argv, Hand &hand)
+// set joint position
+int jp(int argc, char **argv, Hand &hand)
 {
   verify_argc(argc, 6, "usage: hand_cli jp FINGER_IDX J0 J1 J2\n");
   uint8_t finger_idx = 0;
@@ -414,14 +424,84 @@ int palmburn(int argc, char **argv, Hand &hand)
   return 0;
 }
 
+int mflash_read(int argc, char **argv, Hand &hand)
+{
+  if (argc != 2)
+  {
+    printf("usage: mflash_read PAGE_NUM\n");
+    return 1;
+  }
+  vector<uint8_t> page_data;
+  if (!hand.readMoboFlashPage(atoi(argv[1]), page_data))
+  {
+    printf("Hand::readMoboFlashPage failed\n");
+    return 1;
+  }
+  printf("Hand::readMoboFlashPage succeeded\n");
+  return 0;
+}
+
+void print_page(const vector<uint8_t> &v)
+{
+  if (v.size() != 256)
+  {
+    printf("invalid page size: %d\n", (int)v.size());
+    return;
+  }
+  for (int i = 0; i < 256; i++)
+  {
+    printf("0x%02x  ", v[i]);
+    if (i % 8 == 7)
+      printf("\n");
+  }
+}
+
+int mflash_test(int argc, char **argv, Hand &hand)
+{
+  vector<uint8_t> page_data;
+  const uint32_t page_num = 31250;
+  if (!hand.readMoboFlashPage(page_num, page_data))
+  {
+    printf("initial page read fail\n");
+    return 1;
+  }
+  printf("page contents at start:\n");
+  print_page(page_data);
+  if (!hand.eraseMoboFlashSector(page_num))
+  {
+    printf("couldn't erase sector\n");
+    return 1;
+  }
+  if (!hand.readMoboFlashPage(page_num, page_data))
+  {
+    printf("post-erase page read fail\n");
+    return 1;
+  }
+  printf("page contents after erase:\n");
+  print_page(page_data);
+  for (int i = 0; i < 256; i++)
+    page_data[i] = i;
+  if (!hand.writeMoboFlashPage(page_num, page_data))
+  {
+    printf("page write fail\n");
+    return 1;
+  }
+  if (!hand.readMoboFlashPage(page_num, page_data))
+  {
+    printf("post-write page read fail\n");
+    return 1;
+  }
+  printf("page contents after write:\n");
+  print_page(page_data);
+  return 0;
+}
+
+///////////////////////
+
+#define CLI_FUNC(x) do { cmds[string(#x)] = x; } while (0)
 
 int main(int argc, char **argv)
 {
-  if (argc < 2)
-  {
-    printf("usage: hand_cli COMMAND [OPTIONS]\n");
-    return 1;
-  }
   ros::Time::init();
   Hand hand;
   if (!hand.init())
@@ -430,38 +510,41 @@ int main(int argc, char **argv)
     return false;
   }
   signal(SIGINT, signal_handler);
-  const char *cmd = argv[1];
-  if (!strcmp(cmd, "p")) 
-    return set_all_finger_powers(argc, argv, hand);
-  else if (!strcmp(cmd, "fp")) 
-    return set_single_finger_power(argc, argv, hand);
-  else if (!strcmp(cmd, "pp"))
-    return pp(argc, argv, hand);
-  else if (!strcmp(cmd, "fcm")) 
-    return set_finger_control_mode(argc, argv, hand);
-  else if (!strcmp(cmd, "jp")) // set joint position
-    return set_joint_position(argc, argv, hand);
-  else if (!strcmp(cmd, "cam_pgm"))
-    return cam_pgm(argc, argv, hand);
-  else if (!strcmp(cmd, "fping"))
-    return finger_ping(argc, argv, hand);
-  else if (!strcmp(cmd, "palm_ping"))
-    return palm_ping(argc, argv, hand);
-  else if (!strcmp(cmd, "test_finger_currents"))
-    return test_finger_currents(argc, argv, hand);
-  else if (!strcmp(cmd, "test_finger_stream"))
-    return test_finger_stream(argc, argv, hand);
-  else if (!strcmp(cmd, "mmburn"))
-    return mmburn(argc, argv, hand);
-  else if (!strcmp(cmd, "mmburn_all"))
-    return mmburn_all(argc, argv, hand);
-  else if (!strcmp(cmd, "f2burn"))
-    return f2burn(argc, argv, hand);
-  else if (!strcmp(cmd, "f3burn"))
-    return f3burn(argc, argv, hand);
-  else if (!strcmp(cmd, "palmburn"))
-    return palmburn(argc, argv, hand);
-  printf("unknown command: [%s]\n", cmd);
-  return 1;
+  typedef boost::function<int(int, char **, Hand &) > cli_cmd_t;
+  map<string, cli_cmd_t> cmds;
+  // todo: fun challenge to make function declaration macro to automatically
+  // do this, instead of having to instantiate macros here
+  CLI_FUNC(p);
+  CLI_FUNC(fp);
+  CLI_FUNC(pp);
+  CLI_FUNC(fcm);
+  CLI_FUNC(jp);
+  CLI_FUNC(cam_pgm);
+  CLI_FUNC(fping);
+  CLI_FUNC(palm_ping);
+  CLI_FUNC(test_finger_currents);
+  CLI_FUNC(test_finger_stream);
+  CLI_FUNC(mmburn);
+  CLI_FUNC(mmburn_all);
+  CLI_FUNC(f2burn);
+  CLI_FUNC(f3burn);
+  CLI_FUNC(palmburn);
+  CLI_FUNC(mflash_read);
+  CLI_FUNC(mflash_test);
+  if (argc == 1)
+  {
+    printf("available commands:\n");
+    std::pair<string, cli_cmd_t> cmd;
+    BOOST_FOREACH(cmd, cmds)
+      printf("  %s\n", cmd.first.c_str());
+    return 0;
+  }
+  string cli_cmd = string(argv[1]);
+  if (cmds.find(cli_cmd) == cmds.end())
+  {
+    printf("unknown command: %s\n", cli_cmd.c_str());
+    return 1;
+  }
+  return cmds[cli_cmd](argc, argv, hand);
 }
 

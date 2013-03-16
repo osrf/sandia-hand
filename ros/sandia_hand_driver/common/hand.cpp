@@ -4,10 +4,11 @@
 #include <cmath>
 #include <boost/bind.hpp>
 #include "sandia_hand/hand_packets.h"
-#include <ros/time.h>
 using namespace sandia_hand;
+using std::vector;
 
 Hand::Hand()
+: last_packet_id_(0)
 {
   socks[0] = &control_sock;
   socks[1] = &cam_socks[0];
@@ -283,6 +284,10 @@ bool Hand::rx_data(const int sock_idx, const uint8_t *data, const int data_len)
       rx_map_[pkt_id](data + 4, (uint16_t)data_len - 4); // neat.
     else
       printf("unhandled packet id: %d\n", pkt_id);
+    // this feels inelegant. revisit at some point.
+    last_packet_id_ = pkt_id;
+    last_packet_data_.resize(data_len-4);
+    memcpy(&last_packet_data_[0], data + 4, data_len - 4);
   }
   else if (sock_idx == 3) // rs485 sock
   {
@@ -371,6 +376,72 @@ bool Hand::listenForDuration(float seconds)
        (ros::Time::now() - t_start).toSec() < seconds;)
     if (!this->listen(0.01))
       return false;
+  return true;
+}
+
+bool Hand::readMoboFlashPage(const uint32_t page_num, 
+                             vector<uint8_t> &page)
+{
+  read_fpga_flash_page_t req;
+  req.page_num = page_num;
+  if (!txPacket(CMD_ID_READ_FPGA_FLASH_PAGE, req))
+    return false;
+  fpga_flash_page_t p;
+  if (!listenForPacketId(CMD_ID_FPGA_FLASH_PAGE, 0.5, p))
+    return false;
+  if (p.page_status != FPGA_FLASH_PAGE_STATUS_READ || p.page_num != page_num)
+  {
+    printf("wrong page came back from read request\n");
+    return false;
+  }
+  printf("read flash page %d:\n", page_num);
+  for (int i = 0; i < FPGA_FLASH_PAGE_SIZE; i++)
+  {
+    printf("0x%02x  ", p.page_data[i]);
+    if (i % 8 == 7)
+      printf("\n");
+  }
+  printf("\n");
+  page.resize(FPGA_FLASH_PAGE_SIZE);
+  memcpy(&page[0], &p.page_data[0], FPGA_FLASH_PAGE_SIZE);
+  return true;
+}
+
+bool Hand::writeMoboFlashPage(const uint32_t page_num, 
+                              vector<uint8_t> &page)
+{
+  if (page.size() != 256)
+    return false;
+  fpga_flash_page_t req;
+  req.page_num = page_num;
+  req.page_status = FPGA_FLASH_PAGE_STATUS_WRITE_REQ;
+  memcpy(req.page_data, &page[0], 256);
+  if (!txPacket(CMD_ID_FPGA_FLASH_PAGE, req))
+    return false;
+  fpga_flash_page_t p;
+  if (!listenForPacketId(CMD_ID_FPGA_FLASH_PAGE, 0.5, p))
+    return false;
+  if (p.page_status != FPGA_FLASH_PAGE_STATUS_WRITE_ACK || 
+      p.page_num != page_num)
+  {
+    printf("wrong page came back from write request\n");
+    return false;
+  }
+  printf("wrote flash page %d\n", page_num);
+  return true;
+}
+
+bool Hand::eraseMoboFlashSector(const uint32_t page_num)
+{
+  fpga_flash_erase_sector_t req;
+  req.sector_page_num = page_num;
+  if (!txPacket(CMD_ID_FPGA_FLASH_ERASE_SECTOR, req))
+    return false;
+  fpga_flash_erase_sector_ack_t p;
+  if (!listenForPacketId(CMD_ID_FPGA_FLASH_ERASE_SECTOR_ACK, 0.5, p))
+    return false;
+  if (p.sector_page_num != page_num)
+    return false;
   return true;
 }
 

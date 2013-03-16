@@ -49,6 +49,13 @@ void flash_spi_txrx(const uint8_t instr, const uint16_t data_len,
   PIOC->PIO_CODR = PIO_PC29; // release control of the flash SPI lines
 }
 
+uint8_t flash_read_status_register()
+{
+  uint8_t rx_data = 0;
+  flash_spi_txrx(0x05, 1, NULL, &rx_data);
+  return rx_data;
+}
+
 void flash_read_page(const uint32_t page_num, uint8_t *page_data)
 { 
   // assume 256-byte read pages
@@ -56,6 +63,45 @@ void flash_read_page(const uint32_t page_num, uint8_t *page_data)
   tx_data[0] = (page_num >> 8) & 0xff; // page number MSB
   tx_data[1] = page_num & 0xff; // page number LSB
   tx_data[2] = 0; // page-aligned reads
-  flash_spi_txrx(0x03, 256+3, tx_data, page_data);
+  flash_spi_txrx(0x03, 256+3, tx_data, page_data); // Read Data instruction
+}
+
+void flash_write_page(const uint32_t page_num, const uint8_t *page_data)
+{ 
+  printf("writing page %d...\r\n", page_num);
+  flash_spi_txrx(0x06, 0, NULL, NULL); // send Write Enable instruction
+  uint8_t tx_data[256+3] = {0};
+  tx_data[0] = (page_num >> 8) & 0xff; // page number MSB
+  tx_data[1] = page_num & 0xff; // page number LSB
+  tx_data[2] = 0; // page-aligned writes
+  flash_spi_txrx(0x02, 256+3, tx_data, NULL); // Page Program instruction
+  // check Write In Progress bit periodicially
+  int check_count = 0;
+  while (flash_read_status_register() & 0x01) 
+  {
+    check_count++;
+    for (volatile int i = 0; i < 100; i++) { } // burn some cycles
+  }
+  printf("write needed %d checks\r\n", check_count);
+}
+
+void flash_erase_sector(const uint32_t page_num)
+{
+  printf("erasing sector of page %d...\r\n", page_num);
+  flash_spi_txrx(0x06, 0, NULL, NULL); // send Write Enable instruction
+  uint8_t tx_data[3] = {0};
+  tx_data[0] = (page_num >> 8) & 0xff; // page number MSB
+  tx_data[1] = page_num & 0xff; // page number LSB
+  tx_data[2] = 0; // page-aligned writes
+  flash_spi_txrx(0xd8, 3, tx_data, NULL); // Sector Erase instruction
+  // check Write In Progress bit periodicially
+  int check_count = 0;
+  while (flash_read_status_register() & 0x01) 
+  {
+    check_count++;
+    for (volatile int i = 0; i < 100; i++) { } // burn some cycles
+  }
+  printf("sector erase needed %d checks\r\n", check_count);
+
 }
 

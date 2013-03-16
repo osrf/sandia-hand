@@ -11,10 +11,12 @@ int main()
 {
   wdt_disable(); // todo: revisit this...
   DDRC = 0x0c;
-  while (1)
+  for (uint32_t i = 0; ; i++)
   {
     _delay_ms(250);
     PORTC ^= 0x04;
+    if (i % 20 == 0)
+      PORTC ^= 0x08; // toggle ssr output
   }
   return 0;
 }

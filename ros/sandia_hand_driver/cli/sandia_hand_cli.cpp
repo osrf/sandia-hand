@@ -426,13 +426,13 @@ int palmburn(int argc, char **argv, Hand &hand)
 
 int mflash_read(int argc, char **argv, Hand &hand)
 {
-  if (argc != 2)
+  if (argc != 3)
   {
     printf("usage: mflash_read PAGE_NUM\n");
     return 1;
   }
   vector<uint8_t> page_data;
-  if (!hand.readMoboFlashPage(atoi(argv[1]), page_data))
+  if (!hand.readMoboFlashPage(atoi(argv[2]), page_data))
   {
     printf("Hand::readMoboFlashPage failed\n");
     return 1;

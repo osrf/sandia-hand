@@ -705,8 +705,8 @@ void enet_tx_packet(const uint32_t packet_id,
   udp->udp_len = htons(8 + 4 + packet_len);
   udp->udp_checksum = 0; // IPv4 UDP checksum is optional. 
   enet_add_ip_header_checksum(&udp->ip);
-  *((uint32_t *)((uint32_t *)udp + sizeof(udp_header_t))) = packet_id;
-  memcpy((uint8_t *)udp + sizeof(udp_header_t) + 4, packet, packet_len);
+  *((uint32_t *)(((uint8_t *)udp) + sizeof(udp_header_t))) = packet_id;
+  memcpy(((uint8_t *)udp) + sizeof(udp_header_t) + 4, packet, packet_len);
   enet_tx_raw((uint8_t *)udp, sizeof(udp_header_t) + 4 + packet_len);
 }
 

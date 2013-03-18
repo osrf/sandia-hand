@@ -2,6 +2,11 @@ set(CMAKE_C_LINK_FLAGS ${SAM3X_APPLICATION_FLAGS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../ros/sandia_hand_driver/include)
 add_definitions(-DF_CPU=64000000) 
 add_executable(mobo-mcu.elf main.c startup.c fpga_spi.c power.c enet.c finger.c cam.c flash.c)
+add_custom_command(OUTPUT mobo-mcu.bin
+                   COMMAND ${ARM_GCC_ROOT}/bin/arm-none-eabi-objcopy -O binary ${CMAKE_CURRENT_BINARY_DIR}/mobo-mcu.elf ${CMAKE_CURRENT_BINARY_DIR}/mobo-mcu.bin
+                   DEPENDS mobo-mcu.elf)
+add_custom_target(do_mobo-mcu.bin ALL DEPENDS mobo-mcu.bin)
+
 #set_target_properties(mobo_mcu.elf PROPERTIES LINK_FLAGS "-T\"${CMAKE_CURRENT_SOURCE_DIR}/../common_sam3x/sam3x8e.ld\"")
 target_link_libraries(mobo-mcu.elf common_sam3x c gcc)
 

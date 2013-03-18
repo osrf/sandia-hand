@@ -5,7 +5,7 @@ add_executable(mobo-mcu.elf main.c startup.c fpga_spi.c power.c enet.c finger.c 
 #set_target_properties(mobo_mcu.elf PROPERTIES LINK_FLAGS "-T\"${CMAKE_CURRENT_SOURCE_DIR}/../common_sam3x/sam3x8e.ld\"")
 target_link_libraries(mobo-mcu.elf common_sam3x c gcc)
 
-set(OPENOCD_INIT ${OPENOCD} -f ${PROJECT_SOURCE_DIR}/openocd/jtagkey.cfg -f ${PROJECT_SOURCE_DIR}/mobo/openocd.cfg -c init -c halt)
+set(OPENOCD_INIT ${OPENOCD} -f ${PROJECT_SOURCE_DIR}/openocd/olimex-arm-usb-tiny-h.cfg -f ${PROJECT_SOURCE_DIR}/mobo/openocd.cfg -c init -c halt)
 
 add_custom_target(mobo-mcu-size
                   COMMAND ${ARM_GCC_ROOT}/bin/arm-none-eabi-size -A -x ${CMAKE_CURRENT_BINARY_DIR}/mobo-mcu.elf

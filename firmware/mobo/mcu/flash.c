@@ -102,6 +102,5 @@ void flash_erase_sector(const uint32_t page_num)
     for (volatile int i = 0; i < 100; i++) { } // burn some cycles
   }
   printf("sector erase needed %d checks\r\n", check_count);
-
 }
 

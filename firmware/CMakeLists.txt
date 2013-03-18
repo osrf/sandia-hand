@@ -65,7 +65,7 @@ set(SAM3X_APPLICATION_FLAGS "-g -mthumb -mcpu=cortex-m3 -T\"${CMAKE_CURRENT_SOUR
 
 # sam3s common stuff
 set(SAM3S_APP_LINK_FLAGS "-g -mthumb -mcpu=cortex-m3 -T\"${PROJECT_SOURCE_DIR}/common_sam3s/sam3s_app.ld\" -Wl,-Map=memory.map -Wl,--cref --entry=reset_vector -Wl,--no-gc-sections -Wl,--warn-common -Wl,--unresolved-symbols=report-all -Wl,--no-undefined")
-set(SAM3S_OPENOCD_INIT ${OPENOCD} -f ${PROJECT_SOURCE_DIR}/openocd/jtagkey.cfg -f ${PROJECT_SOURCE_DIR}/openocd/sam3s.cfg -c init -c halt)
+set(SAM3S_OPENOCD_INIT ${OPENOCD} -f ${PROJECT_SOURCE_DIR}/openocd/olimex-arm-usb-tiny-h.cfg -f ${PROJECT_SOURCE_DIR}/openocd/sam3s.cfg -c init -c halt)
 
 include_directories(asf-3.5.1_partial/sam/utils/cmsis/sam3x/include)
 include_directories(asf-3.5.1_partial/thirdparty/CMSIS/Include)

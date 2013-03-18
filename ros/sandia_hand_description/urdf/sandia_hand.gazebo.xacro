@@ -66,13 +66,13 @@
   <xacro:property name="cam_d1" value="0.1" />
   <xacro:property name="cam_L1" value="0.09" />
   <xacro:macro name="sandia_hand_cameras_gazebo" params="side reflect">
-    <joint name="left_camera_frame_joint" type="fixed">
-      <origin xyz="${(cam_L1+reflect*stereo_offset/2)*sin_theta} ${cam_d1 - (cam_L1+reflect*stereo_offset/2)*cos_theta} 0.025"
-              rpy="${-reflect*theta} -${M_pi/2} ${M_pi}"/>
+    <joint name="${side}_palm_left_camera_frame_joint" type="fixed">
+      <origin xyz="${(cam_L1+reflect*stereo_offset/2)*sin_theta} ${reflect*(cam_d1-(cam_L1+reflect*stereo_offset/2)*cos_theta)} 0.025"
+              rpy="${reflect*theta} -${M_pi/2} ${M_pi}"/>
       <parent link="${side}_palm"/>
-      <child link="left_camera_frame"/>
+      <child link="${side}_palm_left_camera_frame"/>
     </joint>
-    <link name="left_camera_frame">
+    <link name="${side}_palm_left_camera_frame">
       <inertial>
         <mass value="0.01"/>
         <origin xyz="0 0 0"/>
@@ -85,14 +85,14 @@
         </geometry>
       </visual>
     </link>
-    <joint name="left_camera_optical_frame_joint" type="fixed">
+    <joint name="${side}_palm_left_camera_optical_frame_joint" type="fixed">
       <origin rpy="${-M_pi/2} 0.0 ${-M_pi/2}" xyz="0 0 0"/>
-      <parent link="left_camera_frame"/>
-      <child link="left_camera_optical_frame"/>
+      <parent link="${side}_palm_left_camera_frame"/>
+      <child link="${side}_palm_left_camera_optical_frame"/>
     </joint>
-    <link name="left_camera_optical_frame"/>
-    <gazebo reference="left_camera_frame">
-      <sensor name="stereo_camera" type="multicamera">
+    <link name="${side}_palm_left_camera_optical_frame"/>
+    <gazebo reference="${side}_palm_left_camera_frame">
+      <sensor name="${side}_palm_stereo_camera" type="multicamera">
         <update_rate>60.0</update_rate>
         <camera name="left">
           <!-- 72 degrees -->
@@ -100,7 +100,7 @@
           <image>
             <width>752</width>
             <height>480</height>
-            <format>L_INT8</format>
+            <format>L8</format>
           </image>
           <clip>
             <near>0.02</near>
@@ -114,7 +114,7 @@
           <image>
             <width>752</width>
             <height>480</height>
-            <format>L_INT8</format>
+            <format>L8</format>
           </image>
           <clip>
             <near>0.02</near>
@@ -127,7 +127,7 @@
           <cameraName>sandia_hand/${side}_hand/camera</cameraName>
           <imageTopicName>image_raw</imageTopicName>
           <cameraInfoTopicName>camera_info</cameraInfoTopicName>
-          <frameName>left_camera_optical_frame</frameName>
+          <frameName>${side}_palm_left_camera_optical_frame</frameName>
           <hackBaseline>0.07</hackBaseline>
           <distortionK1>0.0</distortionK1>
           <distortionK2>0.0</distortionK2>
@@ -137,13 +137,13 @@
         </plugin>
       </sensor>
     </gazebo>
-    <joint name="right_camera_frame_joint" type="fixed">
-      <origin xyz="${(cam_L1-reflect*stereo_offset/2)*sin_theta} ${-cam_d1+(cam_L1-reflect*stereo_offset/2)*cos_theta} 0.025"
+    <joint name="${side}_palm_right_camera_frame_joint" type="fixed">
+      <origin xyz="${(cam_L1-reflect*stereo_offset/2)*sin_theta} ${reflect*(cam_d1-(cam_L1-reflect*stereo_offset/2)*cos_theta)} 0.025"
               rpy="${reflect*theta} -${M_pi/2} ${M_pi}"/>
       <parent link="${side}_palm"/>
-      <child link="right_camera_frame"/>
+      <child link="${side}_palm_right_camera_frame"/>
     </joint>
-    <link name="right_camera_frame">
+    <link name="${side}_palm_right_camera_frame">
       <inertial>
         <mass value="0.01"/>
         <origin xyz="0 0 0"/>
@@ -156,12 +156,12 @@
         </geometry>
       </visual>
     </link>
-    <joint name="right_camera_optical_frame_joint" type="fixed">
+    <joint name="${side}_palm_right_camera_optical_frame_joint" type="fixed">
       <origin rpy="${-M_pi/2} 0.0 ${-M_pi/2}" xyz="0 0 0"/>
-      <parent link="right_camera_frame"/>
-      <child link="right_camera_optical_frame"/>
+      <parent link="${side}_palm_right_camera_frame"/>
+      <child link="${side}_palm_right_camera_optical_frame"/>
     </joint>
-    <link name="right_camera_optical_frame"/>
+    <link name="${side}_palm_right_camera_optical_frame"/>
   </xacro:macro>
   <!-- end cameras -->
   <xacro:macro name="sandia_hand_gazebo_controller" params="side">

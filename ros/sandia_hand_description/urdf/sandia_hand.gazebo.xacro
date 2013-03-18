@@ -65,10 +65,10 @@
   <!-- cam_d1 and cam_L1 are lengths that adjust the camera position -->
   <xacro:property name="cam_d1" value="0.1" />
   <xacro:property name="cam_L1" value="0.07" />
-  <xacro:macro name="sandia_hand_cameras_gazebo" params="side">
+  <xacro:macro name="sandia_hand_cameras_gazebo" params="side reflect">
     <joint name="left_camera_frame_joint" type="fixed">
-      <origin xyz="${cam_L1*sin_theta} ${-cam_d1+cam_L1*cos_theta} 0.025"
-              rpy="${-theta} -${M_pi/2} ${M_pi}"/>
+      <origin xyz="${cam_L1*sin_theta} ${reflect*cam_d1 - reflect*cam_L1*cos_theta} 0.025"
+              rpy="${reflect*theta} -${M_pi/2} ${M_pi}"/>
       <parent link="${side}_palm"/>
       <child link="left_camera_frame"/>
     </joint>

@@ -108,7 +108,7 @@
           </clip>
         </camera>
         <camera name="right">
-          <pose>0 ${stereo_offset} 0  0 0 0</pose>
+          <pose>0 ${-stereo_offset} 0  0 0 0</pose>
           <!-- 72 degrees -->
           <horizontal_fov>${72 * M_pi / 180}</horizontal_fov>
           <image>
@@ -128,7 +128,7 @@
           <imageTopicName>image_raw</imageTopicName>
           <cameraInfoTopicName>camera_info</cameraInfoTopicName>
           <frameName>${side}_palm_left_camera_optical_frame</frameName>
-          <hackBaseline>0.04</hackBaseline>
+          <hackBaseline>${stereo_offset}</hackBaseline>
           <distortionK1>0.0</distortionK1>
           <distortionK2>0.0</distortionK2>
           <distortionK3>0.0</distortionK3>

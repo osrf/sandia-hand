@@ -67,8 +67,8 @@
   <xacro:property name="cam_L1" value="0.09" />
   <xacro:macro name="sandia_hand_cameras_gazebo" params="side reflect">
     <joint name="left_camera_frame_joint" type="fixed">
-      <origin xyz="${(cam_L1-stereo_offset/2)*sin_theta} ${cam_d1 - (cam_L1-stereo_offset/2)*cos_theta} 0.025"
-              rpy="${theta} -${M_pi/2} ${M_pi}"/>
+      <origin xyz="${(cam_L1+reflect*stereo_offset/2)*sin_theta} ${cam_d1 - (cam_L1+reflect*stereo_offset/2)*cos_theta} 0.025"
+              rpy="${-reflect*theta} -${M_pi/2} ${M_pi}"/>
       <parent link="${side}_palm"/>
       <child link="left_camera_frame"/>
     </joint>
@@ -138,8 +138,8 @@
       </sensor>
     </gazebo>
     <joint name="right_camera_frame_joint" type="fixed">
-      <origin xyz="${(cam_L1+stereo_offset/2)*sin_theta} ${-cam_d1+(cam_L1+stereo_offset/2)*cos_theta} 0.025"
-              rpy="${-theta} -${M_pi/2} ${M_pi}"/>
+      <origin xyz="${(cam_L1-reflect*stereo_offset/2)*sin_theta} ${-cam_d1+(cam_L1-reflect*stereo_offset/2)*cos_theta} 0.025"
+              rpy="${reflect*theta} -${M_pi/2} ${M_pi}"/>
       <parent link="${side}_palm"/>
       <child link="right_camera_frame"/>
     </joint>

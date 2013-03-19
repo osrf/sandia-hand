@@ -29,16 +29,34 @@ Dialog::Dialog(QWidget *parent)
 void Dialog::onFirmwareLoad(const QString &board_name_qstr)
 {
   string board = board_name_qstr.toStdString();
+  // first, program the bootloader
   string cmd = string("cd `rospack find sandia_hand_driver`/../../firmware/build && make ") + board + string("-bl-gpnvm && make ") + board + string("-bl-program");
+  //if (board == string("f2") || board == string("f3"))
+  //  cmd = "cd `rospack find sandia_hand_driver`/cli/loose_finger_cli 
   printf("%s\n", cmd.c_str());
   int rv = system(cmd.c_str());
   if (rv)
+  {
     QMessageBox::critical(this, tr("Firmware Load Error"),
-                          tr("Unable to load firmware.\n"
+                          tr("Unable to program bootloader.\n"
                              "See terminal for details."));
-  else
-    QMessageBox::information(this, tr("Firmware Load Complete"),
-                             tr("Successfully loaded firmware."));
+    return;
+  }
+  if (board == string("fmcb"))
+  {
+    // install application image now
+    cmd = string("cd `rospack find sandia_hand_driver` && bin/loose_finger_cli /dev/ttyUSB0 burn `rospack find sandia_hand_driver`/../../firmware/build/fmcb/std/fmcb-std.bin");
+    rv = system(cmd.c_str());
+    if (rv)
+    {
+      QMessageBox::critical(this, tr("Firmware Load Error"),
+                            tr("Unable to load application image.\n"
+                               "See terminal for details."));
+      return;
+    }
+  }
+  QMessageBox::information(this, tr("Firmware Load Complete"),
+                           tr("Successfully loaded firmware."));
 }
 
 LoadFirmwareTab::LoadFirmwareTab(QWidget *parent)

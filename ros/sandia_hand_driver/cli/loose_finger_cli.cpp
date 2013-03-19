@@ -385,8 +385,33 @@ int dump(int argc, char **argv, LooseFinger &lf)
   return 0;
 }
 
+bool fake_set_finger_power()
+{
+  return true;
+}
+
 int burn(int argc, char **argv, LooseFinger &lf)
 {
+  verify_argc(argc, 3, "usage: mmburn MM_BIN_FILE\n");
+  const char *fn = argv[3];
+  FILE *f = fopen(fn, "rb");
+  if (!f)
+  {
+    printf("couldn't open motor module application image %s\n", fn);
+    return 1;
+  }
+  if (!lf.mm.programAppFile(f, fake_set_finger_power, fake_set_finger_power))
+  {
+    printf("failed to program motor module with image %s\n", fn);
+    return 1;
+  }
+  printf("successfully programmed motor module with image %s\n", fn);
+  if (lf.mm.blBoot())
+    printf("booted motor module\n");
+  else
+    printf("failed to boot motor module\n");
+  return 0;
+#if 0
   verify_argc(argc, 4, "usage: burn FILENAME");
   const char *fn = argv[3];
   printf("burning binary image %s to motor module...\n", fn);
@@ -438,6 +463,7 @@ int burn(int argc, char **argv, LooseFinger &lf)
   else
     printf("failed to boot motor module\n");
   return 0;
+#endif
 }
 
 

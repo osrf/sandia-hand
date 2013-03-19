@@ -1,0 +1,8 @@
+find_package(Qt4 REQUIRED)
+set(sandia_hand_gui_SOURCES main.cpp dialog.cpp)
+set(sandia_hand_gui_HEADERS dialog.h)
+QT4_WRAP_CPP(sandia_hand_gui_HEADERS_MOC ${sandia_hand_gui_HEADERS})
+include(${QT_USE_FILE})
+add_definitions(${QT_DEFINITIONS})
+add_executable(sandia_hand_gui ${sandia_hand_gui_SOURCES} ${sandia_hand_gui_HEADERS_MOC})
+target_link_libraries(sandia_hand_gui ${QT_LIBRARIES})

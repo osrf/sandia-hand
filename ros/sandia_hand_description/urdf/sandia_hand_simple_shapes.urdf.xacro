@@ -420,6 +420,7 @@
     <xacro:sandia_hand_gazebo_controller side="${side}" />
     -->
     <xacro:sandia_hand_gazebo side="${side}" />
+    <xacro:sandia_hand_cameras_gazebo side="${side}" reflect="${reflect}" />
   </xacro:macro>
 </robot>
 

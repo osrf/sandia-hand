@@ -421,6 +421,7 @@ bool SerialMessageProcessor::programAppFile(FILE *bin_file,
 {
   // important! this function assumes that the FILE* is either created for
   // application image space (0x0402000) or it is already advanced via fseek() 
+
   // first, do a power-cycle hard reset to ensure the bootloader is running
   if (!power_off()) return false;
   if (!listenFor(1.0)) return false; // wait for power off

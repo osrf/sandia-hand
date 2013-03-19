@@ -282,8 +282,8 @@ bool Hand::rx_data(const int sock_idx, const uint8_t *data, const int data_len)
     const uint32_t pkt_id = *((uint32_t *)(data));
     if (rx_map_.find(pkt_id) != rx_map_.end())
       rx_map_[pkt_id](data + 4, (uint16_t)data_len - 4); // neat.
-    else
-      printf("unhandled packet id: %d\n", pkt_id);
+    //else
+    //  printf("unhandled packet id: %d\n", pkt_id);
     // this feels inelegant. revisit at some point.
     last_packet_id_ = pkt_id;
     last_packet_data_.resize(data_len-4);
@@ -370,6 +370,48 @@ bool Hand::programPalmAppFile(FILE *bin_file)
                boost::bind(&Hand::enableLowvoltRegulator, this, true));
 }
 
+bool Hand::programFPGAGoldenFile(FILE *bin_file)
+{
+  return programFPGAFile(8*1024*1024, bin_file); // midpoint of flash
+}
+
+bool Hand::programFPGAFile(const int start_address, FILE *bin_file)
+{
+  vector<uint8_t> page;
+  page.resize(256);
+  // as we go along, erase sectors as needed.
+  for (int page_num = 0 + start_address; 
+       page_num < 30000 + start_address && !feof(bin_file); 
+       page_num++)
+  {
+    if (page_num % 256 == 0) // first page of this sector, erase first
+    {
+      printf("erasing sector starting at page %x...\n", page_num);
+      if (!eraseMoboFlashSector(page_num))
+        return false;
+    }
+    printf("programming page %x...\n", page_num);
+    memset(&page[0], 0, 256);
+    size_t nread = fread(&page[0], 1, 256, bin_file);
+    if (nread == 0)
+    {
+      printf("couldn't read a flash page, fread returned %d\n", (int)nread);
+      return false;
+    }
+    else if (nread < 256)
+      printf("partial read (%d bytes) of page %d. hopefully last page?\n",
+             (int)nread, page_num);
+    if (!writeMoboFlashPage(page_num, page))
+    {
+      printf("couldn't write page %d\n", page_num);
+      return false;
+    }
+  }
+  printf("done.\n");
+  return true;
+  // todo: buffer the file and verify it at the end.
+}
+
 bool Hand::listenForDuration(float seconds)
 {
   for (ros::Time t_start(ros::Time::now()); 
@@ -427,7 +469,7 @@ bool Hand::writeMoboFlashPage(const uint32_t page_num,
     printf("wrong page came back from write request\n");
     return false;
   }
-  printf("wrote flash page %d\n", page_num);
+  //printf("wrote flash page %d\n", page_num);
   return true;
 }
 
@@ -438,10 +480,17 @@ bool Hand::eraseMoboFlashSector(const uint32_t page_num)
   if (!txPacket(CMD_ID_FPGA_FLASH_ERASE_SECTOR, req))
     return false;
   fpga_flash_erase_sector_ack_t p;
-  if (!listenForPacketId(CMD_ID_FPGA_FLASH_ERASE_SECTOR_ACK, 0.5, p))
+  if (!listenForPacketId(CMD_ID_FPGA_FLASH_ERASE_SECTOR_ACK, 2.0, p))
+  {
+    printf("no response in eraseMoboFlashSector\n");
     return false;
+  }
   if (p.sector_page_num != page_num)
+  {
+    printf("in eraseMoboFlashSector: p.sector_page_num = %d, page_num = %d\n",
+           p.sector_page_num, page_num);
     return false;
+  }
   return true;
 }
 

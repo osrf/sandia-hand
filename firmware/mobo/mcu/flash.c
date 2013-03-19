@@ -74,26 +74,37 @@ void flash_read_page(const uint32_t page_num, uint8_t *page_data)
 
 void flash_write_page(const uint32_t page_num, const uint8_t *page_data)
 { 
+  /*
   printf("writing page %d...\r\n", page_num);
+  for (int i = 0; i < 256; i++) 
+  { 
+    printf("0x%02x  ", page_data[i]); 
+    if (i % 8 == 7) 
+      printf("\r\n"); 
+  }
+  */
   flash_spi_txrx(0x06, 0, NULL, NULL, 0); // send Write Enable instruction
   uint8_t tx_data[256+3] = {0};
   tx_data[0] = (page_num >> 8) & 0xff; // page number MSB
   tx_data[1] = page_num & 0xff; // page number LSB
   tx_data[2] = 0; // page-aligned writes
+  for (int i = 0; i < 256; i++)
+    tx_data[i+3] = page_data[i];
   flash_spi_txrx(0x02, 256+3, tx_data, NULL, 0); // Page Program instruction
   // check Write In Progress bit periodicially
+  // todo: figure out a decent timeout
   int check_count = 0;
   while (flash_read_status_register() & 0x01) 
   {
     check_count++;
     for (volatile int i = 0; i < 100; i++) { } // burn some cycles
   }
-  printf("write needed %d checks\r\n", check_count);
+  //printf("write needed %d checks\r\n", check_count);
 }
 
 void flash_erase_sector(const uint32_t page_num)
 {
-  printf("erasing sector of page %d...\r\n", page_num);
+  //printf("erasing sector of page %d...\r\n", page_num);
   flash_spi_txrx(0x06, 0, NULL, NULL, 0); // send Write Enable instruction
   uint8_t tx_data[3] = {0};
   tx_data[0] = (page_num >> 8) & 0xff; // page number MSB
@@ -101,12 +112,13 @@ void flash_erase_sector(const uint32_t page_num)
   tx_data[2] = 0; // page-aligned writes
   flash_spi_txrx(0xd8, 3, tx_data, NULL, 0); // Sector Erase instruction
   // check Write In Progress bit periodicially
+  // todo: figure out a decent timeout
   int check_count = 0;
   while (flash_read_status_register() & 0x01) 
   {
     check_count++;
     for (volatile int i = 0; i < 100; i++) { } // burn some cycles
   }
-  printf("sector erase needed %d checks\r\n", check_count);
+  //printf("sector erase needed %d checks\r\n", check_count);
 }
 

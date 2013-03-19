@@ -481,6 +481,8 @@ int mflash_test(int argc, char **argv, Hand &hand)
   print_page(page_data);
   for (int i = 0; i < 256; i++)
     page_data[i] = i;
+  printf("about to write page:\n");
+  print_page(page_data);
   if (!hand.writeMoboFlashPage(page_num, page_data))
   {
     printf("page write fail\n");
@@ -491,9 +493,29 @@ int mflash_test(int argc, char **argv, Hand &hand)
     printf("post-write page read fail\n");
     return 1;
   }
-  printf("page contents after write:\n");
+  printf("page contents readback:\n");
   print_page(page_data);
   return 0;
+}
+
+int mflash_burn_golden_fpga(int argc, char **argv, Hand &hand)
+{
+  verify_argc(argc, 3, "usage: mflash_burn_golden_fpga FPGA_BIN_FILE\n");
+  const char *fn = argv[2];
+  FILE *f = fopen(fn, "rb");
+  if (!f)
+  {
+    printf("couldn't open golden image %s\n", fn);
+    return 1;
+  }
+  if (!hand.programFPGAGoldenFile(f))
+  {
+    printf("failed to program with image %s\n", fn);
+    return 1;
+  }
+  printf("successfully programmed golden image %s\n", fn);
+  return 0;
+
 }
 
 ///////////////////////
@@ -531,6 +553,7 @@ int main(int argc, char **argv)
   CLI_FUNC(palmburn);
   CLI_FUNC(mflash_read);
   CLI_FUNC(mflash_test);
+  CLI_FUNC(mflash_burn_golden_fpga);
   if (argc == 1)
   {
     printf("available commands:\n");

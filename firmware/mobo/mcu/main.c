@@ -1,6 +1,6 @@
 /*  Software License Agreement (Apache License)
  *
- *  Copyright 2012 Open Source Robotics Foundation
+ *  Copyright 2013 Open Source Robotics Foundation
  *  Author: Morgan Quigley
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +18,7 @@
 
 #include "common_sam3x/sam3x.h"
 #include "common_sam3x/console.h"
-#include "fpga_spi.h"
+#include "fpga.h"
 #include "power.h"
 #include "enet.h"
 #include "finger.h"
@@ -38,12 +38,22 @@ void systick_vector()
 void main()
 {
   console_init();
-  fpga_spi_init();
+  const int MAX_CONFIG_ATTEMPTS = 3;
+  int attempt = 0;
+  for (; !fpga_is_init_complete() && attempt < MAX_CONFIG_ATTEMPTS; attempt++)
+  {
+    fpga_init();
+    flash_init(); // if needed, blow away fpga image with golden one.
+  }
+  if (attempt >= MAX_CONFIG_ATTEMPTS)
+  {
+    printf("fpga will not configure. now i will go into infinite loop...\r\n");
+    while (1) { } // aaahhhhhhhhhhhhhhhhhhhhh
+  }
   power_init();
   enet_init();
   finger_init();
   cam_init();
-  flash_init();
   printf("hello, world!\r\n");
   // blink the FPGA LED a few times
   for (int i = 0; i < 4; i++)

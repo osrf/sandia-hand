@@ -17,7 +17,7 @@
  */
 
 #include "cam.h"
-#include "fpga_spi.h"
+#include "fpga.h"
 #include "common_sam3x/sam3x.h"
 #include <stdio.h>
 
@@ -28,7 +28,7 @@
 
 void cam_init()
 {
-  // must be run AFTER fpga_spi_init()
+  // must be run AFTER fpga_init()
   printf("hai. cam_init.\r\n");
   PMC->PMC_PCER0 |= (1 << ID_PIOA) | (1 << ID_TWI0);
   PIOA->PIO_PER = PIOA->PIO_OER = PIOA->PIO_SODR = PIO_PA24;

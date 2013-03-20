@@ -1,6 +1,7 @@
 #include "common_sam3x/sam3x.h"
 #include <stdio.h>
 #include "flash.h"
+#include "fpga.h"
 
 // xilinx user guide seems to say that it takes 19,719,712 bits to configure
 // a spartan6 LX75, but the bin file for the prom seems to be slightly smaller.
@@ -23,12 +24,25 @@ void flash_init()
   PIOC->PIO_PER = PIOC->PIO_OER = PIOC->PIO_CODR = PIO_PC29; // low = fpga ctrl
   // NOTE! this assumes that fpga_spi_init() has already run, which set up
   // the SPI controller and pins.
-  /*
-  uint8_t flash_id[20] = {0};
-  flash_spi_txrx(0x9e, 20, NULL, flash_id);
-  for (int i = 0; i < 20; i++)
-    printf(" flash id byte %02d: 0x%02x\r\n", i, flash_id[i]);
-  */
+  if (!fpga_is_init_complete())
+  {
+    uint8_t page_buf[256] = {0};
+    printf("fpga did not configure. replacing root image with golden...\r\n");
+    for (int page_num = 0; page_num < 10000; page_num++) // 10k for xc6slx75
+    {
+      flash_read_page(32768 + page_num, page_buf);
+      if ((page_num % 256) == 0) // first page of this sector; erase first.
+      {
+        if ((page_num % (256*16)) == 0)
+          printf("erasing sector 0x%x  (page 0x%x)\r\n", 
+                 page_num/256, page_num);
+        flash_erase_sector(page_num);
+      }
+      flash_write_page(page_num, page_buf);
+    }
+    printf("done replacing root image. starting fpga init cycle...\r\n");
+    fpga_start_configuration();
+  }
 }
 
 void flash_spi_txrx(const uint8_t instr, const uint16_t data_len, 
@@ -70,6 +84,18 @@ void flash_read_page(const uint32_t page_num, uint8_t *page_data)
   tx_data[1] = page_num & 0xff; // page number LSB
   tx_data[2] = 0; // page-aligned reads
   flash_spi_txrx(0x03, 256+3, tx_data, page_data, 3); // Read Data instruction
+  /*
+  if (page_num == 32768)
+  {
+    printf("read page %d...\r\n", page_num);
+    for (int i = 0; i < 256; i++) 
+    { 
+      printf("0x%02x  ", page_data[i]); 
+      if (i % 8 == 7) 
+        printf("\r\n"); 
+    }
+  }
+  */
 }
 
 void flash_write_page(const uint32_t page_num, const uint8_t *page_data)

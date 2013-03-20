@@ -31,6 +31,9 @@ void Dialog::onFirmwareLoad(const QString &board_name_qstr)
   string board = board_name_qstr.toStdString();
   // first, program the bootloader
   string cmd = string("cd `rospack find sandia_hand_driver`/../../firmware/build && make ") + board + string("-bl-gpnvm && make ") + board + string("-bl-program");
+  printf("onFirmwareLoad(%s)\n", board.c_str());
+  if (board == string("mobo"))
+    cmd = string("cd `rospack find sandia_hand_driver`/../../firmware/build && make mobo-mcu-set_boot_vector && make mobo-mcu-program");
   //if (board == string("f2") || board == string("f3"))
   //  cmd = "cd `rospack find sandia_hand_driver`/cli/loose_finger_cli 
   printf("%s\n", cmd.c_str());

@@ -1,6 +1,6 @@
 /*  Software License Agreement (Apache License)
  *
- *  Copyright 2012 Open Source Robotics Foundation
+ *  Copyright 2013 Open Source Robotics Foundation
  *  Author: Morgan Quigley
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +16,10 @@
  *  limitations under the License.
  */
 
-#include "fpga_spi.h"
+#include <stdio.h>
+#include "fpga.h"
 #include "common_sam3x/sam3x.h"
+#include "led.h"
 
 // hardware connections:
 //  PA27 = SCK
@@ -25,10 +27,40 @@
 //  PA25 = MISO
 //  PC24 = FPGA CS
 //  PA29 = FLASH CS
+//  PA28 = FPGA_DONE
+//  PB26 = FPGA_INIT_B
+//  PB23 = FPGA_PROGRAM_B
+#define PORTA_FPGA_DONE_PIN PIO_PA28
+#define PORTB_PROGRAM_PIN   PIO_PB23
 
-void fpga_spi_init()
+static uint8_t g_fpga_init_complete = 0;
+
+uint8_t fpga_is_init_complete() { return g_fpga_init_complete; }
+
+void fpga_init()
 {
-  PMC->PMC_PCER0 |= (1 << ID_SPI0) | (1 << ID_PIOA) | (1 << ID_PIOC);
+  PMC->PMC_PCER0 |= (1 << ID_SPI0) | 
+                    (1 << ID_PIOA) | (1 << ID_PIOB) | (1 << ID_PIOC);
+  // wait here until fpga is done configuring, and set config status flag 
+  printf("fpga_init()\r\n");
+  PIOA->PIO_PER = PIOA->PIO_ODR = PORTA_FPGA_DONE_PIN;
+  PIOB->PIO_SODR = PORTB_PROGRAM_PIN; // be sure it's high before enabled
+  PIOB->PIO_PER = PIOB->PIO_OER = PORTB_PROGRAM_PIN; 
+  const int FPGA_TIMEOUT = 200; // meaningless units
+  for (volatile int i = 0; i < FPGA_TIMEOUT; i++)
+  {
+    for (volatile int j = 0; j < 500000; j++) { } // hack. fix this someday.
+    if (PIOA->PIO_PDSR & PORTA_FPGA_DONE_PIN)
+    {
+      printf("fpga configuration complete\r\n");
+      g_fpga_init_complete = 1;
+      break;
+    }
+    if (i % 10 == 0)
+      printf("fpga configuration in process %d...\r\n", i);
+    led_dance();
+  }
+
   PIOA->PIO_OER = PIO_PA29 | PIO_PA25 | PIO_PA26 | PIO_PA27; // output enables
   PIOA->PIO_SODR = PIO_PA29; // drive flash chip CS line high
   PIOC->PIO_OER = PIO_PC24; // output enables
@@ -73,5 +105,12 @@ uint16_t fpga_spi_txrx(uint8_t reg, uint16_t tx_data)
   rx |= SPI0->SPI_RDR; // copy out rx LSB 
   PIOC->PIO_SODR = PIO_PC24; // drive FPGA CS line high
   return rx;
+}
+
+void fpga_start_configuration()
+{
+  PIOB->PIO_CODR = PORTB_PROGRAM_PIN; // yank PROGRAM_B down
+  for (volatile int i = 0; i < 10000; i++) { } // burn a bit of time
+  PIOB->PIO_SODR = PORTB_PROGRAM_PIN; // release PROGRAM_B
 }
 

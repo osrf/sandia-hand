@@ -372,25 +372,30 @@ bool Hand::programPalmAppFile(FILE *bin_file)
 
 bool Hand::programFPGAGoldenFile(FILE *bin_file)
 {
-  return programFPGAFile(8*1024*1024, bin_file); // midpoint of flash
+  return programFPGAFile(32768, bin_file); // midpoint of flash
 }
 
-bool Hand::programFPGAFile(const int start_address, FILE *bin_file)
+bool Hand::programFPGAAppFile(FILE *bin_file)
+{
+  return programFPGAFile(0, bin_file); // put application image at root
+}
+
+bool Hand::programFPGAFile(const int start_page, FILE *bin_file)
 {
   vector<uint8_t> page;
   page.resize(256);
   // as we go along, erase sectors as needed.
-  for (int page_num = 0 + start_address; 
-       page_num < 30000 + start_address && !feof(bin_file); 
+  for (int page_num = 0 + start_page; 
+       page_num < 30000 + start_page && !feof(bin_file); 
        page_num++)
   {
     if (page_num % 256 == 0) // first page of this sector, erase first
     {
-      printf("erasing sector starting at page %x...\n", page_num);
+      printf("erasing sector starting at page 0x%x...\n", page_num);
       if (!eraseMoboFlashSector(page_num))
         return false;
     }
-    printf("programming page %x...\n", page_num);
+    //printf("programming page %x...\n", page_num);
     memset(&page[0], 0, 256);
     size_t nread = fread(&page[0], 1, 256, bin_file);
     if (nread == 0)
@@ -436,6 +441,7 @@ bool Hand::readMoboFlashPage(const uint32_t page_num,
     printf("wrong page came back from read request\n");
     return false;
   }
+  /*
   printf("read flash page %d:\n", page_num);
   for (int i = 0; i < FPGA_FLASH_PAGE_SIZE; i++)
   {
@@ -444,6 +450,7 @@ bool Hand::readMoboFlashPage(const uint32_t page_num,
       printf("\n");
   }
   printf("\n");
+  */
   page.resize(FPGA_FLASH_PAGE_SIZE);
   memcpy(&page[0], &p.page_data[0], FPGA_FLASH_PAGE_SIZE);
   return true;

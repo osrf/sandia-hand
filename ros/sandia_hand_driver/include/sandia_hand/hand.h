@@ -58,6 +58,7 @@ public:
   bool programProximalPhalangeAppFile(const uint8_t finger_idx, FILE *bin_file);
   bool programPalmAppFile(FILE *bin_file);
   bool programFPGAGoldenFile(FILE *bin_file);
+  bool programFPGAAppFile(FILE *bin_file);
   bool readMoboFlashPage(const uint32_t page_num, std::vector<uint8_t> &page);
   bool writeMoboFlashPage(const uint32_t page_num, std::vector<uint8_t> &page);
   bool eraseMoboFlashSector(const uint32_t page_num); // erases ENTIRE sector!
@@ -116,7 +117,7 @@ private:
     return true;
   }
   
-  bool programFPGAFile(const int start_address, FILE *bin_file);
+  bool programFPGAFile(const int start_page, FILE *bin_file);
 };
 
 }

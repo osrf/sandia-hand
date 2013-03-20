@@ -1,6 +1,6 @@
 /*  Software License Agreement (Apache License)
  *
- *  Copyright 2012 Open Source Robotics Foundation
+ *  Copyright 2013 Open Source Robotics Foundation
  *  Author: Morgan Quigley
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +16,8 @@
  *  limitations under the License.
  */
 
-#ifndef FPGA_SPI_H
-#define FPGA_SPI_H
+#ifndef FPGA_H
+#define FPGA_H
 
 #include <stdint.h>
 
@@ -43,8 +43,10 @@
 
 #define FPGA_SPI_WRITE                0x80
 
-void fpga_spi_init();
+void fpga_init();
 uint16_t fpga_spi_txrx(uint8_t reg, uint16_t tx_data);
+uint8_t fpga_is_init_complete();
+void fpga_start_configuration();
 
 #endif
 

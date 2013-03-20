@@ -24,7 +24,7 @@
 #include "power.h"
 #include "finger.h"
 #include "cam.h"
-#include "fpga_spi.h"
+#include "fpga.h"
 #include "flash.h"
 
 // hardware connections:

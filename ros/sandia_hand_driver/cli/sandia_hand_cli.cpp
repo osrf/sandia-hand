@@ -459,7 +459,7 @@ void print_page(const vector<uint8_t> &v)
 int mflash_test(int argc, char **argv, Hand &hand)
 {
   vector<uint8_t> page_data;
-  const uint32_t page_num = 31250;
+  const uint32_t page_num = 32768;
   if (!hand.readMoboFlashPage(page_num, page_data))
   {
     printf("initial page read fail\n");
@@ -515,6 +515,57 @@ int mflash_burn_golden_fpga(int argc, char **argv, Hand &hand)
   }
   printf("successfully programmed golden image %s\n", fn);
   return 0;
+}
+
+int mflash_burn_fpga(int argc, char **argv, Hand &hand)
+{
+  verify_argc(argc, 3, "usage: mflash_burn_fpga FPGA_BIN_FILE\n");
+  const char *fn = argv[2];
+  FILE *f = fopen(fn, "rb");
+  if (!f)
+  {
+    printf("couldn't open application image %s\n", fn);
+    return 1;
+  }
+  if (!hand.programFPGAAppFile(f))
+  {
+    printf("failed to program with image %s\n", fn);
+    return 1;
+  }
+  printf("successfully programmed application image %s\n", fn);
+  return 0;
+}
+
+int mflash_dump(int argc, char **argv, Hand &hand)
+{
+  if (argc != 4)
+  {
+    printf("usage: mflash_read START_PAGE NUMBER_OF_PAGES\n");
+    return 1;
+  }
+  vector<uint8_t> page_data;
+  page_data.resize(256);
+  const int start_page = atoi(argv[2]), n_pages = atoi(argv[3]);
+  const char *fn = "dump.bin";
+  FILE *f = fopen(fn, "wb");
+  for (int page_num = start_page; page_num < start_page + n_pages; page_num++)
+  {
+    if (!hand.readMoboFlashPage(page_num, page_data))
+    {
+      printf("couldn't read page %d\n", page_num);
+      return 1;
+    }
+    int n_written = fwrite(&page_data[0], 1, 256, f);
+    if (n_written != 256)
+    {
+      printf("error writing page %d to %s\n", page_num, fn);
+      return 1;
+    }
+  }
+  fclose(f);
+  printf("%d pages (%d bytes) written to %s\n", 
+         n_pages, n_pages * 256, fn);
+  return 0;
 
 }
 
@@ -554,6 +605,8 @@ int main(int argc, char **argv)
   CLI_FUNC(mflash_read);
   CLI_FUNC(mflash_test);
   CLI_FUNC(mflash_burn_golden_fpga);
+  CLI_FUNC(mflash_burn_fpga);
+  CLI_FUNC(mflash_dump);
   if (argc == 1)
   {
     printf("available commands:\n");

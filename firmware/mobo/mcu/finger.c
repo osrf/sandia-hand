@@ -20,7 +20,7 @@
 #include "finger.h"
 #include <stdio.h>
 #include "common_sam3x/sam3x.h"
-#include "fpga_spi.h"
+#include "fpga.h"
 
 // hardware connections:
 // PA15 = RS485_SEL

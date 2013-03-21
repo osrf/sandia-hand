@@ -60,6 +60,10 @@ void cam_init()
     const uint16_t read_mode_val = cam_read_register(i, 0x0d);
     printf("cam %d initial read mode: 0x%04x\r\n", i, read_mode_val);
     cam_write_register(i, 0x0d, read_mode_val | 0x30);
+
+    //const uint16_t vblank = cam_read_register(i, 0x06);
+    //printf("cam %d initial read vblank: 0x%04x\r\n", i, vblank);
+    cam_write_register(i, 0x06, 505); // reduce frame rate to ~30 hz
   }
   /*
   for (int i = 0; i < 256; i++)
@@ -130,22 +134,28 @@ void cam_write_register(const uint8_t cam_idx,
     i2c_addr = 0x98 >> 1;
   else if (cam_idx == 1)
     i2c_addr = 0xb8 >> 1;
+  else
+  {
+    printf("illegal cam_idx: [%x]\r\n", cam_idx);
+    return; // bogus
+  }
   TWI0->TWI_MMR = 0; // not sure why... atmel library clears this first
   TWI0->TWI_MMR = TWI_MMR_IADRSZ_1_BYTE | TWI_MMR_DADR(i2c_addr);
+  TWI0->TWI_IADR = 0;
   TWI0->TWI_IADR = reg_idx;
-  uint8_t *tx_ptr = (uint8_t *)&reg_val;
+  uint8_t *tx_ptr = ((uint8_t *)&reg_val) + 1;
   uint32_t tx_cnt = 0;
   while (tx_cnt < 2)
   {
-    const uint32_t status = TWI0->TWI_SR;
+    uint32_t status = TWI0->TWI_SR;
     if (status & TWI_SR_NACK)
     {
       printf("received nack\r\n");
       return;
     }
-    if (!(status & TWI_SR_RXRDY))
+    if (!(status & TWI_SR_TXRDY))
       continue; // busy wait in this loop
-    TWI0->TWI_THR = *tx_ptr++;
+    TWI0->TWI_THR = *tx_ptr--;
     tx_cnt++;
   }
   TWI0->TWI_CR = TWI_CR_STOP;

@@ -60,6 +60,8 @@ void fpga_init()
       printf("fpga configuration in process %d...\r\n", i);
     led_dance();
   }
+  led_off(0);
+  led_off(1);
 
   PIOA->PIO_OER = PIO_PA29 | PIO_PA25 | PIO_PA26 | PIO_PA27; // output enables
   PIOA->PIO_SODR = PIO_PA29; // drive flash chip CS line high

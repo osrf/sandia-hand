@@ -57,8 +57,8 @@ int main(int argc, char **argv)
                         (new camera_info_manager::CameraInfoManager(nh_right));
   g_cinfo[0]->setCameraName("left");
   g_cinfo[1]->setCameraName("right");
-  g_cinfo[0]->loadCameraInfo("package://sandia_hand_driver/calib/left.yaml");
-  g_cinfo[1]->loadCameraInfo("package://sandia_hand_driver/calib/right.yaml");
+  g_cinfo[0]->loadCameraInfo("package://sandia_hand_driver/camera_calibration/stereo/left.ini");
+  g_cinfo[1]->loadCameraInfo("package://sandia_hand_driver/camera_calibration/stereo/right.ini");
   image_transport::ImageTransport it(nh);
   image_transport::CameraPublisher image_pub[2];
   image_pub[0] = it.advertiseCamera("left/image_raw", 1);

@@ -23,6 +23,8 @@
 
 void cam_init();
 uint16_t cam_read_register(uint8_t cam_idx, uint8_t reg_idx);
+void cam_write_register(const uint8_t cam_idx, 
+                        const uint8_t reg_idx, const uint16_t reg_val);
 void cam_set_streams(const uint8_t stream_0, const uint8_t stream_1);
 
 #define CAM_CAPTURE_0 0x0040

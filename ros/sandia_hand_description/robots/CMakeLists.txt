@@ -6,7 +6,10 @@ set (model_basenames
 foreach(model_basename ${model_basenames})
   add_custom_command(
     OUTPUT ${model_basename}.urdf
-    COMMAND ROS_PACKAGE_PATH=${PROJECT_SOURCE_DIR}:$ENV{ROS_PACKAGE_PATH} rosrun xacro xacro.py ${CMAKE_SOURCE_DIR}/ros/${ROS_PACKAGE_NAME}/robots/${model_basename}.urdf.xacro > ${model_basename}.urdf 
+    # Need to separate args with a ; (list in cmake) to make cmake not autoexpand
+    # double quotes around the first variable assigement. It will break bourne-shell
+    # inside jenkins.
+    COMMAND ROS_PACKAGE_PATH=${PROJECT_SOURCE_DIR}:$ENV{ROS_PACKAGE_PATH};rosrun;xacro;xacro.py;${CMAKE_SOURCE_DIR}/ros/${ROS_PACKAGE_NAME}/robots/${model_basename}.urdf.xacro > ${model_basename}.urdf 
     DEPENDS ${model_basename}.urdf.xacro)
   add_custom_target(${model_basename}_urdf ALL DEPENDS ${model_basename}.urdf)
 

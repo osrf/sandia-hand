@@ -20,7 +20,6 @@
 #include "stdint.h"
 #include "common_sam3x/sam3x.h"
 #include "enet.h"
-#include "power.h"
 #include "clocks.h"
 
 /* Stack Configuration */  
@@ -92,7 +91,7 @@ IntFunc exception_table[] = {
     unmapped_vector, // 20 USART3 
     unmapped_vector, // 21 HSMCI
     unmapped_vector, // 22 TWI0
-    power_twi1_vector, // 23 TWI1
+    unmapped_vector, // 23 TWI1
     unmapped_vector, // 24 SPI0
     unmapped_vector, // 25 SPI1
     unmapped_vector, // 26 SSC 
@@ -106,7 +105,7 @@ IntFunc exception_table[] = {
     unmapped_vector, // 34 TC7
     unmapped_vector, // 35 TC8
     unmapped_vector, // 36 PWM
-    power_adc_vector, // 37 ADC
+    unmapped_vector, // 37 ADC
     unmapped_vector, // 38 DACC
     unmapped_vector, // 39 DMAC
     unmapped_vector, // 40 UOTGHS

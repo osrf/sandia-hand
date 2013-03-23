@@ -1,4 +1,0 @@
-void clock_init()
-{
-
-}

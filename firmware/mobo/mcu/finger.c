@@ -234,7 +234,7 @@ void finger_idle()
   if (g_finger_status_request)
   {
     g_finger_status_request = 0;
-    printf("fsr\r\n");
+    //printf("fsr\r\n");
     uint8_t pkt[50];
     pkt[0] = 0x42;
     pkt[1] = 10; // generic finger address

@@ -424,6 +424,21 @@ int palmburn(int argc, char **argv, Hand &hand)
   return 0;
 }
 
+void print_page(const vector<uint8_t> &v)
+{
+  if (v.size() != 256)
+  {
+    printf("invalid page size: %d\n", (int)v.size());
+    return;
+  }
+  for (int i = 0; i < 256; i++)
+  {
+    printf("0x%02x  ", v[i]);
+    if (i % 8 == 7)
+      printf("\n");
+  }
+}
+
 int mflash_read(int argc, char **argv, Hand &hand)
 {
   if (argc != 3)
@@ -438,22 +453,26 @@ int mflash_read(int argc, char **argv, Hand &hand)
     return 1;
   }
   printf("Hand::readMoboFlashPage succeeded\n");
+  print_page(page_data);
   return 0;
 }
 
-void print_page(const vector<uint8_t> &v)
+int mmcu_read(int argc, char **argv, Hand &hand)
 {
-  if (v.size() != 256)
+  if (argc != 3)
   {
-    printf("invalid page size: %d\n", (int)v.size());
-    return;
+    printf("usage: mmcu_read PAGE_NUM\n");
+    return 1;
   }
-  for (int i = 0; i < 256; i++)
+  vector<uint8_t> page_data;
+  if (!hand.readMoboMCUPage(atoi(argv[2]), page_data))
   {
-    printf("0x%02x  ", v[i]);
-    if (i % 8 == 7)
-      printf("\n");
+    printf("Hand::readMoboMCUPage failed\n");
+    return 1;
   }
+  printf("Hand::readMoboMCUPage succeeded\n");
+  print_page(page_data);
+  return 0;
 }
 
 int mflash_test(int argc, char **argv, Hand &hand)
@@ -489,6 +508,36 @@ int mflash_test(int argc, char **argv, Hand &hand)
     return 1;
   }
   if (!hand.readMoboFlashPage(page_num, page_data))
+  {
+    printf("post-write page read fail\n");
+    return 1;
+  }
+  printf("page contents readback:\n");
+  print_page(page_data);
+  return 0;
+}
+
+int mmcu_test(int argc, char **argv, Hand &hand)
+{
+  vector<uint8_t> page_data;
+  const uint32_t page_num = 1512; // land in bank 1
+  if (!hand.readMoboMCUPage(page_num, page_data))
+  {
+    printf("initial page read fail\n");
+    return 1;
+  }
+  printf("page contents at start:\n");
+  print_page(page_data);
+  for (int i = 0; i < 256; i++)
+    page_data[i] = i;
+  printf("about to write page %d:\n", page_num);
+  print_page(page_data);
+  if (!hand.writeMoboMCUPage(page_num, page_data))
+  {
+    printf("page write fail\n");
+    return 1;
+  }
+  if (!hand.readMoboMCUPage(page_num, page_data))
   {
     printf("post-write page read fail\n");
     return 1;
@@ -536,6 +585,38 @@ int mflash_burn_fpga(int argc, char **argv, Hand &hand)
   return 0;
 }
 
+int mmcu_dump(int argc, char **argv, Hand &hand)
+{
+  if (argc != 4)
+  {
+    printf("usage: mmcu_dump START_PAGE NUMBER_OF_PAGES\n");
+    return 1;
+  }
+  vector<uint8_t> page_data;
+  page_data.resize(256);
+  const int start_page = atoi(argv[2]), n_pages = atoi(argv[3]);
+  const char *fn = "dump.bin";
+  FILE *f = fopen(fn, "wb");
+  for (int page_num = start_page; page_num < start_page + n_pages; page_num++)
+  {
+    if (!hand.readMoboMCUPage(page_num, page_data))
+    {
+      printf("couldn't read page %d\n", page_num);
+      return 1;
+    }
+    int n_written = fwrite(&page_data[0], 1, 256, f);
+    if (n_written != 256)
+    {
+      printf("error writing page %d to %s\n", page_num, fn);
+      return 1;
+    }
+  }
+  fclose(f);
+  printf("%d pages (%d bytes) written to %s\n", 
+         n_pages, n_pages * 256, fn);
+  return 0;
+}
+
 int mflash_dump(int argc, char **argv, Hand &hand)
 {
   if (argc != 4)
@@ -567,6 +648,25 @@ int mflash_dump(int argc, char **argv, Hand &hand)
          n_pages, n_pages * 256, fn);
   return 0;
 
+}
+
+int mmcu_burn(int argc, char **argv, Hand &hand)
+{
+  verify_argc(argc, 3, "usage: mmcu_burn BIN_FILE\n");
+  const char *fn = argv[2];
+  FILE *f = fopen(fn, "rb");
+  if (!f)
+  {
+    printf("couldn't open application image %s\n", fn);
+    return 1;
+  }
+  if (!hand.programMoboMCUAppFile(f))
+  {
+    printf("failed to program with image %s\n", fn);
+    return 1;
+  }
+  printf("successfully programmed mobo MCU with application image %s\n", fn);
+  return 0;
 }
 
 ///////////////////////
@@ -607,6 +707,10 @@ int main(int argc, char **argv)
   CLI_FUNC(mflash_burn_golden_fpga);
   CLI_FUNC(mflash_burn_fpga);
   CLI_FUNC(mflash_dump);
+  CLI_FUNC(mmcu_read);
+  CLI_FUNC(mmcu_dump);
+  CLI_FUNC(mmcu_test);
+  CLI_FUNC(mmcu_burn);
   if (argc == 1)
   {
     printf("available commands:\n");

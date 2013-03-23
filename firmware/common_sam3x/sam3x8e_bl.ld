@@ -10,19 +10,7 @@ MEMORY
 /* Section Definitions */ 
 SECTIONS 
 { 
-    .bl_text 0x80000 :
-    {
-      . = ALIGN(4);
-      _bl_sfixed = .;
-      KEEP(*bootloader_startup.S.o(*.text))
-      KEEP(*(.bl_text))  /**bootloader.o(.bl_text))*/
-      /*KEEP(*bl_text .bl_text.*)*/
-      /*KEEP(*(.bl_id))*/
-      . = 0x1ffc;
-      _sid = .;
-      KEEP(*(.bl_id))
-    } > rom 
-    .text    0x82000 : 
+    .text    0x80000 : 
     { 
         /*. = ALIGN(4);*/
         _sfixed = .;
@@ -92,7 +80,6 @@ SECTIONS
         _erelocate = .;
     } > ram
 
-    _normal_start_bss = .;
     .bss (NOLOAD) : /* smash the bootloader bss with the application bss */
     { 
         . = ALIGN(4);
@@ -105,17 +92,6 @@ SECTIONS
         _ebss = . ;
         _ezero = .;
     } > ram
-    _normal_end_bss = .;
-
-    . = _normal_start_bss;
-    _bl_szero = .;
-    .bl_bss (NOLOAD) :  /* plunk down the bootloader bss */
-    {
-      KEEP(*(.bl_bss))
-    } > ram
-    _bl_ezero = .;
-
-    . = _normal_end_bss;
 
     /* stack section */
     .stack (NOLOAD):

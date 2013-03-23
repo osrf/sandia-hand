@@ -1,6 +1,6 @@
 /*  Software License Agreement (Apache License)
  *
- *  Copyright 2012 Open Source Robotics Foundation
+ *  Copyright 2013 Open Source Robotics Foundation
  *  Author: Morgan Quigley
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,10 +20,6 @@
 #include "common_sam3x/sam3x.h"
 #include <stdio.h>
 #include <string.h>
-#include "sandia_hand/hand_packets.h"
-#include "power.h"
-#include "finger.h"
-#include "cam.h"
 #include "fpga.h"
 #include "flash.h"
 
@@ -36,11 +32,6 @@
 //   PB5 = ERX_0
 //   PB6 = ERX_1
 //   PB7 = ERX_ER
-
-#define htonl(x) (__REV((uint32_t)x))
-#define htons(x) (__REV16((uint16_t)x))
-#define ntohl(x) (htonl(x))
-#define ntohs(x) (htons(x))
 
 // structure definitions taken from ASF 3.5.1,  /sam/drivers/emac/emac.h
 typedef struct emac_rx_descriptor {
@@ -98,37 +89,6 @@ typedef struct emac_tx_descriptor {
 
 #define ENET_MAX_PKT_SIZE 1550
 
-typedef struct 
-{
-  uint8_t  eth_dest_addr[6];
-  uint8_t  eth_source_addr[6];
-  uint16_t eth_ethertype : 16;
-} __attribute__((packed)) eth_header_t;
-
-/////////////////////////////////////////////////////////////////////////////
-typedef struct 
-{
-  eth_header_t eth;
-  uint8_t  ip_header_len   :  4;
-  uint8_t  ip_version      :  4;
-  uint8_t  ip_ecn          :  2;
-  uint8_t  ip_diff_serv    :  6;
-  uint16_t ip_len          : 16;
-  uint16_t ip_id           : 16;
-  uint16_t ip_flag_frag    : 16;
-  uint8_t  ip_ttl          :  8;
-  uint8_t  ip_proto        :  8;
-  uint16_t ip_checksum     : 16;
-  uint32_t ip_source_addr  : 32;
-  uint32_t ip_dest_addr    : 32;
-} __attribute__((packed)) ip_header_t;
-static const uint16_t IP_ETHERTYPE = 0x0800;
-static const uint8_t  IP_HEADER_LEN = 5;
-static const uint8_t  IP_VERSION = 4;
-static const uint8_t  IP_PROTO_ICMP = 0x01;
-static const uint8_t  IP_PROTO_UDP = 0x11;
-static const uint16_t IP_DONT_FRAGMENT = 0x4000;
-
 /////////////////////////////////////////////////////////////////////////////
 typedef struct
 {
@@ -164,17 +124,6 @@ static const uint8_t ICMP_ECHO_REPLY   = 0x00;
 static const uint8_t ICMP_ECHO_REQUEST = 0x08;
 
 /////////////////////////////////////////////////////////////////////////////
-typedef struct
-{
-  ip_header_t ip;
-  uint16_t udp_source_port;
-  uint16_t udp_dest_port;
-  uint16_t udp_len;
-  uint16_t udp_checksum;
-} __attribute__((packed)) udp_header_t;
-static const uint16_t UDP_HAND_PORT = 12321; // some random number
-
-/////////////////////////////////////////////////////////////////////////////
 // globals
 
 #define ENET_RX_BUFFERS 16
@@ -186,7 +135,7 @@ volatile static uint8_t __attribute__((aligned(8)))
 static uint8_t __attribute__((aligned(8)))
                    g_enet_rx_full_packet[ENET_MAX_PKT_SIZE];
 
-// keep the TX path simple. single big buffer.
+// keep the TX path simple for now. single big buffer.
 #define ENET_TX_BUFFERS 1
 #define ENET_TX_UNITSIZE ENET_MAX_PKT_SIZE
 volatile static emac_tx_descriptor_t __attribute__((aligned(8)))
@@ -417,103 +366,6 @@ static void enet_icmp_rx(uint8_t *pkt, const uint32_t len)
   enet_tx_raw(icmp_response_buf, sizeof(icmp_header_t) + icmp_data_len);
 }
 
-static void enet_udp_rx(uint8_t *pkt, const uint32_t len)
-{
-  udp_header_t *udp = (udp_header_t *)pkt;
-  const uint16_t port = ntohs(udp->udp_dest_port);
-  if (port != UDP_HAND_PORT)
-  {
-    //printf("enet_udp_rx, unknown port %d\r\n", port);
-    return;
-  }
-  uint8_t *udp_payload = pkt + sizeof(udp_header_t);
-  uint32_t udp_payload_len = len - sizeof(udp_header_t);
-  uint32_t cmd = *((uint32_t *)udp_payload);
-  uint8_t *cmd_data = (uint8_t *)(udp_payload+4);
-  // todo: this if..else if block has become way too large. factor it out
-  // somehow into something more clean and efficient 
-  if (cmd == CMD_ID_SET_FINGER_POWER_STATE)
-  {
-    set_finger_power_state_t *sfp = (set_finger_power_state_t *)cmd_data;
-    if (sfp->finger_idx > 3)
-      return; 
-    if (sfp->finger_power_state > (uint8_t)POWER_ON)
-      return;
-    power_set(sfp->finger_idx, (power_state_t)sfp->finger_power_state);
-  }
-  else if (cmd == CMD_ID_SET_ALL_FINGER_POWER_STATES)
-  {
-    for (int i = 0; i < 4; i++)
-      power_set(i, 
-         (power_state_t)((set_all_finger_power_states_t *)cmd_data)->fps[i]);
-  }
-  else if (cmd == CMD_ID_SET_FINGER_CONTROL_MODE)
-  {
-    set_finger_control_mode_t *p = (set_finger_control_mode_t *)cmd_data;
-    if (p->finger_idx > 3 || 
-        p->finger_control_mode > FINGER_CONTROL_MODE_JOINT_POS)
-      return;
-    finger_set_control_mode(p->finger_idx, p->finger_control_mode);
-  }
-  else if (cmd == CMD_ID_SET_FINGER_JOINT_POS)
-  {
-    set_finger_joint_pos_t *p = (set_finger_joint_pos_t *)cmd_data;
-    if (p->finger_idx > 3)
-      return;
-    finger_set_joint_pos(p->finger_idx, p->joint_0_radians, 
-                         p->joint_1_radians, p->joint_2_radians);
-  }
-  else if (cmd == CMD_ID_CONFIGURE_CAMERA_STREAM)
-  {
-    configure_camera_stream_t *p = (configure_camera_stream_t *)cmd_data;
-    cam_set_streams(p->cam_0_stream, p->cam_1_stream);
-  }
-  else if (cmd == CMD_ID_FINGER_RAW_TX)
-  {
-    finger_raw_tx_t *p = (finger_raw_tx_t *)cmd_data;
-    if (p->finger_idx > 4 || p->tx_data_len > FINGER_RAW_TX_MAX_LEN)
-      return;
-    finger_tx_raw(p->finger_idx, p->tx_data, p->tx_data_len);
-  }
-  else if (cmd == CMD_ID_SET_MOBO_STATUS_RATE)
-    power_set_mobo_status_rate(
-                      ((set_mobo_status_rate_t *)cmd_data)->mobo_status_hz);
-  else if (cmd == CMD_ID_SET_FINGER_AUTOPOLL)
-    finger_set_autopoll_rate(
-                   ((set_finger_autopoll_t *)cmd_data)->finger_autopoll_hz);
-  else if (cmd == CMD_ID_ENABLE_LOWVOLT_REGULATOR)
-    power_enable_lowvolt_regulator(
-                    ((enable_lowvolt_regulator_t *)cmd_data)->enable ? 1 : 0);
-  else if (cmd == CMD_ID_READ_FPGA_FLASH_PAGE)
-  {
-    fpga_flash_page_t page;
-    page.page_num = ((read_fpga_flash_page_t *)cmd_data)->page_num;
-    page.page_status = FPGA_FLASH_PAGE_STATUS_READ;
-    flash_read_page(page.page_num, page.page_data);
-    enet_tx_packet(CMD_ID_FPGA_FLASH_PAGE, (uint8_t *)&page, sizeof(page));
-  }
-  else if (cmd == CMD_ID_FPGA_FLASH_PAGE)
-  {
-    fpga_flash_page_t *page = (fpga_flash_page_t *)cmd_data;
-    if (page->page_status == FPGA_FLASH_PAGE_STATUS_WRITE_REQ)
-    {
-      flash_write_page(page->page_num, page->page_data);
-      page->page_status = FPGA_FLASH_PAGE_STATUS_WRITE_ACK;
-      enet_tx_packet(CMD_ID_FPGA_FLASH_PAGE, (uint8_t *)page, sizeof(*page));
-    }
-  }
-  else if (cmd == CMD_ID_FPGA_FLASH_ERASE_SECTOR)
-  {
-    fpga_flash_erase_sector_t *req = (fpga_flash_erase_sector_t *)cmd_data;
-    flash_erase_sector(req->sector_page_num);
-    fpga_flash_erase_sector_ack_t res;
-    res.sector_page_num = req->sector_page_num;
-    enet_tx_packet(CMD_ID_FPGA_FLASH_ERASE_SECTOR_ACK, 
-                   (uint8_t *)&res, sizeof(res));
-  }
-  else
-    printf("  unhandled cmd %d\r\n", cmd);
-}
 
 static void enet_ip_rx(uint8_t *pkt, const uint32_t len)
 {

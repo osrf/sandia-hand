@@ -52,7 +52,7 @@ void cam_init()
   fpga_spi_txrx(0x83, 0x000f); // enable the camera sysclk's
   for (volatile int j = 0; j < 200000; j++) { } // let 3v8 rail come up
   fpga_spi_txrx(0x83, 0x003f); // raise (de-assert) the camera reset lines
-  for (volatile int j = 0; j < 200000; j++) { } // wait for camera to wake up
+  for (volatile int j = 0; j < 2000000; j++) { } // wait for camera to wake up
   fpga_spi_txrx(FPGA_SPI_REG_CAM_MAX_ROWS | FPGA_SPI_WRITE, 0x01e0); // 480 
   // imagers are mounted upside down. doh. have the HW rotate array 180 deg 
   for (int i = 0; i < 2; i++)
@@ -108,8 +108,14 @@ uint16_t cam_read_register(uint8_t cam_idx, uint8_t reg_idx)
   int rx_cnt = 2;
   uint16_t rx_val = 0;
   uint8_t *rx_ptr = (uint8_t *)&rx_val;
+  uint32_t spins = 0;
   while (rx_cnt > 0)
   {
+    if (++spins > 100000)
+    {
+      printf("cam_read_register timeout\r\n");
+      return 0;
+    }
     uint32_t status = TWI0->TWI_SR;
     if (status & TWI_SR_NACK)
     {
@@ -123,6 +129,9 @@ uint16_t cam_read_register(uint8_t cam_idx, uint8_t reg_idx)
     *rx_ptr++ = TWI0->TWI_RHR;
     rx_cnt--;
   }
+  //printf("read spins = %d\r\n", spins);
+  while (!(TWI0->TWI_SR & TWI_SR_TXCOMP)) { } // busy wait until done with stop
+  TWI0->TWI_SR; // not sure why this dummy read is needed. atmel lib does it.
   return __REV16(rx_val);
 }
 
@@ -145,8 +154,14 @@ void cam_write_register(const uint8_t cam_idx,
   TWI0->TWI_IADR = reg_idx;
   uint8_t *tx_ptr = ((uint8_t *)&reg_val) + 1;
   uint32_t tx_cnt = 0;
+  uint32_t spins = 0;
   while (tx_cnt < 2)
   {
+    if (++spins > 100000)
+    {
+      printf("cam_write_register timeout\r\n");
+      return;
+    }
     uint32_t status = TWI0->TWI_SR;
     if (status & TWI_SR_NACK)
     {
@@ -158,6 +173,7 @@ void cam_write_register(const uint8_t cam_idx,
     TWI0->TWI_THR = *tx_ptr--;
     tx_cnt++;
   }
+  //printf("write spins = %d\r\n", spins);
   TWI0->TWI_CR = TWI_CR_STOP;
   while (!(TWI0->TWI_SR & TWI_SR_TXCOMP)) { } // busy wait until done with stop
   TWI0->TWI_SR; // not sure why this dummy read is needed. atmel lib does it.

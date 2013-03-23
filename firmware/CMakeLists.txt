@@ -61,7 +61,7 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)  # search only target
 set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 set(CMAKE_C_FLAGS "-O2 -std=c99 -g -mcpu=cortex-m3 -mthumb -Dprintf=iprintf")
 set(CMAKE_ASM_FLAGS "-mcpu=cortex-m3 -mthumb -g")
-set(SAM3X_APPLICATION_FLAGS "-g -mthumb -mcpu=cortex-m3 -T\"${CMAKE_CURRENT_SOURCE_DIR}/common_sam3x/sam3x8e.ld\" -Wl,-Map=memory.map -Wl,--cref --entry=_bootloader_start -Wl,--no-gc-sections -Wl,--warn-common -Wl,--unresolved-symbols=report-all -Wl,--no-undefined -Wl,--start-group -lc -lgcc -Wl,--end-group")
+set(SAM3X_APP_LINK_FLAGS "-g -mthumb -mcpu=cortex-m3 -T\"${PROJECT_SOURCE_DIR}/common_sam3x/sam3x8e_app.ld\" -Wl,-Map=memory.map -Wl,--cref --entry=reset_vector -Wl,--no-gc-sections -Wl,--warn-common -Wl,--unresolved-symbols=report-all -Wl,--no-undefined -Wl,--start-group -lc -lgcc -Wl,--end-group")
 
 # sam3s common stuff
 set(SAM3S_APP_LINK_FLAGS "-g -mthumb -mcpu=cortex-m3 -T\"${PROJECT_SOURCE_DIR}/common_sam3s/sam3s_app.ld\" -Wl,-Map=memory.map -Wl,--cref --entry=reset_vector -Wl,--no-gc-sections -Wl,--warn-common -Wl,--unresolved-symbols=report-all -Wl,--no-undefined")

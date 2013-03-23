@@ -18,6 +18,8 @@ static const uint32_t CMD_ID_READ_FPGA_FLASH_PAGE        = 11;
 static const uint32_t CMD_ID_FPGA_FLASH_PAGE             = 12;
 static const uint32_t CMD_ID_FPGA_FLASH_ERASE_SECTOR     = 13;
 static const uint32_t CMD_ID_FPGA_FLASH_ERASE_SECTOR_ACK = 14;
+static const uint32_t CMD_ID_BL_MOBO_MCU_FLASH_PAGE      = 15;
+static const uint32_t CMD_ID_MOBO_BOOT_CTRL              = 16;
 
 typedef struct 
 {
@@ -117,5 +119,28 @@ typedef struct
 {
   uint32_t sector_page_num; 
 } __attribute__((packed)) fpga_flash_erase_sector_ack_t;
+
+#define MOBO_MCU_FLASH_PAGE_SIZE 256
+typedef struct
+{
+  uint32_t page_num;
+  uint32_t page_status;
+  uint8_t page_data[MOBO_MCU_FLASH_PAGE_SIZE];
+} __attribute__((packed)) mobo_mcu_flash_page_t;
+static const uint8_t MOBO_MCU_FLASH_PAGE_STATUS_READ_REQ  = 0;
+static const uint8_t MOBO_MCU_FLASH_PAGE_STATUS_READ_RES  = 1;
+static const uint8_t MOBO_MCU_FLASH_PAGE_STATUS_WRITE_REQ = 2;
+static const uint8_t MOBO_MCU_FLASH_PAGE_STATUS_WRITE_RES = 3;
+
+typedef struct
+{
+  uint32_t boot_cmd;
+} __attribute__((packed)) mobo_boot_ctrl_t;
+static const uint32_t MOBO_BOOT_CTRL_RESET_REQUEST  = 0;
+static const uint32_t MOBO_BOOT_CTRL_RESET_RESPONSE = 1;
+static const uint32_t MOBO_BOOT_CTRL_BL_AUTOBOOT_HALT_REQUEST  = 2;
+static const uint32_t MOBO_BOOT_CTRL_BL_AUTOBOOT_HALT_RESPONSE = 3;
+static const uint32_t MOBO_BOOT_CTRL_BL_BOOT_REQUEST  = 4;
+static const uint32_t MOBO_BOOT_CTRL_BL_BOOT_RESPONSE = 5;
 
 #endif

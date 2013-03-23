@@ -370,6 +370,35 @@ bool Hand::programPalmAppFile(FILE *bin_file)
                boost::bind(&Hand::enableLowvoltRegulator, this, true));
 }
 
+bool Hand::programMoboMCUAppFile(FILE *bin_file)
+{
+  // todo: ensure we are in bootloader mode by trying to halt autoboot.
+  // this assumes that now we are in bootloader mode.
+  for (int page_num = 128; !feof(bin_file) && page_num < 2048; page_num++)
+  {
+    vector<uint8_t> page_buf;
+    page_buf.resize(256);
+    size_t nread = 0;
+    nread = fread(&page_buf[0], 1, 256, bin_file);
+    if (nread == 0)
+    {
+      printf("couldn't read a flash page from FILE: returned %d\n",
+             (int)nread);
+      return false;
+    }
+    else if (nread < 256)
+      printf("partial page: %d bytes, hopefully last flash page?\n",
+             (int)nread);
+    if (!writeMoboMCUPage(page_num, page_buf)) // todo: try a few times?
+    {
+      printf("couldn't write page %d\n", page_num);
+      return false;
+    }
+  }
+  return true;
+  // todo: buffer the file and verify it at the end.
+}
+
 bool Hand::programFPGAGoldenFile(FILE *bin_file)
 {
   return programFPGAFile(32768, bin_file); // midpoint of flash
@@ -426,6 +455,27 @@ bool Hand::listenForDuration(float seconds)
   return true;
 }
 
+bool Hand::readMoboMCUPage(const uint32_t page_num, std::vector<uint8_t> &page)
+{
+  mobo_mcu_flash_page_t req, res;
+  req.page_status = MOBO_MCU_FLASH_PAGE_STATUS_READ_REQ;
+  req.page_num = page_num;
+  if (!txPacket(CMD_ID_BL_MOBO_MCU_FLASH_PAGE, req))
+    return false;
+  if (!listenForPacketId(CMD_ID_BL_MOBO_MCU_FLASH_PAGE, 0.5, res))
+    return false;
+  if (res.page_status != MOBO_MCU_FLASH_PAGE_STATUS_READ_RES ||
+      res.page_num != page_num)
+  {
+    printf("wrong page came back from mcu bootloader read request\r\n");
+    return false;
+  }
+  page.resize(MOBO_MCU_FLASH_PAGE_SIZE);
+  memcpy(&page[0], &res.page_data[0], MOBO_MCU_FLASH_PAGE_SIZE);
+  return true;
+}
+
+
 bool Hand::readMoboFlashPage(const uint32_t page_num, 
                              vector<uint8_t> &page)
 {
@@ -453,6 +503,28 @@ bool Hand::readMoboFlashPage(const uint32_t page_num,
   */
   page.resize(FPGA_FLASH_PAGE_SIZE);
   memcpy(&page[0], &p.page_data[0], FPGA_FLASH_PAGE_SIZE);
+  return true;
+}
+
+bool Hand::writeMoboMCUPage(const uint32_t page_num, vector<uint8_t> &page)
+{
+  if (page.size() != 256)
+    return false;
+  mobo_mcu_flash_page_t req, res;
+  req.page_num = page_num;
+  req.page_status = MOBO_MCU_FLASH_PAGE_STATUS_WRITE_REQ;
+  memcpy(req.page_data, &page[0], 256);
+  if (!txPacket(CMD_ID_BL_MOBO_MCU_FLASH_PAGE, req))
+    return false;
+  if (!listenForPacketId(CMD_ID_BL_MOBO_MCU_FLASH_PAGE, 0.5, res))
+    return false;
+  if (res.page_status != MOBO_MCU_FLASH_PAGE_STATUS_WRITE_RES ||
+      res.page_num != page_num)
+  {
+    printf("wrong page came back from write request\n");
+    return false;
+  }
+  //printf("wrote flash page %d\n", page_num);
   return true;
 }
 

@@ -80,6 +80,7 @@ static uint8_t  __attribute__((section(".bl_bss"))) bl_flash_word_ready[64];
 
 void bl_main() 
 {
+  return;
   volatile int i, j;
   //volatile uint32_t *p;
   EFC0->EEFC_FMR = EEFC_FMR_FWS(4); // set flash wait states so it can handle 

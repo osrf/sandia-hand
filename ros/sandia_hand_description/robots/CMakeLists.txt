@@ -4,9 +4,12 @@ set (model_basenames
      sandia_hand_both_on_box)
 
 foreach(model_basename ${model_basenames})
+  # Bourne shell is not happy with cmake auto quoting for declaring variables 
+  # in front of rosrun so first export and then make rosrun
   add_custom_command(
     OUTPUT ${model_basename}.urdf
-    COMMAND ROS_PACKAGE_PATH=${PROJECT_SOURCE_DIR}:$ENV{ROS_PACKAGE_PATH} rosrun xacro xacro.py ${CMAKE_SOURCE_DIR}/ros/${ROS_PACKAGE_NAME}/robots/${model_basename}.urdf.xacro > ${model_basename}.urdf 
+      COMMAND export ROS_PACKAGE_PATH=${PROJECT_SOURCE_DIR}:$ENV{ROS_PACKAGE_PATH}
+      COMMAND rosrun xacro xacro.py ${CMAKE_SOURCE_DIR}/ros/${ROS_PACKAGE_NAME}/robots/${model_basename}.urdf.xacro > ${model_basename}.urdf
     DEPENDS ${model_basename}.urdf.xacro)
   add_custom_target(${model_basename}_urdf ALL DEPENDS ${model_basename}.urdf)
 

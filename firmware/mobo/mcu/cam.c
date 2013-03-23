@@ -46,11 +46,11 @@ void cam_init()
   TWI0->TWI_CWGR = TWI_CWGR_CLDIV(77) | TWI_CWGR_CHDIV(77) |  // 50% duty cycle
                    TWI_CWGR_CKDIV(3); // 400 khz i2c / 2^3 = 50 (weak pullups)
 
-  for (volatile int j = 0; j < 200000; j++) { } // let 3v8 rail come up
+  for (volatile int j = 0; j < 400000; j++) { } // let 3v8 rail come up
   fpga_spi_txrx(0x83, 0x0003); // enable the camera voltage regulators
-  for (volatile int j = 0; j < 200000; j++) { } // let 3v8 rail come up
+  for (volatile int j = 0; j < 400000; j++) { } // let 3v8 rail come up
   fpga_spi_txrx(0x83, 0x000f); // enable the camera sysclk's
-  for (volatile int j = 0; j < 200000; j++) { } // let 3v8 rail come up
+  for (volatile int j = 0; j < 400000; j++) { } // let 3v8 rail come up
   fpga_spi_txrx(0x83, 0x003f); // raise (de-assert) the camera reset lines
   for (volatile int j = 0; j < 2000000; j++) { } // wait for camera to wake up
   fpga_spi_txrx(FPGA_SPI_REG_CAM_MAX_ROWS | FPGA_SPI_WRITE, 0x01e0); // 480 
@@ -152,7 +152,7 @@ void cam_write_register(const uint8_t cam_idx,
   TWI0->TWI_MMR = TWI_MMR_IADRSZ_1_BYTE | TWI_MMR_DADR(i2c_addr);
   TWI0->TWI_IADR = 0;
   TWI0->TWI_IADR = reg_idx;
-  uint8_t *tx_ptr = ((uint8_t *)&reg_val) + 1;
+  uint8_t *tx_ptr = ((uint8_t *)&reg_val) + 1; // read backwards for byte swap
   uint32_t tx_cnt = 0;
   uint32_t spins = 0;
   while (tx_cnt < 2)

@@ -84,11 +84,13 @@ void main()
       led_dance();
     if ((systick_count - start_time < 5000 && boot_enabled) ||
         boot_requested)
-    {
-      // hit timeout. boot.
-    }
+      break; // hit timeout. boot.
   }
-  //printf("exiting bootloader. jumping to application.\r\n");
+  printf("jumping to application. bye...\r\n");
+  typedef uint32_t (*app_fp)();
+  app_fp app = *((app_fp *)0x88004); // look up application start address
+  app(); // and call it
+  while (1) { } // shouldn't return, but if we do, hang out here.
 }
 
 ///////////////////////////////////////////////////////////////////////////

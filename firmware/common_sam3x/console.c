@@ -49,5 +49,6 @@ void console_send_block(uint8_t *block, uint32_t len)
     UART->UART_THR = block[i];
     while ((UART->UART_SR & UART_SR_TXRDY) == 0) { }
   }
+  while (!(UART->UART_SR & UART_SR_TXEMPTY)) { } // spin until byte is done
 }
 

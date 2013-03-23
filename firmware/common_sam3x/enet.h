@@ -32,6 +32,7 @@ void enet_tx_packet(const uint32_t packet_id,
                     const uint8_t *packet, 
                     const uint16_t packet_len); // uses UDP
 void enet_udp_rx(uint8_t *pkt, const uint32_t len); // defined by user app
+uint8_t enet_arp_valid();
 
 typedef struct 
 {

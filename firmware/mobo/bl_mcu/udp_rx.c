@@ -112,7 +112,7 @@ void enet_udp_rx(uint8_t *pkt, const uint32_t len)
     {
       p->boot_cmd = MOBO_BOOT_CTRL_BL_BOOT_RESPONSE;
       enet_tx_packet(CMD_ID_MOBO_BOOT_CTRL, (uint8_t *)p, sizeof(*p));
-      for (volatile int i = 0; i < 100000; i++) { } // wait here until it goes.
+      printf("booting...\r\n");
       boot_requested = 1; // we'll then bail from the idle() func
     }
   }

@@ -32,6 +32,7 @@
 //   PB5 = ERX_0
 //   PB6 = ERX_1
 //   PB7 = ERX_ER
+static uint8_t g_enet_arp_valid = 0;
 
 // structure definitions taken from ASF 3.5.1,  /sam/drivers/emac/emac.h
 typedef struct emac_rx_descriptor {
@@ -268,6 +269,7 @@ static void enet_arp_rx(uint8_t *pkt, const uint32_t len)
       fpga_spi_txrx(FPGA_SPI_REG_ETH_DEST_ADDR_2 | FPGA_SPI_WRITE,
                      (uint16_t)g_enet_master_mac[1] |
                     ((uint16_t)g_enet_master_mac[0] << 8));
+      g_enet_arp_valid = 1;
     }
   }
 }
@@ -560,6 +562,11 @@ void enet_tx_packet(const uint32_t packet_id,
   *((uint32_t *)(((uint8_t *)udp) + sizeof(udp_header_t))) = packet_id;
   memcpy(((uint8_t *)udp) + sizeof(udp_header_t) + 4, packet, packet_len);
   enet_tx_raw((uint8_t *)udp, sizeof(udp_header_t) + 4 + packet_len);
+}
+
+uint8_t enet_arp_valid()
+{
+  return g_enet_arp_valid;
 }
 
 ////////////////////////////////////////////////////////////////////////

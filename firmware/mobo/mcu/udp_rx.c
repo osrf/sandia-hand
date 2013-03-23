@@ -131,6 +131,17 @@ void enet_udp_rx(uint8_t *pkt, const uint32_t len)
     enet_tx_packet(CMD_ID_FPGA_FLASH_ERASE_SECTOR_ACK, 
                    (uint8_t *)&res, sizeof(res));
   }
+  else if (cmd == CMD_ID_MOBO_BOOT_CTRL)
+  {
+    mobo_boot_ctrl_t *p = (mobo_boot_ctrl_t *)cmd_data;
+    if (p->boot_cmd == MOBO_BOOT_CTRL_RESET_REQUEST)
+    {
+      p->boot_cmd = MOBO_BOOT_CTRL_RESET_RESPONSE;
+      enet_tx_packet(CMD_ID_MOBO_BOOT_CTRL, (uint8_t *)p, sizeof(*p));
+      printf("rebooting...\r\n"); // this will take long enough for pkt to TX
+      RSTC->RSTC_CR = RSTC_CR_KEY(0xA5) | RSTC_CR_PERRST | RSTC_CR_PROCRST;
+    }
+  }
   else
     printf("  unhandled cmd %d\r\n", cmd);
 }

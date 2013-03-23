@@ -372,6 +372,13 @@ bool Hand::programPalmAppFile(FILE *bin_file)
 
 bool Hand::programMoboMCUAppFile(FILE *bin_file)
 {
+  if (!resetMoboMCU())
+    printf("couldn't reset mobo mcu. continuing anyway...\n");
+  sleep(4);
+  for (int attempt = 0; attempt < 50; attempt++)
+  {
+    sleep(0.25);
+  }
   // todo: ensure we are in bootloader mode by trying to halt autoboot.
   // this assumes that now we are in bootloader mode.
   for (int page_num = 128; !feof(bin_file) && page_num < 2048; page_num++)
@@ -503,6 +510,25 @@ bool Hand::readMoboFlashPage(const uint32_t page_num,
   */
   page.resize(FPGA_FLASH_PAGE_SIZE);
   memcpy(&page[0], &p.page_data[0], FPGA_FLASH_PAGE_SIZE);
+  return true;
+}
+
+bool Hand::resetMoboMCU()
+{
+  mobo_boot_ctrl_t req, res;
+  req.boot_cmd = MOBO_BOOT_CTRL_RESET_REQUEST;
+  if (!txPacket(CMD_ID_MOBO_BOOT_CTRL, req))
+    return false;
+  if (!listenForPacketId(CMD_ID_MOBO_BOOT_CTRL, 0.5, res))
+  {
+    printf("didn't hear back from reset command\n");
+    return false;
+  }
+  if (res.boot_cmd != MOBO_BOOT_CTRL_RESET_RESPONSE)
+  {
+    printf("wrong response to reset command\n");
+    return false;
+  }
   return true;
 }
 

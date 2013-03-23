@@ -68,7 +68,6 @@ void main()
   fpga_spi_txrx(FPGA_SPI_REG_MDIO_CFG | FPGA_SPI_WRITE,
                 0x0001); // start write of register zero
   for (volatile int j = 0; j < 2000000; j++) { } // wait a longer while
-  printf("entering bootloader wait loop\r\n");
   SysTick_Config(F_CPU/1000); // set up 1 khz systick
 
   if ((*(uint32_t *)0x000088000) == 0)
@@ -76,13 +75,22 @@ void main()
     printf("boot not possible; application vector table is undefined.\r\n");
     boot_enabled = 0; // impossible to boot. don't time out.
   }
+
+  printf("waiting until we have ARP to 10.10.1.1 ...\r\n");
+  // spin here until we have ARP
+  while (!enet_arp_valid()) 
+  { 
+    enet_idle(); 
+  }
+
+  printf("entering bootloader wait loop\r\n");
   uint32_t start_time = systick_count;
   for (uint32_t loop_count = 0; ; loop_count++)
   {
     enet_idle();
     if (loop_count % 200000 == 0)
       led_dance();
-    if ((systick_count - start_time < 5000 && boot_enabled) ||
+    if ((systick_count - start_time >= 5000 && boot_enabled) ||
         boot_requested)
       break; // hit timeout. boot.
   }

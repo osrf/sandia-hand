@@ -54,7 +54,7 @@ void main()
   enet_init();
   finger_init();
   cam_init();
-  printf("hello, world!\r\n");
+  printf("welcome to mobo mcu. hello, world!\r\n");
   // blink the FPGA LED a few times
   for (int i = 0; i < 4; i++)
   {

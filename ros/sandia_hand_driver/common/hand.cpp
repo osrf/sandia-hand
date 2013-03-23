@@ -375,10 +375,20 @@ bool Hand::programMoboMCUAppFile(FILE *bin_file)
   if (!resetMoboMCU())
     printf("couldn't reset mobo mcu. continuing anyway...\n");
   sleep(4);
-  for (int attempt = 0; attempt < 50; attempt++)
+  bool autoboot_halted = false;
+  for (int attempt = 0; !autoboot_halted && attempt < 50; attempt++)
   {
+    printf("autoboot halt attempt %d / %d...\n", attempt, 50);
     sleep(0.25);
+    if (haltMoboMCUAutoboot())
+      autoboot_halted = true;
   }
+  if (!autoboot_halted)
+  {
+    printf("couldn't halt mobo autoboot. fail.\n");
+    return false;
+  }
+  printf("mobo autoboot halted successfully.\n");
   // todo: ensure we are in bootloader mode by trying to halt autoboot.
   // this assumes that now we are in bootloader mode.
   for (int page_num = 128; !feof(bin_file) && page_num < 2048; page_num++)
@@ -401,6 +411,11 @@ bool Hand::programMoboMCUAppFile(FILE *bin_file)
       printf("couldn't write page %d\n", page_num);
       return false;
     }
+  }
+  if (!bootMoboMCU())
+  {
+    printf("couldn't boot mobo mcu.\n");
+    return false;
   }
   return true;
   // todo: buffer the file and verify it at the end.
@@ -594,6 +609,44 @@ bool Hand::eraseMoboFlashSector(const uint32_t page_num)
   {
     printf("in eraseMoboFlashSector: p.sector_page_num = %d, page_num = %d\n",
            p.sector_page_num, page_num);
+    return false;
+  }
+  return true;
+}
+
+bool Hand::haltMoboMCUAutoboot()
+{
+  mobo_boot_ctrl_t request, response;
+  request.boot_cmd = MOBO_BOOT_CTRL_BL_AUTOBOOT_HALT_REQUEST;
+  if (!txPacket(CMD_ID_MOBO_BOOT_CTRL, request))
+    return false;
+  if (!listenForPacketId(CMD_ID_MOBO_BOOT_CTRL, 0.25, response))
+  {
+    printf("no response to MCU autoboot halt\n");
+    return false;
+  }
+  if (response.boot_cmd != MOBO_BOOT_CTRL_BL_AUTOBOOT_HALT_RESPONSE)
+  {
+    printf("unexpected response\n");
+    return false;
+  }
+  return true;
+}
+
+bool Hand::bootMoboMCU()
+{
+  mobo_boot_ctrl_t request, response;
+  request.boot_cmd = MOBO_BOOT_CTRL_BL_BOOT_REQUEST;
+  if (!txPacket(CMD_ID_MOBO_BOOT_CTRL, request))
+    return false;
+  if (!listenForPacketId(CMD_ID_MOBO_BOOT_CTRL, 0.25, response))
+  {
+    printf("no response to MCU boot command\n");
+    return false;
+  }
+  if (response.boot_cmd != MOBO_BOOT_CTRL_BL_BOOT_RESPONSE)
+  {
+    printf("unexpected response\n");
     return false;
   }
   return true;

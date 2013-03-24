@@ -669,6 +669,17 @@ int mmcu_burn(int argc, char **argv, Hand &hand)
   return 0;
 }
 
+int mmcu_ping(int argc, char **argv, Hand &hand)
+{
+  if (!hand.pingMoboMCU())
+  {
+    printf("couldn't ping mobo MCU\r\n");
+    return 1;
+  }
+  printf("successfully pinged mobo MCU\r\n");
+  return 0;
+}
+
 ///////////////////////
 
 #define CLI_FUNC(x) do { cmds[string(#x)] = x; } while (0)
@@ -711,6 +722,7 @@ int main(int argc, char **argv)
   CLI_FUNC(mmcu_dump);
   CLI_FUNC(mmcu_test);
   CLI_FUNC(mmcu_burn);
+  CLI_FUNC(mmcu_ping);
   if (argc == 1)
   {
     printf("available commands:\n");

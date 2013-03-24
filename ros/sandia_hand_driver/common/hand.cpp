@@ -652,3 +652,16 @@ bool Hand::bootMoboMCU()
   return true;
 }
 
+bool Hand::pingMoboMCU()
+{
+  mobo_ping_t request, response;
+  request.state = MOBO_PING_REQUEST;
+  if (!txPacket(CMD_ID_MOBO_PING, request))
+    return false;
+  if (!listenForPacketId(CMD_ID_MOBO_PING, 0.25, response))
+    return false;
+  if (response.state != MOBO_PING_RESPONSE)
+    return false;
+  return true;
+}
+

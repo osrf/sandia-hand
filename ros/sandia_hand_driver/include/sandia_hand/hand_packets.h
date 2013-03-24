@@ -20,6 +20,7 @@ static const uint32_t CMD_ID_FPGA_FLASH_ERASE_SECTOR     = 13;
 static const uint32_t CMD_ID_FPGA_FLASH_ERASE_SECTOR_ACK = 14;
 static const uint32_t CMD_ID_BL_MOBO_MCU_FLASH_PAGE      = 15;
 static const uint32_t CMD_ID_MOBO_BOOT_CTRL              = 16;
+static const uint32_t CMD_ID_MOBO_PING                   = 17;
 
 typedef struct 
 {
@@ -142,5 +143,12 @@ static const uint32_t MOBO_BOOT_CTRL_BL_AUTOBOOT_HALT_REQUEST  = 2;
 static const uint32_t MOBO_BOOT_CTRL_BL_AUTOBOOT_HALT_RESPONSE = 3;
 static const uint32_t MOBO_BOOT_CTRL_BL_BOOT_REQUEST  = 4;
 static const uint32_t MOBO_BOOT_CTRL_BL_BOOT_RESPONSE = 5;
+
+typedef struct
+{
+  uint32_t state;
+} __attribute__((packed)) mobo_ping_t;
+static const uint32_t MOBO_PING_REQUEST  = 0;
+static const uint32_t MOBO_PING_RESPONSE = 1;
 
 #endif

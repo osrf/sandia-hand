@@ -142,6 +142,15 @@ void enet_udp_rx(uint8_t *pkt, const uint32_t len)
       RSTC->RSTC_CR = RSTC_CR_KEY(0xA5) | RSTC_CR_PERRST | RSTC_CR_PROCRST;
     }
   }
+  else if (cmd == CMD_ID_MOBO_PING)
+  {
+    mobo_ping_t *p = (mobo_ping_t *)cmd_data;
+    if (p->state == MOBO_PING_REQUEST)
+    {
+      p->state = MOBO_PING_RESPONSE;
+      enet_tx_packet(CMD_ID_MOBO_PING, (uint8_t *)p, sizeof(*p));
+    }
+  }
   else
     printf("  unhandled cmd %d\r\n", cmd);
 }

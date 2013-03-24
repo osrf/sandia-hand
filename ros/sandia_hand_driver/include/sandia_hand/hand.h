@@ -68,6 +68,7 @@ public:
   bool resetMoboMCU();
   bool haltMoboMCUAutoboot();
   bool bootMoboMCU();
+  bool pingMoboMCU();
 private:
   static const int NUM_SOCKS = 4;
   static const uint16_t HAND_BASE_PORT = 12321; // i love palindromes

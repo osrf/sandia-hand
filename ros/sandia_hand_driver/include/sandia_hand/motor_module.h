@@ -12,7 +12,7 @@ public:
   MotorModule(const uint8_t addr);
   virtual ~MotorModule();
   bool setPhalangeBusPower(bool on);
-  bool setPhalangeAutopoll(bool on); // caveat... doesn't work yet.
+  bool setPhalangeAutopoll(bool on); 
   bool pollFingerStatus();
   bool phalangeTxRx(const uint8_t *data, const uint16_t data_len);
                     //const uint16_t timeout_ms);

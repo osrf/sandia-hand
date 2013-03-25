@@ -56,13 +56,13 @@ typedef struct
 } finger_status_t;
 
 sandia_hand_msgs::RawFingerInertial g_raw_finger_inertial;
-ros::Publisher *g_raw_finger_inertial_pubs[4] = {NULL};
+ros::Publisher *g_raw_finger_inertial_pubs[Hand::NUM_FINGERS] = {NULL};
 
 void rxFingerStatus(const uint8_t finger_idx, 
                     const uint8_t *payload, const uint16_t payload_len)
 {
   //printf("rxFingerStatus %d:   %d bytes\n", finger_idx, payload_len);
-  if (payload_len < sizeof(finger_status_t))
+  if (payload_len < sizeof(finger_status_t) || finger_idx >= Hand::NUM_FINGERS)
     return; // buh bye
   const finger_status_t *p = (const finger_status_t *)payload;
   //printf("%.6f\n", p->fmcb_time * 1.0e-6);
@@ -71,11 +71,8 @@ void rxFingerStatus(const uint8_t finger_idx,
     g_raw_finger_inertial.mm_accel[i] = p->fmcb_imu[i];
     g_raw_finger_inertial.mm_mag[i]   = p->fmcb_imu[i+3];
   }
-  /*
-  uint16_t pp_imu_data[STATUS_IMU_LEN];
-  uint16_t dp_imu_data[STATUS_IMU_LEN];
-  uint16_t fmcb_imu_data[STATUS_IMU_LEN];
-  */
+  if (g_raw_finger_inertial_pubs[finger_idx])
+    g_raw_finger_inertial_pubs[finger_idx]->publish(g_raw_finger_inertial);
 }
 
 static const unsigned NUM_CAMS = 2;
@@ -203,6 +200,15 @@ int main(int argc, char **argv)
     return 1;
   }
   printf("hand is autopolling its fingers\n");
+  ros::Publisher raw_finger_inertial_pubs[Hand::NUM_FINGERS];
+  for (int i = 0; i < Hand::NUM_FINGERS; i++)
+  { 
+    char topic_name[100];
+    snprintf(topic_name, sizeof(topic_name), "raw_finger_inertial_%d", i);
+    raw_finger_inertial_pubs[i] = 
+         nh.advertise<sandia_hand_msgs::RawFingerInertial>(topic_name, 1);
+    g_raw_finger_inertial_pubs[i] = &raw_finger_inertial_pubs[i];
+  }
 
   //hand.setCameraStreaming(true, true);
   ros::spinOnce();

@@ -296,8 +296,8 @@ void pb_systick()
   if (pb_subclock % 5 == 0)
   {
     // snapshot encoder targets and values
-    g_status.fmcb_time = (g_pb_tc0_ovf_count << 16) + 
-                         (TC0->TC_CHANNEL[0].TC_CV << 1); 
+    g_status.fmcb_time = (g_pb_tc0_ovf_count << 17) + 
+                         (TC0->TC_CHANNEL[0].TC_CV << 1);  // microseconds
     for (int i = 0; i < 3; i++)
       g_status.fmcb_hall_tgt[i] = g_control_joint_tgt[i];
     g_status.fmcb_hall_pos[0] = g_hall_count_0 - g_params.encoder_offset[0];

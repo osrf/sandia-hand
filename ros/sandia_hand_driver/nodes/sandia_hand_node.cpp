@@ -6,6 +6,7 @@
 #include <sensor_msgs/fill_image.h>
 #include <image_transport/image_transport.h>
 #include <camera_info_manager/camera_info_manager.h>
+#include <sandia_hand_msgs/RawFingerInertial.h>
 using namespace sandia_hand;
 
 bool g_done = false;
@@ -29,7 +30,52 @@ void listenToHand(Hand &hand, const float seconds)
 void shutdownHand(Hand &hand)
 {
   hand.setCameraStreaming(false, false);
+  hand.setFingerAutopollHz(0);
   hand.setAllFingerPowers(Hand::FPS_OFF);
+}
+
+// todo: have firmware and driver pull from same .h file, instead of pure haxx
+typedef struct
+{
+  uint32_t pp_tactile_time;
+  uint32_t dp_tactile_time;
+  uint32_t fmcb_time;
+  uint16_t pp_tactile[6];
+  uint16_t dp_tactile[12];
+  uint16_t pp_imu[6];
+  uint16_t dp_imu[6];
+  uint16_t fmcb_imu[6];
+  uint16_t pp_temp[4];
+  uint16_t dp_temp[4];
+  uint16_t fmcb_temp[3];
+  uint16_t fmcb_voltage;
+  uint16_t fmcb_pb_current;
+  uint32_t pp_strain;
+  int32_t  fmcb_hall_tgt[3];
+  int32_t  fmcb_hall_pos[3];
+} finger_status_t;
+
+sandia_hand_msgs::RawFingerInertial g_raw_finger_inertial;
+ros::Publisher *g_raw_finger_inertial_pubs[4] = {NULL};
+
+void rxFingerStatus(const uint8_t finger_idx, 
+                    const uint8_t *payload, const uint16_t payload_len)
+{
+  //printf("rxFingerStatus %d:   %d bytes\n", finger_idx, payload_len);
+  if (payload_len < sizeof(finger_status_t))
+    return; // buh bye
+  const finger_status_t *p = (const finger_status_t *)payload;
+  //printf("%.6f\n", p->fmcb_time * 1.0e-6);
+  for (int i = 0; i < 3; i++)
+  {
+    g_raw_finger_inertial.mm_accel[i] = p->fmcb_imu[i];
+    g_raw_finger_inertial.mm_mag[i]   = p->fmcb_imu[i+3];
+  }
+  /*
+  uint16_t pp_imu_data[STATUS_IMU_LEN];
+  uint16_t dp_imu_data[STATUS_IMU_LEN];
+  uint16_t fmcb_imu_data[STATUS_IMU_LEN];
+  */
 }
 
 static const unsigned NUM_CAMS = 2;
@@ -148,7 +194,9 @@ int main(int argc, char **argv)
     return 1;
   }
   printf("finger 0 is autopolling its phalanges\n");
-  if (!hand.setFingerAutopollHz(1))
+  hand.fingers[0].mm.registerRxHandler(MotorModule::PKT_FINGER_STATUS,
+                                       boost::bind(rxFingerStatus, 0, _1, _2));
+  if (!hand.setFingerAutopollHz(100))
   {
     printf("couldn't set finger autopoll rate for hand\n");
     shutdownHand(hand);

@@ -7,6 +7,7 @@
 #include <image_transport/image_transport.h>
 #include <camera_info_manager/camera_info_manager.h>
 #include <sandia_hand_msgs/RawFingerInertial.h>
+#include <osrf_msgs/JointCommands.h>
 using namespace sandia_hand;
 
 bool g_done = false;
@@ -32,6 +33,11 @@ void shutdownHand(Hand &hand)
   hand.setCameraStreaming(false, false);
   hand.setFingerAutopollHz(0);
   hand.setAllFingerPowers(Hand::FPS_OFF);
+}
+
+void jointCommandsCallback(const osrf_common::JointCommandsConstPtr &msg)
+{
+  printf("jcb\n");
 }
 
 // todo: have firmware and driver pull from same .h file, instead of pure haxx
@@ -209,6 +215,23 @@ int main(int argc, char **argv)
          nh.advertise<sandia_hand_msgs::RawFingerInertial>(topic_name, 1);
     g_raw_finger_inertial_pubs[i] = &raw_finger_inertial_pubs[i];
   }
+  // todo: some sort of auto-home sequence. for now, the fingers assume they 
+  // were powered up in (0,0,0)
+
+  ros::Subscriber joint_commands_sub = 
+          n.subscribe("joint_commands", 1, 
+                      boost::bind(JointCommandsCallback, hand, _1));
+
+  // set the joint limits for each finger
+  float upper[4][3] = { { 1.5 ,  1.5,  1.7},
+                        { 0.05,  1.5,  1.7},
+                        { 0.05,  1.5,  1.7},
+                        { 0.3 ,  1.1,  1.0} };
+  float lower[4][3] = { {-0.05, -1.2, -1.2},
+                        {-0.05, -1.2, -1.2},
+                        {-1.5 , -1.2, -1.2},
+                        {-1.5 , -1.2, -0.8} };
+
 
   //hand.setCameraStreaming(true, true);
   ros::spinOnce();

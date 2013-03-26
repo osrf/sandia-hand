@@ -33,6 +33,8 @@ public:
   typedef boost::function<bool()> PowerFunctor;
   bool programAppFile(FILE *bin_file, 
                       PowerFunctor power_on, PowerFunctor power_off);
+  bool setParamFloat(const std::string &name, const float val);
+  bool getParamNames(std::vector<std::string> &names);
 
 protected:
   static const uint32_t MAX_PACKET_LENGTH = 512;
@@ -52,6 +54,7 @@ protected:
   void serializeUint32(const uint32_t x, uint8_t *p);
   void serializeFloat32(const float x, uint8_t *p);
   void resetParser();
+  bool retrieveParamNames();
 
 private:
   uint8_t addr_;
@@ -70,11 +73,16 @@ private:
   static const uint8_t PKT_BL_WRITE_FLASH_PAGE   = 0x0b;
   static const uint8_t PKT_BL_SET_FLASH_BUF_WORD = 0x0d;
   static const uint8_t PKT_BL_WRITE_FLASH_BUF    = 0x0e;
+  static const uint8_t PKT_READ_NUM_PARAMS       = 0x16;
+  static const uint8_t PKT_READ_PARAM_NAME       = 0x17;
+  static const uint8_t PKT_READ_PARAM_VALUE      = 0x18;
+  static const uint8_t PKT_WRITE_PARAM_VALUE     = 0x19;
   void rxPing(const uint8_t *payload, const uint16_t payload_len);
   void rxByte(const uint8_t b);
   ListenFunctor listen_functor_;
   bool done_listening_;
   uint8_t listen_pkt_type_;
+  std::vector<std::string> param_names_;
 };
 
 }

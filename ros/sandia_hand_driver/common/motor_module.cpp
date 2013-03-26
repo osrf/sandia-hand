@@ -139,3 +139,15 @@ void MotorModule::addPhalangeRxFunctor(RxFunctor f)
   phalange_rx_functors.push_back(f);
 }
 
+bool MotorModule::setJointLimits(float *lower, float *upper)
+{
+  bool all_ok = true;
+  all_ok &= setParamFloat("j0_lower_limit", lower[2]);
+  all_ok &= setParamFloat("j1_lower_limit", lower[1]);
+  all_ok &= setParamFloat("j2_lower_limit", lower[0]);
+  all_ok &= setParamFloat("j0_upper_limit", upper[2]);
+  all_ok &= setParamFloat("j1_upper_limit", upper[1]);
+  all_ok &= setParamFloat("j2_upper_limit", upper[0]);
+  return all_ok;
+}
+

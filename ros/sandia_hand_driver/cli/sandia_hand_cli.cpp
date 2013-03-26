@@ -680,6 +680,25 @@ int mmcu_ping(int argc, char **argv, Hand &hand)
   return 0;
 }
 
+int mm_param_dump(int argc, char **argv, Hand &hand)
+{
+  verify_argc(argc, 3, "usage: mm_param_dump FINGER_IDX\n");
+  uint8_t finger_idx = 0;
+  parse_finger_idx(finger_idx, argv[2]);
+  vector<string> param_names;
+  if (!hand.fingers[finger_idx].mm.getParamNames(param_names))
+  {
+    printf("couldn't get param names\n");
+    return 1;
+  }
+  printf("found %d parameters:\n", (int)param_names.size());
+  for (int i = 0; i < (int)param_names.size(); i++)
+  {
+    printf("  %02d: %s\n", i, param_names[i].c_str());
+  }
+  return 0;
+}
+
 ///////////////////////
 
 #define CLI_FUNC(x) do { cmds[string(#x)] = x; } while (0)
@@ -723,6 +742,7 @@ int main(int argc, char **argv)
   CLI_FUNC(mmcu_test);
   CLI_FUNC(mmcu_burn);
   CLI_FUNC(mmcu_ping);
+  CLI_FUNC(mm_param_dump);
   if (argc == 1)
   {
     printf("available commands:\n");

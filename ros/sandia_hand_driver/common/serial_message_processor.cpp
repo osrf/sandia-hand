@@ -3,7 +3,11 @@
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 #include <ros/time.h>
+#include <string>
+#include <vector>
 using namespace sandia_hand;
+using std::string;
+using std::vector;
 
 SerialMessageProcessor::SerialMessageProcessor(const uint8_t addr)
 : print_parser_debris_(false), 
@@ -462,6 +466,89 @@ bool SerialMessageProcessor::programAppFile(FILE *bin_file,
     return false;
   }
   printf("successfully booted after app write\n");
+  return true;
+}
+
+bool SerialMessageProcessor::setParamFloat(const std::string &name, 
+                                           const float val)
+{
+  if (param_names_.size() == 0)
+    if (!retrieveParamNames())
+      return false;
+  // search through the param names vector to find what we want.
+  // todo: if it ever matters, set up a STL map to do this
+  int found_idx = -1;
+  for (int i = 0; found_idx < 0 && i < (int)param_names_.size(); i++)
+    if (name == param_names_[i])
+      found_idx = i;
+  if (found_idx < 0)
+  {
+    printf("couldn't find parameter [%s]\n", name.c_str());
+    return false;
+  }
+  const uint16_t param_idx = (uint16_t)found_idx;
+  serializeUint16(param_idx, getTxBuffer());
+  serializeFloat32(val, getTxBuffer()+2);
+  if (!sendTxBuffer(PKT_WRITE_PARAM_VALUE, 6))
+    return false;
+  if (!listenFor(PKT_WRITE_PARAM_VALUE, 0.25))
+    return false;
+  return true;
+}
+
+bool SerialMessageProcessor::retrieveParamNames()
+{
+  // first, figure out how many parameters are stored on the device
+  if (!sendTxBuffer(PKT_READ_NUM_PARAMS))
+    return false;
+  if (!listenFor(PKT_READ_NUM_PARAMS, 0.25))
+    return false;
+  if (rx_pkt_data_.size() != 2)
+  {
+    printf("retrieveParamNames unexpected length: %d\n", 
+           (int)rx_pkt_data_.size());
+    return false;
+  }
+  uint16_t n_params = deserializeUint16(&rx_pkt_data_[0]);
+  printf("%d params on the device\n", n_params);
+  vector<string> name_buf;
+  name_buf.resize(n_params);
+  for (uint16_t param_idx = 0; param_idx < n_params; param_idx++)
+  {
+    serializeUint16(param_idx, getTxBuffer());
+    if (!sendTxBuffer(PKT_READ_PARAM_NAME, 2))
+      return false;
+    if (!listenFor(PKT_READ_PARAM_NAME, 0.25))
+      return false;
+    if (rx_pkt_data_.size() < 3 || rx_pkt_data_.size() > 256)
+    {
+      printf("woah. read param had unexpected length: %d\n", 
+             (int)rx_pkt_data_.size());
+      return false;
+    }
+    char name_cstr[257]; // prepare for some char array mangling action
+    uint8_t len = rx_pkt_data_[0];
+    if ((int)len != rx_pkt_data_.size() - 1)
+    {
+      printf("woah. expected parameter name length %d, received %d\n",
+             (int)len, (int)rx_pkt_data_.size() - 1);
+      len = (int)rx_pkt_data_.size()-2; // believe the rx data
+    }
+    //bool is_float = (rx_pkt_data_[1] == 'f' || rx_pkt_data_[1] == 'F'); // todo
+    strncpy(name_cstr, (const char *)&rx_pkt_data_[2], len - 1);
+    name_cstr[len - 1] = 0; // null terminate plz
+    name_buf[param_idx] = string(name_cstr);
+  }
+  param_names_ = name_buf; // we got em all.
+  return true;
+}
+
+bool SerialMessageProcessor::getParamNames(vector<string> &names)
+{
+  if (param_names_.size() == 0)
+    if (!retrieveParamNames())
+      return false;
+  names = param_names_;
   return true;
 }
 

@@ -6,7 +6,7 @@
 #include <sensor_msgs/fill_image.h>
 #include <image_transport/image_transport.h>
 #include <camera_info_manager/camera_info_manager.h>
-#include <sandia_hand_msgs/RawFingerInertial.h>
+#include <sandia_hand_msgs/RawFingerStatus.h>
 #include <osrf_msgs/JointCommands.h>
 using namespace sandia_hand;
 
@@ -35,10 +35,18 @@ void shutdownHand(Hand &hand)
   hand.setAllFingerPowers(Hand::FPS_OFF);
 }
 
+int perish(const char *msg, Hand &hand)
+{
+  ROS_FATAL("%s", msg);
+  shutdownHand(hand);
+  return 1;
+}
+
 void jointCommandsCallback(Hand &hand, 
                            const osrf_msgs::JointCommandsConstPtr &msg)
 {
-  printf("jcb\n");
+  hand.setFingerJointPos(0, 
+                         msg->position[0], msg->position[1], msg->position[2]);
 }
 
 // todo: have firmware and driver pull from same .h file, instead of pure haxx
@@ -62,8 +70,8 @@ typedef struct
   int32_t  fmcb_hall_pos[3];
 } finger_status_t;
 
-sandia_hand_msgs::RawFingerInertial g_raw_finger_inertial;
-ros::Publisher *g_raw_finger_inertial_pubs[Hand::NUM_FINGERS] = {NULL};
+sandia_hand_msgs::RawFingerStatus g_raw_finger_status;
+ros::Publisher *g_raw_finger_status_pubs[Hand::NUM_FINGERS] = {NULL};
 
 void rxFingerStatus(const uint8_t finger_idx, 
                     const uint8_t *payload, const uint16_t payload_len)
@@ -72,14 +80,40 @@ void rxFingerStatus(const uint8_t finger_idx,
   if (payload_len < sizeof(finger_status_t) || finger_idx >= Hand::NUM_FINGERS)
     return; // buh bye
   const finger_status_t *p = (const finger_status_t *)payload;
-  //printf("%.6f\n", p->fmcb_time * 1.0e-6);
+  sandia_hand_msgs::RawFingerStatus *rfs = &g_raw_finger_status; // save typing
+  rfs->fmcb_time = p->fmcb_time;
+  rfs->pp_time = p->pp_tactile_time;
+  rfs->dp_time = p->dp_tactile_time;
+  for (int i = 0; i < 6; i++)
+    rfs->pp_tactile[i] = p->pp_tactile[i];
+  for (int i = 0; i < 12; i++)
+    rfs->dp_tactile[i] = p->dp_tactile[i];
+  rfs->pp_strain = p->pp_strain;
   for (int i = 0; i < 3; i++)
   {
-    g_raw_finger_inertial.mm_accel[i] = p->fmcb_imu[i];
-    g_raw_finger_inertial.mm_mag[i]   = p->fmcb_imu[i+3];
+    rfs->mm_accel[i] = p->fmcb_imu[i];
+    rfs->mm_mag[i]   = p->fmcb_imu[i+3];
+    rfs->pp_accel[i] = p->pp_imu[i];
+    rfs->pp_mag[i]   = p->pp_imu[i+3];
+    rfs->dp_accel[i] = p->dp_imu[i];
+    rfs->dp_mag[i]   = p->dp_imu[i+3];
   }
-  if (g_raw_finger_inertial_pubs[finger_idx])
-    g_raw_finger_inertial_pubs[finger_idx]->publish(g_raw_finger_inertial);
+  for (int i = 0; i < 4; i++)
+  {
+    rfs->pp_temp[i] = p->pp_temp[i];
+    rfs->dp_temp[i] = p->dp_temp[i];
+  }
+  for (int i = 0; i < 3; i++)
+    rfs->fmcb_temp[i] = p->fmcb_temp[i];
+  rfs->fmcb_voltage = p->fmcb_voltage;
+  rfs->fmcb_pb_current = p->fmcb_pb_current;
+  for (int i = 0; i < 3; i++)
+  {
+    rfs->hall_tgt[i] = p->fmcb_hall_tgt[i];
+    rfs->hall_pos[i] = p->fmcb_hall_pos[i];
+  }
+  if (g_raw_finger_status_pubs[finger_idx])
+    g_raw_finger_status_pubs[finger_idx]->publish(g_raw_finger_status);
 }
 
 static const unsigned NUM_CAMS = 2;
@@ -149,11 +183,7 @@ int main(int argc, char **argv)
   hand.setFingerPower(0, Hand::FPS_LOW);
   listenToHand(hand, 1.0);
   if (!hand.fingers[0].mm.blBoot())
-  {
     printf("couldn't boot finger 0\n");
-    shutdownHand(hand);
-    return 1;
-  }
   listenToHand(hand, 0.5);
   if (!hand.fingers[0].mm.ping())
   {
@@ -166,55 +196,23 @@ int main(int argc, char **argv)
   hand.fingers[0].mm.setPhalangeBusPower(true);
   listenToHand(hand, 1.0);
   if (!hand.fingers[0].pp.blBoot())
-  {
-    printf("couldn't boot finger 0 proximal phalange\n");
-    shutdownHand(hand);
-    return 1;
-  }
+    ROS_WARN("couldn't boot finger 0 proximal phalange\n");
   if (!hand.fingers[0].dp.blBoot())
-  {
-    printf("couldn't boot finger 0 distal phalange\n");
-    shutdownHand(hand);
-    return 1;
-  }
+    ROS_WARN("couldn't boot finger 0 distal phalange\n");
   listenToHand(hand, 0.5);
   if (!hand.fingers[0].pp.ping())
-  {
-    printf("couldn't ping finger 0 proximal phalange\n");
-    shutdownHand(hand);
-    return 1;
-  }
+    return perish("couldn't ping finger 0 proximal phalange", hand);
   if (!hand.fingers[0].dp.ping())
-  {
-    printf("couldn't ping finger 0 distal phalange\n");
-    shutdownHand(hand);
-    return 1;
-  }
-  printf("finger 0 phalanges booted\n");
-  if (!hand.fingers[0].mm.setPhalangeAutopoll(true))
-  {
-    printf("couldn't start phalange autopoll on finger 0\n");
-    shutdownHand(hand);
-    return 1;
-  }
-  printf("finger 0 is autopolling its phalanges\n");
-  hand.fingers[0].mm.registerRxHandler(MotorModule::PKT_FINGER_STATUS,
-                                       boost::bind(rxFingerStatus, 0, _1, _2));
-  if (!hand.setFingerAutopollHz(100))
-  {
-    printf("couldn't set finger autopoll rate for hand\n");
-    shutdownHand(hand);
-    return 1;
-  }
-  printf("hand is autopolling its fingers\n");
-  ros::Publisher raw_finger_inertial_pubs[Hand::NUM_FINGERS];
+    return perish("couldn't ping finger 0 distal phalange", hand);
+  ROS_INFO("finger 0 phalanges booted\n");
+  ros::Publisher raw_finger_status_pubs[Hand::NUM_FINGERS];
   for (int i = 0; i < Hand::NUM_FINGERS; i++)
   { 
     char topic_name[100];
-    snprintf(topic_name, sizeof(topic_name), "raw_finger_inertial_%d", i);
-    raw_finger_inertial_pubs[i] = 
-         nh.advertise<sandia_hand_msgs::RawFingerInertial>(topic_name, 1);
-    g_raw_finger_inertial_pubs[i] = &raw_finger_inertial_pubs[i];
+    snprintf(topic_name, sizeof(topic_name), "raw_finger_status_%d", i);
+    raw_finger_status_pubs[i] = 
+         nh.advertise<sandia_hand_msgs::RawFingerStatus>(topic_name, 1);
+    g_raw_finger_status_pubs[i] = &raw_finger_status_pubs[i];
   }
   // todo: some sort of auto-home sequence. for now, the fingers assume they 
   // were powered up in (0,0,0)
@@ -232,7 +230,20 @@ int main(int argc, char **argv)
                         {-0.05, -1.2, -1.2},
                         {-1.5 , -1.2, -1.2},
                         {-1.5 , -1.2, -0.8} };
+  if (!hand.fingers[0].mm.setJointLimits(lower[0], upper[0]))
+    return perish("couldn't set joint limits", hand);
 
+  if (!hand.fingers[0].mm.setPhalangeAutopoll(true))
+    return perish("couldn't start phalange autopoll on finger 0", hand);
+  ROS_INFO("finger 0 is autopolling its phalanges\n");
+
+  hand.fingers[0].mm.registerRxHandler(MotorModule::PKT_FINGER_STATUS,
+                                       boost::bind(rxFingerStatus, 0, _1, _2));
+  if (!hand.setFingerAutopollHz(100))
+    return perish("couldn't set finger autopoll rate for hand", hand);
+  ROS_INFO("hand is autopolling its fingers\n");
+
+  hand.setFingerControlMode(0, Hand::FCM_JOINT_POS);
 
   //hand.setCameraStreaming(true, true);
   ros::spinOnce();

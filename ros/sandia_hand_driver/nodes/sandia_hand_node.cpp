@@ -35,7 +35,8 @@ void shutdownHand(Hand &hand)
   hand.setAllFingerPowers(Hand::FPS_OFF);
 }
 
-void jointCommandsCallback(const osrf_common::JointCommandsConstPtr &msg)
+void jointCommandsCallback(Hand &hand, 
+                           const osrf_msgs::JointCommandsConstPtr &msg)
 {
   printf("jcb\n");
 }
@@ -219,8 +220,8 @@ int main(int argc, char **argv)
   // were powered up in (0,0,0)
 
   ros::Subscriber joint_commands_sub = 
-          n.subscribe("joint_commands", 1, 
-                      boost::bind(JointCommandsCallback, hand, _1));
+          nh.subscribe<osrf_msgs::JointCommands>("joint_commands", 1, 
+                       boost::bind(jointCommandsCallback, hand, _1));
 
   // set the joint limits for each finger
   float upper[4][3] = { { 1.5 ,  1.5,  1.7},

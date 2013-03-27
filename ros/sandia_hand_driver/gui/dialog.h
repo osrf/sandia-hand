@@ -3,16 +3,17 @@
 
 #include <QDialog>
 #include <QSignalMapper>
+#include <string>
 
 class QDialogButtonBox;
 class QFileInfo;
 class QTabWidget;
 
-class LoadFirmwareTab : public QWidget
+class FirmwareTab : public QWidget
 {
   Q_OBJECT
 public:
-  LoadFirmwareTab(QWidget *parent = 0);
+  FirmwareTab(QWidget *parent = 0);
   QSignalMapper *button_mapper;
 };
 
@@ -29,10 +30,12 @@ class Dialog : public QDialog
 public:
   Dialog(QWidget *parent = 0);
 public slots:
-  void onFirmwareLoad(const QString &board_name);
+  void onFirmwareButton(const QString &board_name);
+  void onFirmwareOperationChanged(const QString &operation);
 private:
   QTabWidget       *tabWidget;
   QDialogButtonBox *buttonBox;
+  std::string firmware_operation_;
 };
 
 #endif

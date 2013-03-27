@@ -472,6 +472,7 @@ bool SerialMessageProcessor::programAppFile(FILE *bin_file,
 bool SerialMessageProcessor::setParamFloat(const std::string &name, 
                                            const float val)
 {
+  //printf("setParamFloat(%s, %f)\n", name.c_str(), val);
   if (param_names_.size() == 0)
     if (!retrieveParamNames())
       return false;
@@ -487,6 +488,7 @@ bool SerialMessageProcessor::setParamFloat(const std::string &name,
     return false;
   }
   const uint16_t param_idx = (uint16_t)found_idx;
+  //printf("found param [%s] at idx %d\n", name.c_str(), param_idx);
   serializeUint16(param_idx, getTxBuffer());
   serializeFloat32(val, getTxBuffer()+2);
   if (!sendTxBuffer(PKT_WRITE_PARAM_VALUE, 6))
@@ -499,6 +501,7 @@ bool SerialMessageProcessor::setParamFloat(const std::string &name,
 bool SerialMessageProcessor::retrieveParamNames()
 {
   // first, figure out how many parameters are stored on the device
+  //printf("retrieveParamNames()\n");
   if (!sendTxBuffer(PKT_READ_NUM_PARAMS))
     return false;
   if (!listenFor(PKT_READ_NUM_PARAMS, 0.25))
@@ -510,7 +513,7 @@ bool SerialMessageProcessor::retrieveParamNames()
     return false;
   }
   uint16_t n_params = deserializeUint16(&rx_pkt_data_[0]);
-  printf("%d params on the device\n", n_params);
+  //printf("%d params on the device\n", n_params);
   vector<string> name_buf;
   name_buf.resize(n_params);
   for (uint16_t param_idx = 0; param_idx < n_params; param_idx++)
@@ -536,6 +539,7 @@ bool SerialMessageProcessor::retrieveParamNames()
     }
     //bool is_float = (rx_pkt_data_[1] == 'f' || rx_pkt_data_[1] == 'F'); // todo
     strncpy(name_cstr, (const char *)&rx_pkt_data_[2], len - 1);
+    //printf("param %d has len %d\n", param_idx, len);
     name_cstr[len - 1] = 0; // null terminate plz
     name_buf[param_idx] = string(name_cstr);
   }

@@ -144,9 +144,10 @@ bool Hand::setFingerJointPos(const uint8_t finger_idx,
   *((uint32_t *)pkt) = CMD_ID_SET_FINGER_JOINT_POS;
   set_finger_joint_pos_t *p = (set_finger_joint_pos_t *)(pkt + 4);
   p->finger_idx = finger_idx;
-  p->joint_0_radians = joint_0;
-  p->joint_1_radians = joint_1;
-  p->joint_2_radians = joint_2;
+  // permute joints as needed... numbering scheme in schematics is different.
+  p->joint_0_radians =  joint_2;
+  p->joint_1_radians =  joint_1;
+  p->joint_2_radians = -joint_0;
   if (!tx_udp(pkt, 4 + sizeof(set_finger_joint_pos_t)))
     return false;
   return true;
@@ -204,6 +205,7 @@ bool Hand::fingerRawTx(const uint8_t finger_idx,
 
 bool Hand::tx_udp(uint8_t *pkt, uint16_t pkt_len)
 {
+  //printf("tx_udp %d bytes to socket %d\n", pkt_len, control_sock);
   if (-1 == sendto(control_sock, pkt, pkt_len, 0, 
                    (sockaddr *)&control_saddr, sizeof(sockaddr)))
   {

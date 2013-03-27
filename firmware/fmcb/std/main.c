@@ -248,7 +248,7 @@ void rs485_process_packet(uint8_t pkt_addr, uint16_t payload_len,
   else if (pkt_type == 0x16) // get number of registered parameters
   {
     *((uint16_t *)(g_tx_pkt_buf+ 5)) = (uint16_t)g_num_registered_params;
-    rs485_send_packet(0x16, 4);
+    rs485_send_packet(0x16, 2);
   }
   else if (pkt_type == 0x17) // get name of parameter
   {

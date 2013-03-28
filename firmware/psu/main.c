@@ -3,6 +3,7 @@
 #include <avr/io.h>
 #include <avr/wdt.h>
 #include <avr/interrupt.h>
+#include <avr/eeprom.h>
 #include <util/delay.h>
 
 // hardware connections:
@@ -12,16 +13,24 @@
 #define PORTC_LED_PIN   0x04
 #define PORTC_SSR_PIN   0x08
 #define PORTD_TX_PIN    0x02
+#define PORTD_FAN_PIN   0x20
 #define INA226_I2C_ADDR 0x80
 #define I2C_TIMEOUT_MS   100
+#define TIMER1_FREQ   125000
 
 inline void toggle_led() { PORTC ^= PORTC_LED_PIN; }
 static volatile uint8_t g_timer_flag = 0;
+static volatile uint16_t g_raw_temp_adc = 0;
 #define SWAP_16(x) (((x >> 8) & 0xff) | ((x << 8) & 0xff00))
 
 ISR(TIMER1_COMPA_vect)
 {
   g_timer_flag = 1;
+}
+
+ISR(ADC_vect)
+{
+  g_raw_temp_adc = ADC;
 }
 
 int usart0_putc(char c, FILE *f)
@@ -142,12 +151,28 @@ uint16_t ina226_read_current()
   return raw_val;
 }
 
+void set_output(uint8_t enable)
+{
+  if (enable)
+    PORTC |= PORTC_SSR_PIN;
+  else
+    PORTC &= ~PORTC_SSR_PIN;
+}
+
+void set_fan(uint8_t enable)
+{
+  if (enable)
+    PORTD |= PORTD_FAN_PIN;
+  else
+    PORTD &= ~PORTD_FAN_PIN;
+}
+
 int main()
 {
   wdt_disable(); // todo: revisit this...
   PORTC = 0;
   DDRC = PORTC_SSR_PIN | PORTC_LED_PIN;
-  DDRD = PORTD_TX_PIN;
+  DDRD = PORTD_TX_PIN | PORTD_FAN_PIN;
   UCSR0A = _BV(U2X0);
   UCSR0B = _BV(TXEN0);
   UCSR0C = _BV(UCSZ01) | _BV(UCSZ00); // 8N1 format
@@ -155,6 +180,8 @@ int main()
   UBRR0L = 12; // 9600 // with U2X0, this will give 115200 baud with 8.5% error
   fdevopen(usart0_putc, NULL);
   printf("hello, world!\r\n");
+  uint16_t temp_offset = eeprom_read_word(0);
+  printf("eeprom temp offset: %d\r\n", temp_offset);
   TWSR = 0; // twi prescalar = 1
   TWBR = 0; // twi bit rate = 1000000/16 = 62.5 kHz
   /*
@@ -171,14 +198,21 @@ int main()
   int16_t raw_reading = ina226_read_current();
   printf("ina226 raw = %d\r\n", raw_reading);
 
-  // todo: setup analog temperature read
-  OCR1A = 62500; // set to 2 Hz for testing
+  // set up analog temperature auto-polling 
+  ADCSRA = _BV(ADEN)  |             // adc enabled
+           _BV(ADIE)  |             // interrupt enabled
+           _BV(ADPS1) | _BV(ADPS0); // adc clock = sysclk/8 = 125 kHz
+  ADCSRB = 0; // free running mode
+  ADMUX = _BV(REFS1) | _BV(REFS0) | 0x08; // enable 1v1 reference and temp ch
+
+  OCR1A = TIMER1_FREQ / 10; // set to 10 Hz for testing
   TCCR1A = 0x00; // clear timer on compare match
   TCCR1B = 0x0a; // CTC, timer 1 = sysclk / 8 = 125 kHz
   TCNT1 = 0;
   TIMSK1 = _BV(OCIE1A);
   sei(); // turn on interrupts
-  uint32_t loop_count = 0;
+  float temp_celsius = 25;
+  const float gain = 0.2;
   while (1) 
   { 
     if (g_timer_flag)
@@ -186,15 +220,29 @@ int main()
       g_timer_flag = 0;
       toggle_led();
       uint16_t raw_reading = ina226_read_current();
-      printf("raw = %d\r\n", raw_reading);
-      if (++loop_count % 20 == 0)
+      int16_t celsius = 0;
+      if (g_raw_temp_adc)
       {
-        PORTC ^= PORTC_SSR_PIN;
-        if (PORTC & PORTC_SSR_PIN)
-          printf("output enabled\r\n");
-        else
-          printf("output disabled\r\n");
+        set_output(1);
+        cli();
+        if (temp_offset == 0xffff)
+        {
+          temp_offset = 334; //g_raw_temp_adc;  // UNCOMMENT THIS in production
+          printf("burning temp sensor offset: %d\r\n", temp_offset);
+          eeprom_write_word(0, temp_offset); 
+        }
+        float cur_temp_celsius = ((float)g_raw_temp_adc - (float)temp_offset) * 
+                                 1.06f + 26.0f;
+        temp_celsius = gain * cur_temp_celsius + (1.0f - gain) * temp_celsius;
+        sei();
+        celsius = (int16_t)temp_celsius;
+        if (celsius >= 36)
+          set_fan(1);
+        else if (celsius <= 31)
+          set_fan(0);
       }
+      printf("%d %d %d\r\n", raw_reading, g_raw_temp_adc, celsius);
+      ADCSRA |= _BV(ADSC);
     }
   }
   return 0;

@@ -21,6 +21,7 @@ static const uint32_t CMD_ID_FPGA_FLASH_ERASE_SECTOR_ACK = 14;
 static const uint32_t CMD_ID_BL_MOBO_MCU_FLASH_PAGE      = 15;
 static const uint32_t CMD_ID_MOBO_BOOT_CTRL              = 16;
 static const uint32_t CMD_ID_MOBO_PING                   = 17;
+static const uint32_t CMD_ID_HAND_JOINT_COMMANDS         = 18;
 
 typedef struct 
 {
@@ -150,5 +151,11 @@ typedef struct
 } __attribute__((packed)) mobo_ping_t;
 static const uint32_t MOBO_PING_REQUEST  = 0;
 static const uint32_t MOBO_PING_RESPONSE = 1;
+
+typedef struct
+{
+  float   joint_angles[12];
+  uint8_t max_efforts [12];
+} __attribute__((packed)) hand_joint_commands_t;
 
 #endif

@@ -10,6 +10,7 @@
 volatile enum control_mode_t g_control_mode;
 volatile int32_t g_control_hall_tgt[3];
 volatile float g_control_joint_tgt[3];
+volatile uint8_t g_control_joint_max_effort[3];
 
 #define CONTROL_FREQ 1000
 void control_init()
@@ -18,6 +19,7 @@ void control_init()
   {
     g_control_hall_tgt[i] = 0;
     g_control_joint_tgt[i] = 0;
+    g_control_joint_max_effort[i] = 255; // use overall effort limit at first
   }
   g_control_mode = CM_IDLE;
   SysTick_Config(F_CPU / CONTROL_FREQ); // 1 ms tick clock
@@ -62,15 +64,17 @@ void control_systick()
         dir |= (1 << i);
       if (torque[i] < 0)
         torque[i] *= -1;
-      if (torque[i] > g_params.torque_limit[i])
+      if (torque[i] > g_params.torque_limit[i]) // from param table
         torque[i] = g_params.torque_limit[i];
+      if (torque[i] > g_control_joint_max_effort[i]) // if specified in msg
+        torque[i] = g_control_joint_max_effort[i];
     }
     motors_set_all(en, dir, torque);
   }
   gpio_led(false);
 }
 
-void control_set_motorspace(int16_t *targets)
+void control_set_motorspace(const int16_t *targets)
 {
   control_systick_disable();
   g_control_mode = CM_JOINT_SPACE;
@@ -79,7 +83,7 @@ void control_set_motorspace(int16_t *targets)
   control_systick_enable();
 }
 
-void control_set_jointspace(float *targets)
+void control_set_jointspace(const float *targets)
 {
   control_systick_disable();
   g_control_mode = CM_JOINT_SPACE;
@@ -103,7 +107,7 @@ void control_set_jointspace(float *targets)
   control_systick_enable();
 }
 
-void control_set_jointspace_fp(int16_t *fp_targets)
+void control_set_jointspace_fp(const int16_t *fp_targets)
 {
   float targets[3];
   for (int i = 0; i < 3; i++)
@@ -133,4 +137,13 @@ void control_systick_enable()
 {
   SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;
 }
+
+void control_set_jointspace_with_max_effort(const float   *targets, 
+                                            const uint8_t *efforts)
+{
+  for (int i = 0; i < 3; i++)
+    g_control_joint_max_effort[i] = efforts[i];
+  control_set_jointspace(targets);
+}
+
 

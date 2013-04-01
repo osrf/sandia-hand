@@ -329,6 +329,9 @@ void rs485_process_packet(uint8_t pkt_addr, uint16_t payload_len,
         control_set_jointspace((float *)(payload+1));
       else if (cm == CM_JOINT_SPACE_FP)
         control_set_jointspace_fp((int16_t *)(payload+1));
+      else if (cm == CM_JOINT_SPACE_WITH_MAX_EFFORT)
+        control_set_jointspace_with_max_effort((float *)(payload+1),
+                                               payload+13);
     }
     if (payload[0] != (uint8_t)CM_JOINT_SPACE_FP) 
       rs485_send_packet(0x1d, 0); // don't generate any extra traffic for FP...

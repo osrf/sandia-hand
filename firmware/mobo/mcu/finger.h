@@ -24,6 +24,8 @@ void finger_tx_raw(const uint8_t finger_idx,
                    const uint8_t *data, const uint16_t data_len);
 void finger_set_control_mode(uint8_t finger_idx, uint8_t control_mode);
 void finger_set_joint_pos(uint8_t finger_idx, float j0, float j1, float j2);
+void finger_set_all_joint_angles_with_max_efforts(const float *joint_angles, 
+        /* most verbose function name ever */     const uint8_t *max_efforts);
 void finger_systick();
 void finger_idle();
 void finger_set_autopoll_rate(uint16_t hz);

@@ -40,6 +40,8 @@ public:
                             const FingerControlMode fcm);
   bool setFingerJointPos(const uint8_t finger_idx,
                          float joint_0, float joint_1, float joint_2);
+  bool setAllFingerJointPos(const float   *joint_pos,
+                            const uint8_t *joint_max_effort);
   bool listen(const float max_seconds);
   bool setCameraStreaming(const bool cam_0_streaming, 
                           const bool cam_1_streaming);

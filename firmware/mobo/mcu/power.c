@@ -244,9 +244,11 @@ void power_start_poll()
     g_power_autopoll_sensor_idx = 0;
     power_start_read_finger_sensor_reg(0, 0x04);
   }
+  /*
   else if (g_power_status_send_req == 1) // only print this at low speed...
     printf("! %d %x %d\r\n", 
            g_power_state, TWI1->TWI_SR, g_power_i2c_rx_cnt);
+  */
 }
 
 void power_i2c_rx_complete(const uint16_t rx_data)

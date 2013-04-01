@@ -146,6 +146,28 @@ void finger_set_joint_pos(uint8_t finger_idx, float j0, float j1, float j2)
   finger_tx_raw(finger_idx, pkt, 20);
 }
 
+void finger_set_all_joint_angles_with_max_efforts(const float *joint_angles, 
+                                                  const uint8_t *max_efforts)
+{
+  uint8_t pkt[50];
+  for (int i = 0; i < 4; i++)
+  {
+    pkt[0] = 0x42;
+    pkt[1] = 10;
+    *((uint16_t *)(&pkt[2])) = 13; // 1 mode byte + three 32-bit floats 
+    pkt[4] = 0x1d; // control mode packet id
+    pkt[5] = 4; // joint position mode with max efforts
+    *((float *)&pkt[6])  = joint_angles[i*3  ];
+    *((float *)&pkt[10]) = joint_angles[i*3+1];
+    *((float *)&pkt[14]) = joint_angles[i*3+2];
+    pkt[18] = max_efforts[i*3  ];
+    pkt[19] = max_efforts[i*3+1];
+    pkt[20] = max_efforts[i*3+2];
+    *((uint16_t *)(&pkt[21])) = finger_calc_crc(pkt);
+    finger_tx_raw(i, pkt, 23);
+  }
+}
+
 void finger_tx_raw(const uint8_t finger_idx, 
                    const uint8_t *data, const uint16_t data_len)
 {

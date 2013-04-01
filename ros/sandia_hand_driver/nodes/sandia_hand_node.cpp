@@ -30,6 +30,8 @@ void listenToHand(Hand &hand, const float seconds)
 
 void shutdownHand(Hand &hand)
 {
+  for (int i = 0; i < Hand::NUM_FINGERS; i++)
+    hand.setFingerControlMode(i, Hand::FCM_IDLE);
   hand.setCameraStreaming(false, false);
   hand.setFingerAutopollHz(0);
   hand.setAllFingerPowers(Hand::FPS_OFF);
@@ -45,10 +47,20 @@ int perish(const char *msg, Hand &hand)
 void jointCommandsCallback(Hand *hand, 
                            const osrf_msgs::JointCommandsConstPtr &msg)
 {
+  /*
   ROS_INFO("joint command %.3f %.3f %.3f",
            msg->position[0], msg->position[1], msg->position[2]);
   hand->setFingerJointPos(0, 
          msg->position[0], msg->position[1], msg->position[2]);
+  */
+  uint8_t max_effort_dummy[12]; // todo: if max_effort is populated, take it.
+  float joint_angles[12];
+  for (int i = 0; i < 12; i++)
+  {
+    max_effort_dummy[i] = 50;
+    joint_angles[i] = msg->position[i];
+  }
+  hand->setAllFingerJointPos(joint_angles, max_effort_dummy);
 }
 
 // todo: have firmware and driver pull from same .h file, instead of pure haxx
@@ -158,10 +170,10 @@ int main(int argc, char **argv)
   // be sure we can ping it
   if (!hand.pingMoboMCU())
   {
-    ROS_FATAL("couldn't ping hand.");
+    ROS_FATAL("couldn't ping hand motherboard.");
     return 1;
   }
-  ROS_INFO("successfully pinged hand.");
+  ROS_INFO("successfully pinged hand motherboard.");
 
   signal(SIGINT, signal_handler);
   g_cinfo[0] = boost::shared_ptr<camera_info_manager::CameraInfoManager>
@@ -180,80 +192,86 @@ int main(int argc, char **argv)
   g_image_pub[1] = &image_pub[1];
   hand.setImageCallback(&image_cb); 
 
-  if (!hand.fingers[0].mm.ping())
-  {
-    // now, start up finger(s)
-    // set finger 0 socket to low voltage
-    hand.setFingerPower(0, Hand::FPS_LOW);
-    listenToHand(hand, 1.0);
-    if (!hand.fingers[0].mm.blBoot())
-      ROS_WARN("couldn't boot finger 0");
-    listenToHand(hand, 0.5);
-    if (!hand.fingers[0].mm.ping())
-    {
-      ROS_FATAL("couldn't ping finger 0");
-      shutdownHand(hand);
-      return 1;
-    }
-  }
-  hand.setFingerPower(0, Hand::FPS_FULL);
-  ROS_INFO("finger 0 booted");
-  if (!hand.fingers[0].pp.ping())
-  {
-    hand.fingers[0].mm.setPhalangeBusPower(true);
-    listenToHand(hand, 1.0);
-    if (!hand.fingers[0].pp.blBoot())
-      ROS_WARN("couldn't boot finger 0 proximal phalange");
-    if (!hand.fingers[0].dp.blBoot())
-      ROS_WARN("couldn't boot finger 0 distal phalange");
-    listenToHand(hand, 0.5);
-    if (!hand.fingers[0].pp.ping())
-      return perish("couldn't ping finger 0 proximal phalange", hand);
-    if (!hand.fingers[0].dp.ping())
-      return perish("couldn't ping finger 0 distal phalange", hand);
-  }
-  ROS_INFO("finger 0 phalanges booted");
-  
   ros::Publisher raw_finger_status_pubs[Hand::NUM_FINGERS];
-  for (int i = 0; i < Hand::NUM_FINGERS; i++)
-  { 
+  for (int finger_idx = 0; finger_idx < Hand::NUM_FINGERS; finger_idx++)
+  {
+    if (!hand.fingers[finger_idx].mm.ping())
+    {
+      // now, start up finger(s)
+      // set finger 0 socket to low voltage
+      hand.setFingerPower(finger_idx, Hand::FPS_LOW);
+      listenToHand(hand, 1.0);
+      if (!hand.fingers[finger_idx].mm.blBoot())
+        ROS_WARN("couldn't boot finger 0. is it already booted?");
+      else
+        listenToHand(hand, 0.5);
+      if (!hand.fingers[finger_idx].mm.ping())
+      {
+        ROS_FATAL("couldn't ping finger %d", finger_idx);
+        shutdownHand(hand);
+        return 1;
+      }
+    }
+    hand.setFingerPower(finger_idx, Hand::FPS_FULL);
+    ROS_INFO("finger %d motor module booted. now bringing up phalanges...", 
+             finger_idx);
+    if (!hand.fingers[finger_idx].pp.ping())
+    {
+      hand.fingers[finger_idx].mm.setPhalangeBusPower(true);
+      listenToHand(hand, 1.0);
+      if (!hand.fingers[finger_idx].pp.blBoot())
+        ROS_WARN("couldn't boot finger %d proximal phalange", finger_idx);
+      if (!hand.fingers[finger_idx].dp.blBoot())
+        ROS_WARN("couldn't boot finger %d distal phalange", finger_idx);
+      listenToHand(hand, 0.5);
+      if (!hand.fingers[finger_idx].pp.ping())
+        return perish("couldn't ping proximal phalange", hand);
+      if (!hand.fingers[finger_idx].dp.ping())
+        return perish("couldn't ping distal phalange", hand);
+    }
+    ROS_INFO("finger %d phalanges booted", finger_idx);
+
     char topic_name[100];
-    snprintf(topic_name, sizeof(topic_name), "raw_finger_status_%d", i);
+    snprintf(topic_name, sizeof(topic_name), "raw_finger_status_%d",finger_idx);
     printf("advertising topic [%s]\n", topic_name);
-    raw_finger_status_pubs[i] = 
-         nh.advertise<sandia_hand_msgs::RawFingerStatus>(topic_name, 1);
-    g_raw_finger_status_pubs[i] = &raw_finger_status_pubs[i];
+    raw_finger_status_pubs[finger_idx] = 
+      nh.advertise<sandia_hand_msgs::RawFingerStatus>(topic_name, 1);
+    g_raw_finger_status_pubs[finger_idx] = &raw_finger_status_pubs[finger_idx];
+    // todo: some sort of auto-home sequence. for now, the fingers assume they 
+    // were powered up in (0,0,0)
+
+    ros::Subscriber joint_commands_sub = 
+      nh.subscribe<osrf_msgs::JointCommands>("joint_commands", 1, 
+          boost::bind(jointCommandsCallback, &hand, _1));
+
+    // set the joint limits for each finger
+    const float upper[4][3] = { { 1.5 ,  1.5,  1.7},
+      { 0.05,  1.5,  1.7},
+      { 0.05,  1.5,  1.7},
+      { 0.3 ,  1.1,  1.0} };
+    const float lower[4][3] = { {-0.05, -1.2, -1.2},
+      {-0.05, -1.2, -1.2},
+      {-1.5 , -1.2, -1.2},
+      {-1.5 , -1.2, -0.8} };
+    if (!hand.fingers[finger_idx].mm.setJointLimits(
+                                        lower[finger_idx], upper[finger_idx]))
+      return perish("couldn't set finger joint limits", hand);
+    if (!hand.fingers[finger_idx].mm.setPhalangeAutopoll(true))
+      return perish("couldn't start phalange autopoll", hand);
+    ROS_INFO("finger %d is autopolling its phalanges", finger_idx);
+    hand.fingers[finger_idx].mm.registerRxHandler(
+                              MotorModule::PKT_FINGER_STATUS,
+                              boost::bind(rxFingerStatus, finger_idx, _1, _2));
+
   }
-  // todo: some sort of auto-home sequence. for now, the fingers assume they 
-  // were powered up in (0,0,0)
-  
-  ros::Subscriber joint_commands_sub = 
-          nh.subscribe<osrf_msgs::JointCommands>("joint_commands", 1, 
-                       boost::bind(jointCommandsCallback, &hand, _1));
-  
-  // set the joint limits for each finger
-  float upper[4][3] = { { 1.5 ,  1.5,  1.7},
-                        { 0.05,  1.5,  1.7},
-                        { 0.05,  1.5,  1.7},
-                        { 0.3 ,  1.1,  1.0} };
-  float lower[4][3] = { {-0.05, -1.2, -1.2},
-                        {-0.05, -1.2, -1.2},
-                        {-1.5 , -1.2, -1.2},
-                        {-1.5 , -1.2, -0.8} };
-  if (!hand.fingers[0].mm.setJointLimits(lower[0], upper[0]))
-    return perish("couldn't set joint limits", hand);
 
-  if (!hand.fingers[0].mm.setPhalangeAutopoll(true))
-    return perish("couldn't start phalange autopoll on finger 0", hand);
-  ROS_INFO("finger 0 is autopolling its phalanges");
-
-  hand.fingers[0].mm.registerRxHandler(MotorModule::PKT_FINGER_STATUS,
-                                       boost::bind(rxFingerStatus, 0, _1, _2));
+  // if we get here, all fingers are up and running. let's start everything now
   if (!hand.setFingerAutopollHz(100))
     return perish("couldn't set finger autopoll rate for hand", hand);
   ROS_INFO("hand is autopolling its fingers");
 
-  hand.setFingerControlMode(0, Hand::FCM_JOINT_POS);
+  for (int finger_idx = 0; finger_idx < Hand::NUM_FINGERS; finger_idx++)
+    hand.setFingerControlMode(finger_idx, Hand::FCM_JOINT_POS);
 
   //hand.setCameraStreaming(true, true);
   ros::spinOnce();

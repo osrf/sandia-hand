@@ -17,7 +17,7 @@ public:
   bool phalangeTxRx(const uint8_t *data, const uint16_t data_len);
                     //const uint16_t timeout_ms);
   void addPhalangeRxFunctor(RxFunctor f);
-  bool setJointLimits(float *lower, float *upper);
+  bool setJointLimits(const float *lower, const float *upper);
   static const uint8_t PKT_FINGER_STATUS     = 0x21;
 private:
   static const uint8_t PKT_PHALANGE_POWER    = 0x1e;

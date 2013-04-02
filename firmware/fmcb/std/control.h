@@ -14,6 +14,7 @@ void control_systick_enable();
 
 extern volatile float   g_control_joint_tgt[3];
 extern volatile int32_t g_control_hall_tgt [3];
+extern volatile int16_t g_control_effort[3];
 
 enum control_mode_t 
 { 

@@ -82,6 +82,7 @@ typedef struct
   uint32_t pp_strain;
   int32_t  fmcb_hall_tgt[3];
   int32_t  fmcb_hall_pos[3];
+  int16_t  fmcb_effort[3];
 } finger_status_t;
 
 sandia_hand_msgs::RawFingerStatus g_raw_finger_status;
@@ -125,6 +126,7 @@ void rxFingerStatus(const uint8_t finger_idx,
   {
     rfs->hall_tgt[i] = p->fmcb_hall_tgt[i];
     rfs->hall_pos[i] = p->fmcb_hall_pos[i];
+    rfs->fmcb_effort[i] = p->fmcb_effort[i];
   }
   if (g_raw_finger_status_pubs[finger_idx])
     g_raw_finger_status_pubs[finger_idx]->publish(g_raw_finger_status);
@@ -240,10 +242,6 @@ int main(int argc, char **argv)
     // todo: some sort of auto-home sequence. for now, the fingers assume they 
     // were powered up in (0,0,0)
 
-    ros::Subscriber joint_commands_sub = 
-      nh.subscribe<osrf_msgs::JointCommands>("joint_commands", 1, 
-          boost::bind(jointCommandsCallback, &hand, _1));
-
     // set the joint limits for each finger
     const float upper[4][3] = { { 1.5 ,  1.5,  1.7},
       { 0.05,  1.5,  1.7},
@@ -264,7 +262,6 @@ int main(int argc, char **argv)
                               boost::bind(rxFingerStatus, finger_idx, _1, _2));
 
   }
-
   // if we get here, all fingers are up and running. let's start everything now
   if (!hand.setFingerAutopollHz(100))
     return perish("couldn't set finger autopoll rate for hand", hand);
@@ -272,6 +269,10 @@ int main(int argc, char **argv)
 
   for (int finger_idx = 0; finger_idx < Hand::NUM_FINGERS; finger_idx++)
     hand.setFingerControlMode(finger_idx, Hand::FCM_JOINT_POS);
+
+  ros::Subscriber joint_commands_sub = 
+    nh.subscribe<osrf_msgs::JointCommands>("joint_commands", 1, 
+        boost::bind(jointCommandsCallback, &hand, _1));
 
   //hand.setCameraStreaming(true, true);
   ros::spinOnce();

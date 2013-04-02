@@ -49,6 +49,8 @@ def grasp_cb(msg):
   elif (gn == "prismatic"):
     origin = [0,1.4,0, 0,1.4,0, 0,1.4,0, -0.1,0.8,-0.8]
     g0 = [0,0,1.4, 0,0,1.4, 0,0,1.4, 0,0,1.4]
+  elif (gn == "finger_0_test"):
+    g0 = [0,1.5,1.7, 0,0,0, 0,0,0, 0,0,0]
   else:
     return None # bogus
   g_jc.position = [0] * 12

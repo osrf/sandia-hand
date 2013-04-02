@@ -24,6 +24,7 @@ typedef struct
   uint32_t pp_strain;
   int32_t  fmcb_hall_tgt[3];
   int32_t  fmcb_hall_pos[3];
+  int16_t  fmcb_effort[3];
 } status_t;
 extern status_t g_status;
 #define STATUS_PAYLOAD_LEN  (sizeof(status_t))

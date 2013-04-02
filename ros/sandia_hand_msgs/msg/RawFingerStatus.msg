@@ -17,3 +17,4 @@ uint16 fmcb_voltage
 uint16 fmcb_pb_current
 int32[3] hall_tgt
 int32[3] hall_pos
+int16[3] fmcb_effort

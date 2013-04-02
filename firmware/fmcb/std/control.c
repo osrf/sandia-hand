@@ -11,6 +11,7 @@ volatile enum control_mode_t g_control_mode;
 volatile int32_t g_control_hall_tgt[3];
 volatile float g_control_joint_tgt[3];
 volatile uint8_t g_control_joint_max_effort[3];
+volatile int16_t g_control_effort[3];
 
 #define CONTROL_FREQ 1000
 void control_init()
@@ -20,6 +21,7 @@ void control_init()
     g_control_hall_tgt[i] = 0;
     g_control_joint_tgt[i] = 0;
     g_control_joint_max_effort[i] = 255; // use overall effort limit at first
+    g_control_effort[i] = 0;
   }
   g_control_mode = CM_IDLE;
   SysTick_Config(F_CPU / CONTROL_FREQ); // 1 ms tick clock
@@ -68,6 +70,10 @@ void control_systick()
         torque[i] = g_params.torque_limit[i];
       if (torque[i] > g_control_joint_max_effort[i]) // if specified in msg
         torque[i] = g_control_joint_max_effort[i];
+      // reconstruct a bipolar effort to send up in the status packets
+      g_control_effort[i] = torque[i];
+      if (dir & (1 << i))
+        g_control_effort[i] *= -1;
     }
     motors_set_all(en, dir, torque);
   }

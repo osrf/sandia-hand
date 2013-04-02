@@ -318,7 +318,7 @@ void rs485_process_packet(uint8_t pkt_addr, uint16_t payload_len,
   }
   else if (pkt_type == 0x1d) // set control mode
   {
-    if (payload[0] <= (uint8_t)CM_JOINT_SPACE_FP)
+    if (payload[0] <= (uint8_t)CM_JOINT_SPACE_WITH_MAX_EFFORT)
     {
       enum control_mode_t cm = payload[0];
       if (cm == CM_IDLE)
@@ -333,8 +333,8 @@ void rs485_process_packet(uint8_t pkt_addr, uint16_t payload_len,
         control_set_jointspace_with_max_effort((float *)(payload+1),
                                                payload+13);
     }
-    if (payload[0] != (uint8_t)CM_JOINT_SPACE_FP) 
-      rs485_send_packet(0x1d, 0); // don't generate any extra traffic for FP...
+    if (payload[0] < (uint8_t)CM_JOINT_SPACE_FP) 
+      rs485_send_packet(0x1d, 0); // only generate traffic for slower msgs
   }
   else if (pkt_type == 0x1e) // set phalange power
   {

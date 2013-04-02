@@ -154,7 +154,7 @@ void finger_set_all_joint_angles_with_max_efforts(const float *joint_angles,
   {
     pkt[0] = 0x42;
     pkt[1] = 10;
-    *((uint16_t *)(&pkt[2])) = 13; // 1 mode byte + three 32-bit floats 
+    *((uint16_t *)(&pkt[2])) = 16; // 1 mode byte + three floats + 3 uint8
     pkt[4] = 0x1d; // control mode packet id
     pkt[5] = 4; // joint position mode with max efforts
     *((float *)&pkt[6])  = joint_angles[i*3  ];

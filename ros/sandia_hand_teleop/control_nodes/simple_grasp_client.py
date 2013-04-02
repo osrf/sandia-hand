@@ -34,10 +34,15 @@ if __name__ == '__main__':
     side = "l_hand"
   elif side == "right":
     side = "r_hand"
+  elif side == "only":
+    pass
   else:
-    print "side must be 'left' or 'right'"
+    print "side must be 'left' or 'right' or 'only'"
     sys.exit(1)
-  srv_name = "/sandia_hand/%s/simple_grasp" % side 
+  if (side == 'only'):
+    srv_name = "simple_grasp"
+  else:
+    srv_name = "/sandia_hand/%s/simple_grasp" % side 
   rospy.wait_for_service(srv_name)
   try:
     sgs = rospy.ServiceProxy(srv_name, SimpleGraspSrv)

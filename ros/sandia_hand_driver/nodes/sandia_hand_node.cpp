@@ -57,6 +57,15 @@ int perish(const char *msg, Hand &hand)
   return 1;
 }
 
+void fingerJointCommandsCallback(Hand *hand, const uint8_t finger_idx,
+                                 const osrf_msgs::JointCommandsConstPtr &msg)
+{
+  ROS_INFO("finger %d joint command %.3f %.3f %.3f",
+           finger_idx, msg->position[0], msg->position[1], msg->position[2]);
+  hand->setFingerJointPos(finger_idx,
+                      msg->position[0], msg->position[1], msg->position[2]);
+}
+
 void jointCommandsCallback(Hand *hand, 
                            const osrf_msgs::JointCommandsConstPtr &msg)
 {
@@ -317,6 +326,16 @@ int main(int argc, char **argv)
   ros::Subscriber joint_commands_sub = 
     nh.subscribe<osrf_msgs::JointCommands>("joint_commands", 1, 
         boost::bind(jointCommandsCallback, &hand, _1));
+
+  ros::Subscriber finger_joint_commands_subs[4];
+  for (int i = 0; i < 3; i++)
+  {
+    char topic[100];
+    snprintf(topic, sizeof(topic), "finger_%d/joint_commands", i);
+    finger_joint_commands_subs[i] = 
+      nh.subscribe<osrf_msgs::JointCommands>(topic, 1,
+        boost::bind(fingerJointCommandsCallback, &hand, i, _1));
+  }
 
   hand.setCameraStreaming(true, true);
   ros::spinOnce();

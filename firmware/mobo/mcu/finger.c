@@ -283,7 +283,7 @@ void finger_set_autopoll_rate(uint16_t hz)
     g_finger_autopoll_timeout = 1000 / hz;
   else
     g_finger_autopoll_timeout = 0;
-  printf("fsar %d fat = %d\r\n", hz, g_finger_autopoll_timeout);
+  //printf("fsar %d fat = %d\r\n", hz, g_finger_autopoll_timeout);
 }
 
 void finger_mobo_udp_rs485_enable(uint8_t enable)
@@ -291,5 +291,31 @@ void finger_mobo_udp_rs485_enable(uint8_t enable)
   //printf("rs485 enable(%d)\r\n", enable);
   fpga_spi_txrx(FPGA_SPI_REG_RS485_UDP_TX | FPGA_SPI_WRITE, 
                 enable ? 0x1f : 0);
+}
+
+void finger_set_all_effort_limits(const uint8_t mobo_max_effort)
+{
+  // todo: combine with single-finger function 
+  uint8_t pkt[50];
+  pkt[0] = 0x42;
+  pkt[1] = 10; // generic finger address
+  *((uint16_t *)(&pkt[2])) = 1; // no payload
+  pkt[4] = 0x23; // set mobo effort limit
+  pkt[5] = mobo_max_effort;
+  *((uint16_t *)(&pkt[6])) = finger_calc_crc(pkt);
+  finger_broadcast_raw(pkt, 8);
+}
+
+void finger_set_mobo_effort_limit(const uint8_t finger_idx, 
+                                  const uint8_t mobo_max_effort)
+{
+  uint8_t pkt[50];
+  pkt[0] = 0x42;
+  pkt[1] = 10; // generic finger address
+  *((uint16_t *)(&pkt[2])) = 1; // no payload
+  pkt[4] = 0x23; // set mobo effort limit
+  pkt[5] = mobo_max_effort;
+  *((uint16_t *)(&pkt[6])) = finger_calc_crc(pkt);
+  finger_tx_raw(finger_idx, pkt, 8);
 }
 

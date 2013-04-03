@@ -375,6 +375,11 @@ void rs485_process_packet(uint8_t pkt_addr, uint16_t payload_len,
     *((uint16_t *)(&g_tx_pkt_buf[9])) = g_i2c_sensors_data[7];
     rs485_send_packet(0x22, 6);
   }
+  else if (pkt_type == 0x23) // set max effort from mobo
+  {
+    control_set_max_effort_mobo(payload[0]);
+    // don't send response to this packet, since it will come fairly fast
+  }
   else if (pkt_type == 0xfd) // announce myself
   {
     // todo: figure out a way to add a random delay here, to avoid collisions

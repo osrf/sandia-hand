@@ -10,7 +10,7 @@
 volatile enum control_mode_t g_control_mode;
 volatile int32_t g_control_hall_tgt[3];
 volatile float g_control_joint_tgt[3];
-volatile uint8_t g_control_joint_max_effort[3];
+volatile uint8_t g_control_joint_max_effort[3], g_control_max_effort_mobo;
 volatile int16_t g_control_effort[3];
 
 #define CONTROL_FREQ 1000
@@ -21,6 +21,7 @@ void control_init()
     g_control_hall_tgt[i] = 0;
     g_control_joint_tgt[i] = 0;
     g_control_joint_max_effort[i] = 255; // use overall effort limit at first
+    g_control_max_effort_mobo = 255;     // mobo will clamp this later
     g_control_effort[i] = 0;
   }
   g_control_mode = CM_IDLE;
@@ -70,6 +71,8 @@ void control_systick()
         torque[i] = g_params.torque_limit[i];
       if (torque[i] > g_control_joint_max_effort[i]) // if specified in msg
         torque[i] = g_control_joint_max_effort[i];
+      if (torque[i] > g_control_max_effort_mobo) // used by mobo to clamp
+        torque[i] = g_control_max_effort_mobo;
       // reconstruct a bipolar effort to send up in the status packets
       g_control_effort[i] = torque[i];
       if (dir & (1 << i))
@@ -152,4 +155,8 @@ void control_set_jointspace_with_max_effort(const float   *targets,
   control_set_jointspace(targets);
 }
 
+void control_set_max_effort_mobo(const uint8_t effort)
+{
+  g_control_max_effort_mobo = effort;
+}
 

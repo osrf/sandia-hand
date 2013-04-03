@@ -8,6 +8,7 @@ void control_set_jointspace(const float *targets);
 void control_set_jointspace_fp(const int16_t *targets);
 void control_set_jointspace_with_max_effort(const float   *targets, 
                                             const uint8_t *efforts);
+void control_set_max_effort_mobo(const uint8_t effort); // mobo power limit
 void control_halt();
 void control_systick_disable();
 void control_systick_enable();

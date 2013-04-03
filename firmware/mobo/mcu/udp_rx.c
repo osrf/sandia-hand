@@ -150,8 +150,17 @@ void enet_udp_rx(uint8_t *pkt, const uint32_t len)
     finger_set_all_joint_angles_with_max_efforts(control_target_joint_angles,
                                                  control_target_max_efforts);
   }
+  else if (cmd == CMD_ID_MOBO_SET_CURRENT_LIMIT)
+  {
+    set_mobo_current_limit_t *p = (set_mobo_current_limit_t *)cmd_data;
+    if (p->pkt_state == MOBO_CURRENT_LIMIT_STATE_REQUEST)
+    {
+      power_set_mobo_current_limit(p->current_limit);
+      p->pkt_state = MOBO_CURRENT_LIMIT_STATE_RESPONSE;
+      enet_tx_packet(CMD_ID_MOBO_SET_CURRENT_LIMIT, (uint8_t *)p, sizeof(*p));
+    }
+  }
   else
     printf("  unhandled cmd %d\r\n", cmd);
 }
-
 

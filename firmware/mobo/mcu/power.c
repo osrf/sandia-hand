@@ -21,6 +21,8 @@
 #include "sandia_hand/hand_packets.h"
 #include <stdio.h>
 #include "enet.h"
+#include "control.h"
+#include "finger.h"
 
 // hardware connections:
 //   PA21 = F0_LV
@@ -72,6 +74,8 @@ volatile uint16_t g_power_adc_readings[3] = {0};
 #define POWER_ADC_CH_TEMP_1      11
 #define POWER_ADC_CH_ONCHIP_TEMP 15
 static volatile uint32_t g_power_systick_value = 0;
+static float g_power_mobo_current_limit = 0.8f; // be conservative at boot-up
+static uint8_t g_power_mobo_max_effort  = 10;   // be conservative at boot-up
 
 void power_init()
 {
@@ -251,6 +255,44 @@ void power_start_poll()
   */
 }
 
+void power_update_current_limits(const mobo_status_t *p)
+{
+  // this is called from power_i2c_rx_complete. pulled into separate function
+  // just to clarify what is happening.
+  const float static_draw = 0.286; // approximate current draw @ 24V 
+                                   // with phalanges and cameras streaming
+  float current_draw = static_draw;
+  for (int i = 0; i < 4; i++)
+    current_draw += p->finger_currents[i];
+  if (current_draw < g_power_mobo_current_limit)
+  {
+    // see if mobo limit is beneath any requested finger efforts. if so,
+    // increment global limit
+    uint8_t max_requested_effort = 0;
+    for (int i = 0; i < 12; i++)
+      if (control_target_max_efforts[i] > max_requested_effort)
+        max_requested_effort = control_target_max_efforts[i];
+    if (max_requested_effort <= g_power_mobo_max_effort)
+      return; // we're within limits, everything is fine. let it be. let it be.
+    // if we get here, this means that the system is operating below the
+    // global limit, but we are clamping the finger currents. we will increment
+    // the finger current limits a bit now.
+    if (g_power_mobo_max_effort == 255)
+      return; // no idea why we could/should get here. can't get more beef.
+    g_power_mobo_max_effort++;
+    finger_set_all_effort_limits(g_power_mobo_max_effort); // global limits!
+  }
+  else
+  {
+    // crank down the allowed effort by the fingers
+    //finger_set_all_effort_limits(something);
+    if (g_power_mobo_max_effort == 0)
+      return; // no idea what to do in this case. can't reduce power more.
+    g_power_mobo_max_effort--;
+    finger_set_all_effort_limits(g_power_mobo_max_effort); // global limits!
+  }
+}
+
 void power_i2c_rx_complete(const uint16_t rx_data)
 {
   /*
@@ -279,6 +321,8 @@ void power_i2c_rx_complete(const uint16_t rx_data)
         p->logic_currents[i] = g_power_logic_currents[i];
       for (int i = 0; i < 3; i++)
         p->mobo_raw_temperatures[i] = g_power_adc_readings[i];
+      power_update_current_limits(p);
+      p->mobo_max_effort = g_power_mobo_max_effort;
       enet_tx_udp(status_buf, sizeof(mobo_status_t) + 4);
     }
   }
@@ -444,5 +488,11 @@ void power_enable_lowvolt_regulator(const uint8_t enable)
     PIOB->PIO_SODR = PIO_PB16;
   else
     PIOB->PIO_CODR = PIO_PB16;
+}
+
+void power_set_mobo_current_limit(const float max_amps)
+{
+  if (max_amps > 0) // sanity check...
+    g_power_mobo_current_limit = max_amps;
 }
 

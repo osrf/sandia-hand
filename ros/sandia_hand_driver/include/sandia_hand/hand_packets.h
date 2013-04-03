@@ -22,6 +22,7 @@ static const uint32_t CMD_ID_BL_MOBO_MCU_FLASH_PAGE      = 15;
 static const uint32_t CMD_ID_MOBO_BOOT_CTRL              = 16;
 static const uint32_t CMD_ID_MOBO_PING                   = 17;
 static const uint32_t CMD_ID_HAND_JOINT_COMMANDS         = 18;
+static const uint32_t CMD_ID_MOBO_SET_CURRENT_LIMIT      = 19;
 
 typedef struct 
 {
@@ -84,6 +85,7 @@ typedef struct
   float finger_currents[4];
   float logic_currents[3];
   uint16_t mobo_raw_temperatures[3];
+  uint8_t mobo_max_effort;
 } __attribute__((packed)) mobo_status_t;
 
 typedef struct
@@ -158,4 +160,13 @@ typedef struct
   uint8_t max_efforts [12];
 } __attribute__((packed)) hand_joint_commands_t;
 
+typedef struct
+{
+  uint8_t pkt_state;
+  float   current_limit;
+} __attribute__((packed)) set_mobo_current_limit_t;
+static const uint8_t MOBO_CURRENT_LIMIT_STATE_REQUEST  = 0;
+static const uint8_t MOBO_CURRENT_LIMIT_STATE_RESPONSE = 1;
+
 #endif
+

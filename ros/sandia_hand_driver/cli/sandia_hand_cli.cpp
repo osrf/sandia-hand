@@ -266,32 +266,35 @@ void mobo_status_rx(const uint8_t *data, const uint16_t data_len)
   if (!f_log)
     f_log = fopen("current_log.txt", "w");
   //printf("mobo status\n");
-  mobo_status_t *p = (mobo_status_t *)(data + 4);
+  const mobo_status_t *p = (mobo_status_t *)data;
+  printf("\n\n  mobo time: %d\n", p->mobo_time_ms);
   fprintf(f_log, "%d ", p->mobo_time_ms);
   for (int i = 0; i < 4; i++)
   {
-    //printf("  %d current: %.4f\n", i, p->finger_currents[i]);
+    printf("  %d current: %.4f\n", i, p->finger_currents[i]);
     fprintf(f_log, "%.6f ", p->finger_currents[i]);
   }
   for (int i = 0; i < 3; i++)
   {
-    //printf("  logic %d current: %.4f\n", i, p->logic_currents[i]);
+    printf("  logic %d current: %.4f\n", i, p->logic_currents[i]);
     fprintf(f_log, "%.6f ", p->logic_currents[i]);
   }
   for (int i = 0; i < 3; i++)
   {
-    //printf("  %d raw temperature: %d\n", i, p->mobo_raw_temperatures[i]);
+    printf("  %d raw temperature: %d\n", i, p->mobo_raw_temperatures[i]);
     fprintf(f_log, "%d ", (int16_t)p->mobo_raw_temperatures[i]);
   }
+  printf("  mobo max effort: %d\n", p->mobo_max_effort);
   fprintf(f_log, "\n");
 }
 
 int test_finger_stream(int argc, char **argv, Hand &hand)
 {
   hand.registerRxHandler(CMD_ID_MOBO_STATUS, mobo_status_rx);
-  //printf("turning on mobo status streaming...\n");
-  //hand.setMoboStatusHz(100);
+  printf("turning on mobo status streaming...\n");
+  hand.setMoboStatusHz(100);
   //listen_hand(1.0, hand);
+  /*
   printf("powering finger sockets...\n");
   hand.setAllFingerPowers(Hand::FPS_LOW);
   listen_hand(0.5, hand);
@@ -304,12 +307,13 @@ int test_finger_stream(int argc, char **argv, Hand &hand)
 
   printf("turning on finger streaming...\n");
   hand.setFingerAutopollHz(1);
-  while (!g_done)
-    listen_hand(0.1, hand);
   printf("turning off finger power...\n");
   hand.setAllFingerPowers(Hand::FPS_OFF);
-  //hand.setMoboStatusHz(0);
   hand.setFingerAutopollHz(0);
+  */
+  while (!g_done)
+    listen_hand(0.1, hand);
+  hand.setMoboStatusHz(0);
   usleep(200000);
   printf("bye\n");
   return 0;

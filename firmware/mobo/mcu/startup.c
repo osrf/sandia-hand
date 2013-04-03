@@ -24,9 +24,8 @@
 #include "clocks.h"
 
 /* Stack Configuration */  
-#define STACK_SIZE       0x1000     /** Stack size (in DWords) */
-__attribute__ ((aligned(8),section(".stack")))
-uint32_t pdwStack[STACK_SIZE] ;     
+#define STACK_SIZE       0x2000     /** Stack size (in DWords) */
+__attribute__ ((aligned(8),section(".stack"))) uint32_t pdwStack[STACK_SIZE];
 #define IRAM_ADDR 0x20000000
 
 /* Initialize segments */

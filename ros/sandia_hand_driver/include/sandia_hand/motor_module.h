@@ -18,6 +18,7 @@ public:
                     //const uint16_t timeout_ms);
   void addPhalangeRxFunctor(RxFunctor f);
   bool setJointLimits(const float *lower, const float *upper);
+  bool setHallOffsets(const int32_t *offsets);
   static const uint8_t PKT_FINGER_STATUS     = 0x21;
 private:
   static const uint8_t PKT_PHALANGE_POWER    = 0x1e;

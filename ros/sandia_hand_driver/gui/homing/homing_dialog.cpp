@@ -108,7 +108,8 @@ ManualFingerSubtab::ManualFingerSubtab(QWidget *parent,
 : QWidget(parent),
   nh_(nh),
   finger_joint_commands_pub_(finger_joint_commands_pub),
-  finger_idx_(finger_idx)
+  finger_idx_(finger_idx),
+  is_resetting_(false)
 {
   QGridLayout *grid = new QGridLayout(this);  
   const char *row_labels[3] = { "Abduction/Adduction:", 
@@ -134,6 +135,8 @@ ManualFingerSubtab::ManualFingerSubtab(QWidget *parent,
 
 void ManualFingerSubtab::sendFingerPose()
 {
+  if (is_resetting_)
+    return; // in the middle of returning all sliders to zero, after homing
   osrf_msgs::JointCommands jc;
   jc.position.resize(3);
   for (int i = 0; i < 3; i++)
@@ -152,9 +155,15 @@ void ManualFingerSubtab::setFingerHome()
   sandia_hand_msgs::SetFingerHome srv;
   srv.request.finger_idx = finger_idx_;
   if (!set_home_client.call(srv))
+  {
     ROS_ERROR("couldn't set home");
-  else
-    ROS_INFO("set home");
+    return;
+  }
+  ROS_INFO("set home");
+  is_resetting_ = true;
+  for (int i = 0; i < 3; i++)
+    sb_[i]->setValue(0);
+  is_resetting_ = false;
 }
 
 ManualTab::ManualTab(QWidget *parent, ros::NodeHandle &nh)

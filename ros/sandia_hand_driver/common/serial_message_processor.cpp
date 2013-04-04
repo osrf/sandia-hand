@@ -134,6 +134,14 @@ void SerialMessageProcessor::serializeUint32(const uint32_t x, uint8_t *p)
   p[3] = (uint8_t)((x >> 24) & 0xff);
 }
 
+void SerialMessageProcessor::serializeInt32(const int32_t x, uint8_t *p)
+{
+  p[0] = (uint8_t) (x        & 0xff);
+  p[1] = (uint8_t)((x >> 8)  & 0xff);
+  p[2] = (uint8_t)((x >> 16) & 0xff);
+  p[3] = (uint8_t)((x >> 24) & 0xff);
+}
+
 void SerialMessageProcessor::serializeFloat32(const float x, uint8_t *p)
 {
   const uint8_t *q = (uint8_t *)(&x);
@@ -224,7 +232,8 @@ void SerialMessageProcessor::rxByte(const uint8_t b)
       if (rx_pkt_crc_ != crc)
       {
         // crc mismatch.
-        printf("crc mismatch: 0x%04x != 0x%04x\n", crc, rx_pkt_crc_);
+        printf("crc mismatch: 0x%04x != 0x%04x, pkt type = 0x%02x\n", 
+               crc, rx_pkt_crc_, rx_pkt_type_);
         break;
       }
       if (rx_pkt_addr_ != 0 && rx_pkt_addr_ != 0xff)
@@ -495,6 +504,45 @@ bool SerialMessageProcessor::setParamFloat(const std::string &name,
     return false;
   if (!listenFor(PKT_WRITE_PARAM_VALUE, 0.25))
     return false;
+  return true;
+}
+
+// todo: this is gross. factor this with previous function sometime.
+bool SerialMessageProcessor::setParamInt(const std::string &name, 
+                                         const int32_t val)
+{
+  //printf("setParamInt(%s, %d)\n", name.c_str(), val);
+  if (param_names_.size() == 0)
+    if (!retrieveParamNames())
+    {
+      printf("unable to retrieve param names\n");
+      return false;
+    }
+  // search through the param names vector to find what we want.
+  // todo: if it ever matters, set up a STL map to do this
+  int found_idx = -1;
+  for (int i = 0; found_idx < 0 && i < (int)param_names_.size(); i++)
+    if (name == param_names_[i])
+      found_idx = i;
+  if (found_idx < 0)
+  {
+    printf("couldn't find parameter [%s]\n", name.c_str());
+    return false;
+  }
+  const uint16_t param_idx = (uint16_t)found_idx;
+  //printf("found param [%s] at idx %d\n", name.c_str(), param_idx);
+  serializeUint16(param_idx, getTxBuffer());
+  serializeInt32(val, getTxBuffer()+2);
+  if (!sendTxBuffer(PKT_WRITE_PARAM_VALUE, 6))
+  {
+    printf("unable to send param write packet\n");
+    return false;
+  }
+  if (!listenFor(PKT_WRITE_PARAM_VALUE, 0.25))
+  {
+    printf("no response to param write packet\n");
+    return false;
+  }
   return true;
 }
 

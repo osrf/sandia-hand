@@ -22,6 +22,7 @@ public:
   ros::NodeHandle nh_;
   ros::Publisher *finger_joint_commands_pub_;
   int finger_idx_;
+  bool is_resetting_;
 public slots:
   void sendFingerPose();
   void setFingerHome();

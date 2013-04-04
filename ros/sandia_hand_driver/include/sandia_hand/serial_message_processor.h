@@ -34,6 +34,7 @@ public:
   bool programAppFile(FILE *bin_file, 
                       PowerFunctor power_on, PowerFunctor power_off);
   bool setParamFloat(const std::string &name, const float val);
+  bool setParamInt(const std::string &name, const int32_t val);
   bool getParamNames(std::vector<std::string> &names);
 
 protected:
@@ -52,6 +53,7 @@ protected:
   void serializeUint16(const uint16_t x, uint8_t *p);
   void serializeInt16 (const  int16_t x, uint8_t *p);
   void serializeUint32(const uint32_t x, uint8_t *p);
+  void serializeInt32(const int32_t x, uint8_t *p);
   void serializeFloat32(const float x, uint8_t *p);
   void resetParser();
   bool retrieveParamNames();

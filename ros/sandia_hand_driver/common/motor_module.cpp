@@ -73,6 +73,7 @@ void MotorModule::rxFingerStatus(const uint8_t *payload,
   printf("\n");
   */
   finger_status_t *p = (finger_status_t *)payload;
+  /*
   print_uint16_array("pp tactile", p->pp_tactile,  6);
   print_uint16_array("dp tactile", p->dp_tactile, 12);
   print_uint16_array("pp imu"    , p->pp_imu    ,  6);
@@ -92,7 +93,9 @@ void MotorModule::rxFingerStatus(const uint8_t *payload,
          p->fmcb_hall_tgt[0], p->fmcb_hall_tgt[1], p->fmcb_hall_tgt[2]);
   printf("hall positions: %d %d %d\n", 
          p->fmcb_hall_pos[0], p->fmcb_hall_pos[1], p->fmcb_hall_pos[2]);
-  printf("fmcb time: %.6f\n", p->fmcb_time * 1.0e-6);
+  */
+  printf("MotorModule::rxFingerStatus fmcb time: %.6f\n", 
+         p->fmcb_time * 1.0e-6);
   printf("\n");
 }
 
@@ -148,6 +151,15 @@ bool MotorModule::setJointLimits(const float *lower, const float *upper)
   all_ok &= setParamFloat("j0_upper_limit", upper[2]);
   all_ok &= setParamFloat("j1_upper_limit", upper[1]);
   all_ok &= setParamFloat("j2_upper_limit", upper[0]);
+  return all_ok;
+}
+
+bool MotorModule::setHallOffsets(const int32_t *offsets)
+{
+  bool all_ok = true;
+  all_ok &= setParamInt("m0_offset", offsets[0]);
+  all_ok &= setParamInt("m1_offset", offsets[1]);
+  all_ok &= setParamInt("m2_offset", offsets[2]);
   return all_ok;
 }
 

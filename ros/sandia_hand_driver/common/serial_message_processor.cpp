@@ -28,7 +28,7 @@ bool SerialMessageProcessor::ping()
 {
   if (!sendTxBuffer(PKT_PING))
     return false;
-  return listenFor(PKT_PING, 0.2);
+  return listenFor(PKT_PING, 0.1);
 }
 
 void SerialMessageProcessor::rxPing(const uint8_t *data, 

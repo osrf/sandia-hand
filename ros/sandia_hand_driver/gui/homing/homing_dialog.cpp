@@ -7,6 +7,7 @@
 #include <vector>
 #include <utility>
 #include <osrf_msgs/JointCommands.h>
+#include <sandia_hand_msgs/SetFingerHome.h>
 using std::string;
 using std::vector;
 using std::pair;
@@ -16,6 +17,18 @@ double ManualFingerSubtab::SLIDER_TICKS_PER_DEGREE = 2;
 HomingDialog::HomingDialog(QWidget *parent)
 : QDialog(parent)
 {
+  set_joint_policy_client_ = 
+    nh_.serviceClient<sandia_hand_msgs::SetJointLimitPolicy>
+                     ("set_joint_limit_policy");
+  sandia_hand_msgs::SetJointLimitPolicy srv;
+  srv.request.policy = "none";
+  if (!set_joint_policy_client_.call(srv))
+  {
+    ROS_FATAL("couldn't set joint limit policy.");
+    QMetaObject::invokeMethod(this, "close", Qt::QueuedConnection); // bail
+  }
+  else
+    ROS_INFO("Released joint limits. Be careful...");
   tabs_ = new QTabWidget;
   tabs_->addTab(new ManualTab(this, nh_), tr("Manual"));
   tabs_->addTab(new AutoTab(this), tr("Auto"));
@@ -29,6 +42,14 @@ HomingDialog::HomingDialog(QWidget *parent)
   main_layout->addStretch(1);
   setLayout(main_layout);
   setWindowTitle(tr("Homing"));
+}
+
+HomingDialog::~HomingDialog()
+{
+  sandia_hand_msgs::SetJointLimitPolicy srv;
+  srv.request.policy = "default";
+  if (!set_joint_policy_client_.call(srv))
+    ROS_ERROR("couldn't restore joint limit policy.");
 }
 
 /*
@@ -81,9 +102,13 @@ void Dialog::onFirmwareButton(const QString &board_name_qstr)
 */
 
 ManualFingerSubtab::ManualFingerSubtab(QWidget *parent,
-                                    ros::Publisher *finger_joint_commands_pub)
+                                    ros::NodeHandle &nh,
+                                    ros::Publisher *finger_joint_commands_pub,
+                                    const int finger_idx)
 : QWidget(parent),
-  finger_joint_commands_pub_(finger_joint_commands_pub)
+  nh_(nh),
+  finger_joint_commands_pub_(finger_joint_commands_pub),
+  finger_idx_(finger_idx)
 {
   QGridLayout *grid = new QGridLayout(this);  
   const char *row_labels[3] = { "Abduction/Adduction:", 
@@ -114,14 +139,22 @@ void ManualFingerSubtab::sendFingerPose()
   for (int i = 0; i < 3; i++)
     jc.position[i] = (double)sb_[i]->value() / SLIDER_TICKS_PER_DEGREE * 
                      3.14 / 180.0;
-  printf("finger pose: %.3f %.3f %.3f\n", 
-         jc.position[0], jc.position[1], jc.position[2]);
+  //printf("finger pose: %.3f %.3f %.3f\n", 
+  //       jc.position[0], jc.position[1], jc.position[2]);
   finger_joint_commands_pub_->publish(jc);
 }
 
 void ManualFingerSubtab::setFingerHome()
 {
-  printf("ManualFingerSubtab::setFingerHome\n");
+  ROS_INFO("ManualFingerSubtab::setFingerHome");
+  ros::ServiceClient set_home_client = 
+    nh_.serviceClient<sandia_hand_msgs::SetFingerHome>("set_finger_home");
+  sandia_hand_msgs::SetFingerHome srv;
+  srv.request.finger_idx = finger_idx_;
+  if (!set_home_client.call(srv))
+    ROS_ERROR("couldn't set home");
+  else
+    ROS_INFO("set home");
 }
 
 ManualTab::ManualTab(QWidget *parent, ros::NodeHandle &nh)
@@ -139,7 +172,7 @@ ManualTab::ManualTab(QWidget *parent, ros::NodeHandle &nh)
   const char *tab_names[4] = { "Index", "Middle", "Pinkie", "Thumb" };
   for (int i = 0; i < 4; i++)
     tabs_->addTab(finger_tabs_[i] = 
-                          new ManualFingerSubtab(this, &finger_pubs_[i]), 
+                      new ManualFingerSubtab(this, nh_, &finger_pubs_[i], i), 
                   tr(tab_names[i]));
   main_layout->addWidget(tabs_);
   main_layout->addStretch(1);

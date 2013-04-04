@@ -8,8 +8,11 @@
 #include <camera_info_manager/camera_info_manager.h>
 #include <sandia_hand_msgs/RawFingerStatus.h>
 #include <sandia_hand_msgs/RawMoboStatus.h>
+#include <sandia_hand_msgs/SetJointLimitPolicy.h>
 #include <osrf_msgs/JointCommands.h>
+#include <sandia_hand_msgs/SetFingerHome.h>
 using namespace sandia_hand;
+using std::string;
 
 /////////////////////////////////////////////////////////////////////////
 sandia_hand_msgs::RawFingerStatus g_raw_finger_status;
@@ -17,6 +20,27 @@ sandia_hand_msgs::RawMoboStatus   g_raw_mobo_status;
 ros::Publisher *g_raw_finger_status_pubs[Hand::NUM_FINGERS] = {NULL};
 ros::Publisher *g_raw_mobo_status_pub = NULL;
 bool g_done = false;
+
+// set the joint limits for each finger
+static const float upper_limits_default[4][3] = { { 1.5 ,  1.5,  1.7},
+                                                  { 0.05,  1.5,  1.7},
+                                                  { 0.05,  1.5,  1.7},
+                                                  { 0.3 ,  1.1,  1.0} };
+static const float lower_limits_default[4][3] = { {-0.05, -1.2, -1.2},
+                                                  {-0.05, -1.2, -1.2},
+                                                  {-1.5 , -1.2, -1.2},
+                                                  {-1.5 , -1.2, -0.8} };
+
+static const float upper_limits_none[4][3] = { { 1.57,  1.57,  1.57},
+                                               { 1.57,  1.57,  1.57},
+                                               { 1.57,  1.57,  1.57},
+                                               { 1.57,  1.57,  1.57} };
+static const float lower_limits_none[4][3] = { {-1.57, -1.57, -1.57},
+                                               {-1.57, -1.57, -1.57},
+                                               {-1.57, -1.57, -1.57},
+                                               {-1.57, -1.57, -1.57} };
+
+
 /////////////////////////////////////////////////////////////////////////
 
 void signal_handler(int signum)
@@ -57,11 +81,75 @@ int perish(const char *msg, Hand &hand)
   return 1;
 }
 
+bool setJointLimitPolicy(Hand *hand, const std::string &policy_name)
+{
+  ROS_INFO("setJointLimitPolicy(%s)", policy_name.c_str());
+  const float (*upper_limits)[3] = NULL;
+  const float (*lower_limits)[3] = NULL;
+  if (policy_name == string("default"))
+  {
+    upper_limits = upper_limits_default;
+    lower_limits = lower_limits_default;
+  }
+  else if (policy_name == string("none"))
+  {
+    upper_limits = upper_limits_none;
+    lower_limits = lower_limits_none;
+  }
+  else
+  {
+    ROS_ERROR("unknown joint limit policy: %s", policy_name.c_str());
+    return false;
+  }
+  if (!hand->setFingerAutopollHz(0))
+  {
+    ROS_ERROR("couldn't stop finger autopoll");
+    return false;
+  }
+  usleep(100000);
+  for (int i = 0; i < Hand::NUM_FINGERS; i++)
+  {
+    /*
+    ROS_INFO("finger %d lower limits: %.3f %.3f %.3f",
+             i, lower_limits[i][0], lower_limits[i][1], lower_limits[i][2]);
+    ROS_INFO("finger %d upper limits: %.3f %.3f %.3f",
+             i, upper_limits[i][0], upper_limits[i][1], upper_limits[i][2]);
+    */
+    if (!hand->fingers[i].mm.setJointLimits(lower_limits[i], upper_limits[i]))
+    {
+      ROS_ERROR("couldn't set joint limits on finger %d", i);
+      return false;
+    }
+  }
+  if (!hand->setFingerAutopollHz(100))
+  {
+    ROS_ERROR("couldn't resume finger autopoll");
+    return false;
+  }
+  return true;
+}
+
+bool setHomeSrv(Hand *hand, 
+                sandia_hand_msgs::SetFingerHome::Request &req,
+                sandia_hand_msgs::SetFingerHome::Response &res)
+{
+  ROS_INFO("set home service call for finger %d", req.finger_idx);
+  return true;
+}
+
+bool setJointLimitPolicySrv(Hand *hand,
+                         sandia_hand_msgs::SetJointLimitPolicy::Request &req,
+                         sandia_hand_msgs::SetJointLimitPolicy::Response &res)
+{
+  return setJointLimitPolicy(hand, req.policy);
+}
+
+
 void fingerJointCommandsCallback(Hand *hand, const uint8_t finger_idx,
                                  const osrf_msgs::JointCommandsConstPtr &msg)
 {
-  ROS_INFO("finger %d joint command %.3f %.3f %.3f",
-           finger_idx, msg->position[0], msg->position[1], msg->position[2]);
+  //ROS_INFO("finger %d joint command %.3f %.3f %.3f",
+  //         finger_idx, msg->position[0], msg->position[1], msg->position[2]);
   hand->setFingerJointPos(finger_idx,
                       msg->position[0], msg->position[1], msg->position[2]);
 }
@@ -274,6 +362,9 @@ int main(int argc, char **argv)
     ROS_INFO("finger %d phalanges booted", finger_idx);
   }
 
+  if (!setJointLimitPolicy(&hand, "default"))
+    return perish("couldn't set finger joint limits", hand);
+
   for (int finger_idx = 0; finger_idx < Hand::NUM_FINGERS; finger_idx++)
   {
     char topic_name[100];
@@ -286,39 +377,21 @@ int main(int argc, char **argv)
     // todo: some sort of auto-home sequence. for now, the fingers assume they 
     // were powered up in (0,0,0)
 
-    // set the joint limits for each finger
-    const float upper[4][3] = { { 1.5 ,  1.5,  1.7},
-      { 0.05,  1.5,  1.7},
-      { 0.05,  1.5,  1.7},
-      { 0.3 ,  1.1,  1.0} };
-    const float lower[4][3] = { {-0.05, -1.2, -1.2},
-      {-0.05, -1.2, -1.2},
-      {-1.5 , -1.2, -1.2},
-      {-1.5 , -1.2, -0.8} };
-    if (!hand.fingers[finger_idx].mm.setJointLimits(
-                                        lower[finger_idx], upper[finger_idx]))
-      return perish("couldn't set finger joint limits", hand);
+    usleep(1000);
     if (!hand.fingers[finger_idx].mm.setPhalangeAutopoll(true))
       return perish("couldn't start phalange autopoll", hand);
-    ROS_INFO("finger %d is autopolling its phalanges", finger_idx);
     hand.fingers[finger_idx].mm.registerRxHandler(
                               MotorModule::PKT_FINGER_STATUS,
                               boost::bind(rxFingerStatus, finger_idx, _1, _2));
-
+    ROS_INFO("finger %d is autopolling its phalanges", finger_idx);
   }
   ros::Publisher raw_mobo_status_pub = 
     nh.advertise<sandia_hand_msgs::RawMoboStatus>("raw_mobo_status", 1);
   g_raw_mobo_status_pub = &raw_mobo_status_pub;
  
   // if we get here, all fingers are up and running. let's start everything now
-  usleep(1000); // todo: something smarter
-  if (!hand.setFingerAutopollHz(100))
-    return perish("couldn't set finger autopoll rate for hand", hand);
-  ROS_INFO("hand is autopolling its fingers");
-
   usleep(1000);
   hand.registerRxHandler(CMD_ID_MOBO_STATUS, rxMoboStatus);
-  hand.setMoboStatusHz(100);
 
   for (int finger_idx = 0; finger_idx < Hand::NUM_FINGERS; finger_idx++)
     hand.setFingerControlMode(finger_idx, Hand::FCM_JOINT_POS);
@@ -327,8 +400,8 @@ int main(int argc, char **argv)
     nh.subscribe<osrf_msgs::JointCommands>("joint_commands", 1, 
         boost::bind(jointCommandsCallback, &hand, _1));
 
-  ros::Subscriber finger_joint_commands_subs[4];
-  for (int i = 0; i < 3; i++)
+  ros::Subscriber finger_joint_commands_subs[Hand::NUM_FINGERS];
+  for (int i = 0; i < Hand::NUM_FINGERS; i++)
   {
     char topic[100];
     snprintf(topic, sizeof(topic), "finger_%d/joint_commands", i);
@@ -337,6 +410,24 @@ int main(int argc, char **argv)
         boost::bind(fingerJointCommandsCallback, &hand, i, _1));
   }
 
+  ros::ServiceServer joint_limit_srv = 
+    nh.advertiseService<sandia_hand_msgs::SetJointLimitPolicy::Request,
+                        sandia_hand_msgs::SetJointLimitPolicy::Response>
+      ("set_joint_limit_policy", boost::bind(setJointLimitPolicySrv, 
+       &hand, _1, _2));
+
+  ros::ServiceServer home_srv = 
+    nh.advertiseService<sandia_hand_msgs::SetFingerHome::Request, 
+                        sandia_hand_msgs::SetFingerHome::Response>
+      ("set_home", boost::bind(setHomeSrv, &hand, _1, _2));
+
+  usleep(1000); // todo: something smarter
+  if (!hand.setFingerAutopollHz(100))
+    return perish("couldn't set finger autopoll rate for hand", hand);
+  ROS_INFO("hand is autopolling its fingers");
+
+
+  hand.setMoboStatusHz(100);
   hand.setCameraStreaming(true, true);
   ros::spinOnce();
   ros::Time t_prev_spin = ros::Time::now();

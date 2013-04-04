@@ -123,7 +123,7 @@ int palm_ping(int argc, char **argv, Hand &hand)
     printf("   OK\n");
   else
     printf("   fail\n");
-  listen_hand(1.0, hand);
+  listen_hand(0.5, hand);
   return 0;
 }
 

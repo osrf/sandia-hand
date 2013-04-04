@@ -11,6 +11,7 @@ class Palm : public SerialMessageProcessor
 public:
   Palm(const uint8_t addr = 1);
   virtual ~Palm();
+  static const uint8_t PKT_PALM_STATUS = 0x21;
 };
 
 }

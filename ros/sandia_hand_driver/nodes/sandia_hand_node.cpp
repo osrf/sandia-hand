@@ -254,6 +254,11 @@ void rxFingerStatus(const uint8_t finger_idx,
     g_raw_finger_status_pubs[finger_idx]->publish(g_raw_finger_status);
 }
 
+void rxPalmStatus(const uint8_t *data, const uint16_t data_len)
+{
+  ROS_INFO("rxPalmStatus");
+}
+
 void rxMoboStatus(const uint8_t *data, const uint16_t data_len)
 {
   if (!g_raw_mobo_status_pub)
@@ -416,6 +421,9 @@ int main(int argc, char **argv)
   // if we get here, all fingers are up and running. let's start everything now
   listenToHand(&hand, 0.001);
   hand.registerRxHandler(CMD_ID_MOBO_STATUS, rxMoboStatus);
+
+  hand.palm.registerRxHandler(Palm::PKT_PALM_STATUS,
+                              boost::bind(rxPalmStatus, _1, _2));
 
   for (int finger_idx = 0; finger_idx < Hand::NUM_FINGERS; finger_idx++)
     hand.setFingerControlMode(finger_idx, Hand::FCM_JOINT_POS);

@@ -5,6 +5,7 @@
 #include "comms.h"
 #include "tactile.h"
 #include "imu.h"
+#include "status.h"
 
 void comms_send_packet(uint8_t pkt_type, uint16_t payload_len);
 void comms_send_block(uint8_t *block, uint32_t len);
@@ -286,6 +287,12 @@ void comms_process_packet(uint8_t pkt_addr, uint16_t payload_len,
     for (uint8_t i = 0; i < 12; i++)
       g_tx_pkt_buf[5+i] = ((uint8_t *)(g_imu_data))[i];
     comms_send_packet(0x12, 12);
+  }
+  else if (pkt_type == 0x21) // poll status buffer
+  {
+    for (int i = 0; i < sizeof(palm_status_t); i++)
+      g_tx_pkt_buf[5+i] = ((uint8_t *)&g_status)[i]; // ugly
+    comms_send_packet(0x21, sizeof(palm_status_t));
   }
   else if (pkt_type == 0x22) // poll thermal array
   {

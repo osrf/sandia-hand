@@ -452,15 +452,18 @@ bool SerialMessageProcessor::programAppFile(FILE *bin_file,
     uint8_t page_buf[256] = {0};
     size_t nread = 0;
     nread = fread(page_buf, 1, 256, bin_file);
-    if (nread == 0)
+    if (nread == 0 && !feof(bin_file))
     {
       printf("couldn't read a flash page from FILE: returned %d\n",
              (int)nread);
       return false;
     }
-    else if (nread < 256)
-      printf("partial page: %d bytes, hopefully last flash page?\n",
-             (int)nread);
+    if (feof(bin_file))
+    {
+      printf("hit end of file\n");
+      if (nread == 0)
+        break;
+    }
     if (blWriteFlashPage(page_num, page_buf, false))
       page_written = true;
     if (!page_written)

@@ -19,6 +19,7 @@ static int g_comms_rs485_address = 0xfe; // bogus
 static volatile uint8_t g_rx_buf[RX_BUF_LEN];
 static volatile unsigned g_rx_buf_writepos = 0, g_rx_buf_readpos = 0;
 static volatile unsigned g_comms_rx_pkt_timer = 0;
+static volatile uint32_t last_status_send_time = 0; 
 #define COMMS_RX_PKT_TIMEOUT_MS 10
 
 void comms_init()
@@ -257,7 +258,6 @@ void comms_process_packet(uint8_t pkt_addr, uint16_t payload_len,
   }
   if (pkt_type == 0x01)     // ping packet. respond with ping back.
   {
-    //printf("ping\r\n");
     for (volatile int i = 0; i < 10; i++) { }
     comms_send_packet(0x01, 0);
   }
@@ -290,6 +290,9 @@ void comms_process_packet(uint8_t pkt_addr, uint16_t payload_len,
   }
   else if (pkt_type == 0x21) // poll status buffer
   {
+    if (last_status_send_time == g_status.palm_time)
+      return; // don't send same tactile scan more than once
+    last_status_send_time = g_status.palm_time;
     for (int i = 0; i < sizeof(palm_status_t); i++)
       g_tx_pkt_buf[5+i] = ((uint8_t *)&g_status)[i]; // ugly
     comms_send_packet(0x21, sizeof(palm_status_t));
@@ -299,6 +302,9 @@ void comms_process_packet(uint8_t pkt_addr, uint16_t payload_len,
     thermal_scan(g_tx_pkt_buf+5);
     comms_send_packet(0x22, 8);
   }
+  //else
+  //  printf("unknown pkt type: 0x%02x\r\n", pkt_type);
+
 
 #if 0
   else if (pkt_type == 0x10) // accel/mag read

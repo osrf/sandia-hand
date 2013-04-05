@@ -10,6 +10,7 @@
 #include "comms.h"
 #include "imu.h"
 #include "status.h"
+#include "console.h"
 
 void systick_irq()
 {
@@ -27,6 +28,7 @@ int main(void)
   PMC_EnablePeripheral(ID_PIOC);
   PIO_Configure(&pin_led, 1);
   lowlevel_init_clocks();
+  console_init();
   tactile_init();
   comms_init();
   imu_init();
@@ -34,6 +36,7 @@ int main(void)
   SysTick_Config(F_CPU / 1000); // 1 ms tick clock
   NVIC_SetPriority(SysTick_IRQn, 8); 
   __enable_irq();
+  printf("entering main loop\r\n");
   while (1)
   {
     comms_idle();
@@ -64,12 +67,7 @@ extern void _exit(int status) { }
 int _getpid() { return 1; }
 extern int _write(int fd, const void *buf, size_t count)
 {
-#if 0
-  io_led(true);
-  if (g_console_init_complete)
-    console_send_block((uint8_t *)buf, count);
-  io_led(false);
-#endif
+  console_send_block((uint8_t *)buf, count);
   return count;
 }
 int _close(int fd) { return -1; }

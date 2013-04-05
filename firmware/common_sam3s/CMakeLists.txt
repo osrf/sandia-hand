@@ -21,4 +21,4 @@ endmacro()
 
 add_definitions(-Dsam3s4)
 include_directories(${PROJECT_SOURCE_DIR}/common_sam3s/include)
-add_library(common_sam3s core_cm3.c lowlevel.c pio.c pmc.c twi.c twid.c usart.c wdt.c)
+add_library(common_sam3s core_cm3.c lowlevel.c pio.c pmc.c twi.c twid.c usart.c wdt.c console.c)

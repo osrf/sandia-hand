@@ -2,11 +2,13 @@
 #include <cstdio>
 #include <ros/ros.h>
 #include "sandia_hand/hand.h"
+#include "sandia_hand/palm_status.h"
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/fill_image.h>
 #include <image_transport/image_transport.h>
 #include <camera_info_manager/camera_info_manager.h>
 #include <sandia_hand_msgs/RawFingerStatus.h>
+#include <sandia_hand_msgs/RawPalmStatus.h>
 #include <sandia_hand_msgs/RawMoboStatus.h>
 #include <sandia_hand_msgs/SetJointLimitPolicy.h>
 #include <osrf_msgs/JointCommands.h>
@@ -17,8 +19,10 @@ using std::string;
 /////////////////////////////////////////////////////////////////////////
 sandia_hand_msgs::RawFingerStatus g_raw_finger_status;
 sandia_hand_msgs::RawMoboStatus   g_raw_mobo_status;
+sandia_hand_msgs::RawPalmStatus   g_raw_palm_status;
 ros::Publisher *g_raw_finger_status_pubs[Hand::NUM_FINGERS] = {NULL};
 ros::Publisher *g_raw_mobo_status_pub = NULL;
+ros::Publisher *g_raw_palm_status_pub = NULL;
 bool g_done = false;
 static int32_t g_last_fmcb_hall_pos[Hand::NUM_FINGERS][3]; // hack
 
@@ -256,7 +260,21 @@ void rxFingerStatus(const uint8_t finger_idx,
 
 void rxPalmStatus(const uint8_t *data, const uint16_t data_len)
 {
-  ROS_INFO("rxPalmStatus");
+  if (!g_raw_palm_status_pub)
+    return;
+  const palm_status_t *p = (palm_status_t *)data;
+  g_raw_palm_status.palm_time = p->palm_time;
+  for (int i = 0; i < 3; i++)
+  {
+    g_raw_palm_status.palm_accel[i] = p->palm_accel[i];
+    g_raw_palm_status.palm_gyro[i] = p->palm_accel[i];
+    g_raw_palm_status.palm_mag[i] = p->palm_accel[i];
+  }
+  for (int i = 0; i < 7; i++)
+    g_raw_palm_status.palm_temps[i] = p->palm_temps[i];
+  for (int i = 0; i < 32; i++)
+    g_raw_palm_status.palm_tactile[i] = p->palm_tactile[i];
+  g_raw_palm_status_pub->publish(g_raw_palm_status);
 }
 
 void rxMoboStatus(const uint8_t *data, const uint16_t data_len)
@@ -422,6 +440,9 @@ int main(int argc, char **argv)
   listenToHand(&hand, 0.001);
   hand.registerRxHandler(CMD_ID_MOBO_STATUS, rxMoboStatus);
 
+  ros::Publisher raw_palm_status_pub =
+    nh.advertise<sandia_hand_msgs::RawPalmStatus>("raw_palm_status", 1);
+  g_raw_palm_status_pub = &raw_palm_status_pub;
   hand.palm.registerRxHandler(Palm::PKT_PALM_STATUS,
                               boost::bind(rxPalmStatus, _1, _2));
 

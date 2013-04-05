@@ -9,6 +9,7 @@
 #include "sandia_hand/hand.h"
 #include "ros/time.h"
 #include <string>
+#include "sandia_hand/palm_status.h"
 using namespace sandia_hand;
 using std::vector;
 using std::string;
@@ -318,6 +319,47 @@ int test_finger_stream(int argc, char **argv, Hand &hand)
   printf("bye\n");
   return 0;
 }
+
+void palmStatusRx(const uint8_t *data, const uint16_t data_len)
+{
+  printf("palmStatusRx\n");
+  palm_status_t *p = (palm_status_t *)data;
+  printf("  time: %d\n", p->palm_time);
+  printf("  tactile: %d %d\n", p->palm_tactile[0], p->palm_tactile[1]);
+}
+
+int palm_stream(int argc, char **argv, Hand &hand)
+{
+  //hand.registerRxHandler(CMD_ID_MOBO_STATUS, mobo_status_rx);
+  hand.palm.registerRxHandler(Palm::PKT_PALM_STATUS, palmStatusRx);
+  printf("turning on palm status streaming...\n");
+  hand.setFingerAutopollHz(2);
+  //listen_hand(1.0, hand);
+  /*
+  printf("powering finger sockets...\n");
+  hand.setAllFingerPowers(Hand::FPS_LOW);
+  listen_hand(0.5, hand);
+  hand.setAllFingerPowers(Hand::FPS_FULL);
+  listen_hand(4.0, hand);
+  printf("turning on phalange bus...\n");
+  hand.fingers[0].mm.setPhalangeBusPower(true);
+  listen_hand(4.0, hand);
+  hand.fingers[0].mm.setPhalangeAutopoll(true);
+
+  printf("turning on finger streaming...\n");
+  hand.setFingerAutopollHz(1);
+  printf("turning off finger power...\n");
+  hand.setAllFingerPowers(Hand::FPS_OFF);
+  hand.setFingerAutopollHz(0);
+  */
+  while (!g_done)
+    listen_hand(0.1, hand);
+  hand.setFingerAutopollHz(0);
+  usleep(200000);
+  printf("bye\n");
+  return 0;
+}
+
 
 int f3burn(int argc, char **argv, Hand &hand)
 {
@@ -747,6 +789,7 @@ int main(int argc, char **argv)
   CLI_FUNC(mmcu_burn);
   CLI_FUNC(mmcu_ping);
   CLI_FUNC(mm_param_dump);
+  CLI_FUNC(palm_stream);
   if (argc == 1)
   {
     printf("available commands:\n");

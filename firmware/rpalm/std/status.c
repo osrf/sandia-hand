@@ -12,18 +12,18 @@ void status_init()
   for (int i = 0; i < sizeof(palm_status_t); i++)
     ((uint8_t *)(&g_status))[i] = 0; // ugly
   PMC_EnablePeripheral(ID_TC0);
-  TC0->TC_QIDR = 0xffffffff; // no quadrature interrupts plz
   TC0->TC_CHANNEL[0].TC_IDR = 0xffffffff; // no timer interrupts
   TC0->TC_CHANNEL[0].TC_IER = TC_IER_COVFS; // enable overflow interrupt
   TC0->TC_CHANNEL[0].TC_CMR = TC_CMR_TCCLKS_TIMER_CLOCK4 | // 64 / 128 = 500khz
                               TC_CMR_WAVE; // waveform generation mode
-  TC0->TC_CHANNEL[0].TC_CCR = TC_CCR_CLKEN;
+  TC0->TC_CHANNEL[0].TC_CCR = TC_CCR_CLKEN | TC_CCR_SWTRG;
   NVIC_SetPriority(TC0_IRQn, 4);
   NVIC_EnableIRQ(TC0_IRQn);
 }
 
 void status_tc0_irq()
 {
+  g_status_tc0_ovf_count++;
   TC0->TC_CHANNEL[0].TC_SR; // dummy read to clear IRQ flag
 }
 
@@ -46,7 +46,12 @@ void status_idle()
     g_status.palm_temps[i] = 0; // todo
   for (int i = 0; i < 3; i++)
     g_status.palm_accel[i] = g_status.palm_gyro[i] = g_status.palm_mag[i] = 0;
-  g_status.palm_time = (g_status_tc0_ovf_count << 17) +
-                       (TC0->TC_CHANNEL[0].TC_CV << 1); // make it microseconds
+  g_status.palm_time = g_tactile_last_scan_time;
+}
+
+uint32_t status_get_time()
+{
+  return (g_status_tc0_ovf_count << 17) + // want microseconds
+         ((uint32_t)TC0->TC_CHANNEL[0].TC_CV << 1); 
 }
 

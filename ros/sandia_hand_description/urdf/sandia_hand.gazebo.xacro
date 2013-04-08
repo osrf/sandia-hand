@@ -91,34 +91,40 @@
       <child link="${side}_palm_left_camera_optical_frame"/>
     </joint>
     <link name="${side}_palm_left_camera_optical_frame"/>
+    <!-- 72 degrees -->
+    <xacro:property name="horizontal_fov_degrees" value="72" />
+    <xacro:property name="image_width" value="752" />
+    <xacro:property name="image_height" value="480" />
+    <xacro:property name="image_format" value="L8" />
+    <xacro:property name="clip_near" value="0.02" />
+    <xacro:property name="clip_far" value="100" />
     <gazebo reference="${side}_palm_left_camera_frame">
       <sensor name="${side}_palm_stereo_camera" type="multicamera">
         <update_rate>60.0</update_rate>
         <camera name="left">
           <!-- 72 degrees -->
-          <horizontal_fov>${72 * M_pi / 180}</horizontal_fov>
+          <horizontal_fov>${horizontal_fov_degrees * M_pi / 180}</horizontal_fov>
           <image>
-            <width>752</width>
-            <height>480</height>
-            <format>L8</format>
+            <width>${image_width}</width>
+            <height>${image_height}</height>
+            <format>${image_format}</format>
           </image>
           <clip>
-            <near>0.02</near>
-            <far>100</far>
+            <near>${clip_near}</near>
+            <far>${clip_far}</far>
           </clip>
         </camera>
         <camera name="right">
           <pose>0 ${-stereo_offset} 0  0 0 0</pose>
-          <!-- 72 degrees -->
-          <horizontal_fov>${72 * M_pi / 180}</horizontal_fov>
+          <horizontal_fov>${horizontal_fov_degrees * M_pi / 180}</horizontal_fov>
           <image>
-            <width>752</width>
-            <height>480</height>
-            <format>L8</format>
+            <width>${image_width}</width>
+            <height>${image_height}</height>
+            <format>${image_format}</format>
           </image>
           <clip>
-            <near>0.02</near>
-            <far>100</far>
+            <near>${clip_near}</near>
+            <far>${clip_far}</far>
           </clip>
         </camera>
         <plugin filename="libgazebo_ros_multicamera.so" name="stereo_camera_controller">

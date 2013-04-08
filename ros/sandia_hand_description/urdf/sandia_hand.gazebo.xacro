@@ -65,6 +65,22 @@
   <!-- cam_d1 and cam_L1 are lengths that adjust the camera position -->
   <xacro:property name="cam_d1" value="0.1" />
   <xacro:property name="cam_L1" value="0.09" />
+  <!-- 72 degrees -->
+  <xacro:property name="horizontal_fov_degrees" value="72.0" />
+  <xacro:property name="image_width" value="752" />
+  <xacro:property name="image_height" value="480" />
+  <xacro:property name="image_format" value="L8" />
+  <xacro:property name="clip_near" value="0.02" />
+  <xacro:property name="clip_far" value="100" />
+  <!-- Noise is sampled independently per pixel on each frame.  
+       That pixel's noise value is added to each of its color
+       channels, which at that point lie in the range [0,1].
+       The stddev value of 0.007 is based on experimental data 
+       from a camera in a Sandia hand pointed at a static scene
+       in a couple of different lighting conditions.  -->
+  <xacro:property name="noise_type" value="gaussian" />
+  <xacro:property name="noise_mean" value="0.0" />
+  <xacro:property name="noise_stddev" value="0.007" />
   <xacro:macro name="sandia_hand_cameras_gazebo" params="side reflect parent">
     <joint name="${side}_palm_left_camera_frame_joint" type="fixed">
       <origin xyz="${(cam_L1+reflect*stereo_offset/2)*sin_theta} ${reflect*(cam_d1-(cam_L1+reflect*stereo_offset/2)*cos_theta)} 0.025"
@@ -91,22 +107,6 @@
       <child link="${side}_palm_left_camera_optical_frame"/>
     </joint>
     <link name="${side}_palm_left_camera_optical_frame"/>
-    <!-- 72 degrees -->
-    <xacro:property name="horizontal_fov_degrees" value="72" />
-    <xacro:property name="image_width" value="752" />
-    <xacro:property name="image_height" value="480" />
-    <xacro:property name="image_format" value="L8" />
-    <xacro:property name="clip_near" value="0.02" />
-    <xacro:property name="clip_far" value="100" />
-    <!-- Noise is sampled independently per pixel on each frame.  
-         That pixel's noise value is added to each of its color
-         channels, which at that point lie in the range [0,1].
-         The stddev value of 0.007 is based on experimental data 
-         from a camera in a Sandia hand pointed at a static scene
-         in a couple of different lighting conditions.  -->
-    <xacro:property name="noise_type" value="gaussian" />
-    <xacro:property name="noise_mean" value="0.0" />
-    <xacro:property name="noise_stddev" value="0.007" />
     <gazebo reference="${side}_palm_left_camera_frame">
       <sensor name="${side}_palm_stereo_camera" type="multicamera">
         <update_rate>60.0</update_rate>

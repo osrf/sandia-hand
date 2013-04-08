@@ -27,7 +27,21 @@
         </geometry>
     </collision>
   </link>
-  <xacro:sandia_hand side="right" parent="base" reflect="1" joint_type="revolute">
-    <origin xyz="0 0 0.5" rpy="0 -1.57079 0"/>
+  <joint name="r_hand_base" type="fixed">
+    <parent link="base"/>
+    <child link="r_hand"/>
+  </joint>
+  <link name="r_hand"/>
+  <joint name="l_hand_base" type="fixed">
+    <parent link="base"/>
+    <child link="l_hand"/>
+  </joint>
+  <link name="l_hand"/>
+  <xacro:sandia_hand side="right" parent="r_hand" reflect="1" joint_type="fixed">
+    <origin xyz="0 0.2 0.5" rpy="0 -1.57079 0"/>
+  </xacro:sandia_hand>
+
+  <xacro:sandia_hand side="left" parent="l_hand" reflect="-1" joint_type="fixed">
+    <origin xyz="0 -0.2 0.5" rpy="0 -1.57079 0"/>
   </xacro:sandia_hand>
 </robot>

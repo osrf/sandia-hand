@@ -98,11 +98,19 @@
     <xacro:property name="image_format" value="L8" />
     <xacro:property name="clip_near" value="0.02" />
     <xacro:property name="clip_far" value="100" />
+    <!-- Noise is sampled independently per pixel on each frame.  
+         That pixel's noise value is added to each of its color
+         channels, which at that point lie in the range [0,1].
+         The stddev value of 0.007 is based on experimental data 
+         from a camera in a Sandia hand pointed at a static scene
+         in a couple of different lighting conditions.  -->
+    <xacro:property name="noise_type" value="gaussian" />
+    <xacro:property name="noise_mean" value="0.0" />
+    <xacro:property name="noise_stddev" value="0.007" />
     <gazebo reference="${side}_palm_left_camera_frame">
       <sensor name="${side}_palm_stereo_camera" type="multicamera">
         <update_rate>60.0</update_rate>
         <camera name="left">
-          <!-- 72 degrees -->
           <horizontal_fov>${horizontal_fov_degrees * M_pi / 180}</horizontal_fov>
           <image>
             <width>${image_width}</width>
@@ -113,6 +121,11 @@
             <near>${clip_near}</near>
             <far>${clip_far}</far>
           </clip>
+          <noise>
+            <type>${noise_type}</type>
+            <mean>${noise_mean}</mean>
+            <stddev>${noise_stddev}</stddev>
+          </noise>
         </camera>
         <camera name="right">
           <pose>0 ${-stereo_offset} 0  0 0 0</pose>
@@ -126,6 +139,11 @@
             <near>${clip_near}</near>
             <far>${clip_far}</far>
           </clip>
+          <noise>
+            <type>${noise_type}</type>
+            <mean>${noise_mean}</mean>
+            <stddev>${noise_stddev}</stddev>
+          </noise>
         </camera>
         <plugin filename="libgazebo_ros_multicamera.so" name="stereo_camera_controller">
           <alwaysOn>true</alwaysOn>

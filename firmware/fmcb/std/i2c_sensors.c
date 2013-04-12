@@ -108,7 +108,7 @@ void i2c_sensors_twi_cb()
                             ((g_i2c_sensors_txrx_buf[0] & 0xff) << 8);
   else if (g_i2c_sensors_current_txrx == SENSOR_ACCEL)
     for (int i = 0; i < 3; i++)
-      g_i2c_sensors_data[i+1] = g_i2c_sensors_txrx_buf[i] >> 4;
+      g_i2c_sensors_data[i+1] = ((int16_t)g_i2c_sensors_txrx_buf[i]) >> 4;
   else if (g_i2c_sensors_current_txrx == SENSOR_MAG)
     for (int i = 0; i < 3; i++)
       g_i2c_sensors_data[i+4] = ((g_i2c_sensors_txrx_buf[i] >> 8) & 0xff) |

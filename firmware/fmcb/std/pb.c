@@ -306,9 +306,11 @@ void pb_systick()
     g_status.fmcb_hall_pos[0] = g_hall_count_0 - g_params.encoder_offset[0];
     g_status.fmcb_hall_pos[1] = g_hall_count_1 - g_params.encoder_offset[1];
     g_status.fmcb_hall_pos[2] = g_hall_count_2 - g_params.encoder_offset[2];
-    for (int i = 0; i < 6; i++)
-      g_status.fmcb_imu_data[i] = g_i2c_sensors_data[i];
-    g_status.fmcb_temp[0] = g_i2c_sensors_data[6];
+    for (int i = 0; i < 3; i++)
+      g_status.fmcb_imu_data[i] = g_i2c_sensors_data[i+1]; // accel
+    for (int i = 4; i < 6; i++)
+      g_status.fmcb_imu_data[i] = g_i2c_sensors_data[i+1]; // mag
+    g_status.fmcb_temp[0] = g_i2c_sensors_data[0];
     g_status.fmcb_temp[1] = g_i2c_sensors_data[7];
     g_status.fmcb_temp[2] = g_adc_data[1];
     g_status.fmcb_pb_current = g_adc_data[2]; 

@@ -231,11 +231,11 @@ void rxFingerStatus(const uint8_t finger_idx,
   rfs->pp_strain = p->pp_strain;
   for (int i = 0; i < 3; i++)
   {
-    rfs->mm_accel[i] = p->fmcb_imu[i];
+    rfs->mm_accel[i] = (int16_t)p->fmcb_imu[i];
     rfs->mm_mag[i]   = p->fmcb_imu[i+3];
-    rfs->pp_accel[i] = p->pp_imu[i];
+    rfs->pp_accel[i] = (int16_t)p->pp_imu[i];
     rfs->pp_mag[i]   = p->pp_imu[i+3];
-    rfs->dp_accel[i] = p->dp_imu[i];
+    rfs->dp_accel[i] = (int16_t)p->dp_imu[i];
     rfs->dp_mag[i]   = p->dp_imu[i+3];
   }
   for (int i = 0; i < 4; i++)

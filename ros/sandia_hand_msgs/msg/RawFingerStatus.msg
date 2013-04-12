@@ -4,9 +4,9 @@ uint32 dp_time
 uint16[6]  pp_tactile
 uint16[12] dp_tactile
 uint32 pp_strain
-uint16[3] mm_accel
-uint16[3] pp_accel
-uint16[3] dp_accel
+int16[3] mm_accel
+int16[3] pp_accel
+int16[3] dp_accel
 uint16[3] mm_mag
 uint16[3] pp_mag
 uint16[3] dp_mag

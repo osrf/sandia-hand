@@ -145,7 +145,7 @@ bool setHomeSrv(Hand *hand,
   hand->setFingerAutopollHz(0); // we need a clear channel to the finger
   listenToHand(hand, 0.1); // wait for scheduler to realize we're stopped
   hand->setFingerControlMode(req.finger_idx, Hand::FCM_IDLE); // no controller
-  listenToHand(hand, 0.001);
+  listenToHand(hand, 0.1);
   if (!hand->fingers[req.finger_idx].mm.setHallOffsets(
                                      g_last_fmcb_hall_pos[req.finger_idx]))
     ROS_ERROR("unable to set finger %d hall offsets", req.finger_idx);

@@ -42,6 +42,8 @@ static void finger_mobo_udp_rs485_enable(uint8_t enable);
 #define FINGER_TX_QUEUE_LEN 512
 static uint8_t  g_finger_tx_queue[5][FINGER_TX_QUEUE_LEN];
 static uint32_t g_finger_tx_queue_len[5] = {0};
+static uint32_t g_finger_systick_count = 0;
+static void finger_flush_tx_queues();
 
 typedef struct { Pio *pio; uint32_t pin_idx; } rs485_de_t;
 // TODO: map finger_idx to rs485 channel indices. have palm be channel 4.
@@ -281,6 +283,9 @@ void finger_idle()
     *((uint16_t *)(&pkt[5])) = finger_calc_crc(pkt);
     finger_broadcast_raw(pkt, 7);
   }
+  const uint32_t t = g_finger_systick_count % g_finger_autopoll_timeout;
+  if (!g_finger_autopoll_timeout || t > 2)
+    finger_flush_tx_queues();
 }
 
 void finger_flush_tx_queues()
@@ -306,13 +311,10 @@ void finger_flush_tx_queues()
 
 void finger_systick()
 {
-  static uint32_t s_finger_systick_count = 0;
-  s_finger_systick_count++;
-  uint32_t t = s_finger_systick_count % g_finger_autopoll_timeout;
+  g_finger_systick_count++;
+  const uint32_t t = g_finger_systick_count % g_finger_autopoll_timeout;
   if (g_finger_autopoll_timeout && t == 0)
     g_finger_status_request = 1; // schedule query message to fingers
-  if (!g_finger_autopoll_timeout || t > 2)
-    finger_flush_tx_queues();
 }
 
 void finger_set_autopoll_rate(uint16_t hz)

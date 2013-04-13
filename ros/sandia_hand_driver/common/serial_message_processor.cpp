@@ -358,7 +358,6 @@ bool SerialMessageProcessor::blWriteFlashPage(const uint16_t page_num,
   {
     for (int attempt = 0; attempt < 50; attempt++)
     {
-      printf("writing page %d, attempt %d\n", page_num, attempt);
       serializeUint32((uint32_t)page_num, getTxBuffer());
       memcpy(getTxBuffer()+4, page_buf, 256);
       if (!sendTxBuffer(PKT_BL_WRITE_FLASH_PAGE, 256+4))
@@ -448,6 +447,8 @@ bool SerialMessageProcessor::programAppFile(FILE *bin_file,
   printf("autoboot halted.\n");
   for (int page_num = 32; !feof(bin_file) && page_num < 1024; page_num++)
   {
+    printf("writing page %d...       \r", page_num);
+    fflush(stdout);
     bool page_written = false;
     uint8_t page_buf[256] = {0};
     size_t nread = 0;
@@ -460,7 +461,7 @@ bool SerialMessageProcessor::programAppFile(FILE *bin_file,
     }
     if (feof(bin_file))
     {
-      printf("hit end of file\n");
+      printf("\nhit end of file\n");
       if (nread == 0)
         break;
     }
@@ -468,7 +469,7 @@ bool SerialMessageProcessor::programAppFile(FILE *bin_file,
       page_written = true;
     if (!page_written)
     {
-      printf("couldn't write page %d\n", page_num);
+      printf("\ncouldn't write page %d\n", page_num);
       return false;
     }
   }

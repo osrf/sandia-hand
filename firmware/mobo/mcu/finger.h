@@ -32,6 +32,9 @@ void finger_set_autopoll_rate(uint16_t hz);
 void finger_set_mobo_effort_limit(const uint8_t finger_idx, 
                                   const uint8_t mobo_max_effort);
 void finger_set_all_effort_limits(const uint8_t mobo_max_effort);
+void finger_enqueue_tx_raw(uint8_t finger_idx,
+                           const uint8_t *data, const uint16_t data_len);
+                            
 
 
 #define FINGER_INDEX  0

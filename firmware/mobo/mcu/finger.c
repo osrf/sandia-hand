@@ -39,6 +39,9 @@ static void finger_broadcast_raw(const uint8_t *data, const uint16_t data_len);
 static uint8_t g_finger_status_request = 0;
 static volatile uint16_t g_finger_autopoll_timeout = 0;
 static void finger_mobo_udp_rs485_enable(uint8_t enable);
+#define FINGER_TX_QUEUE_LEN 512
+static uint8_t  g_finger_tx_queue[5][FINGER_TX_QUEUE_LEN];
+static uint32_t g_finger_tx_queue_len[5] = {0};
 
 typedef struct { Pio *pio; uint32_t pin_idx; } rs485_de_t;
 // TODO: map finger_idx to rs485 channel indices. have palm be channel 4.
@@ -126,7 +129,7 @@ void finger_set_control_mode(uint8_t finger_idx, uint8_t control_mode)
   for (int i = 6; i < 6+12; i++)
     pkt[i] = 0; // set target as (0,0,0)
   *((uint16_t *)(&pkt[18])) = finger_calc_crc(pkt);
-  finger_tx_raw(finger_idx, pkt, 20);
+  finger_enqueue_tx_raw(finger_idx, pkt, 20);
 }
 
 void finger_set_joint_pos(uint8_t finger_idx, float j0, float j1, float j2)
@@ -143,7 +146,7 @@ void finger_set_joint_pos(uint8_t finger_idx, float j0, float j1, float j2)
   *((float *)&pkt[10]) = j1;
   *((float *)&pkt[14]) = j2;
   *((uint16_t *)(&pkt[18])) = finger_calc_crc(pkt);
-  finger_tx_raw(finger_idx, pkt, 20);
+  finger_enqueue_tx_raw(finger_idx, pkt, 20);
 }
 
 void finger_set_all_joint_angles_with_max_efforts(const float *joint_angles, 
@@ -164,10 +167,23 @@ void finger_set_all_joint_angles_with_max_efforts(const float *joint_angles,
     pkt[19] = max_efforts[i*3+1];
     pkt[20] = max_efforts[i*3+2];
     *((uint16_t *)(&pkt[21])) = finger_calc_crc(pkt);
-    finger_tx_raw(i, pkt, 23);
+    finger_enqueue_tx_raw(i, pkt, 23);
   }
 }
 
+void finger_enqueue_tx_raw(uint8_t finger_idx,
+                           const uint8_t *data, const uint16_t data_len)
+{
+  if (finger_idx > 4)
+    return; // bogus
+  // need to implement a proper circular buffer sometime. this will drop tx.
+  __disable_irq();
+  for (int i = 0; i < data_len; i++)
+    g_finger_tx_queue[finger_idx][i] = data[i];
+  g_finger_tx_queue_len[finger_idx] = data_len;
+  __enable_irq();
+}
+ 
 void finger_tx_raw(const uint8_t finger_idx, 
                    const uint8_t *data, const uint16_t data_len)
 {
@@ -267,14 +283,36 @@ void finger_idle()
   }
 }
 
+void finger_flush_tx_queues()
+{
+  volatile uint8_t  v_finger_tx_pkt_buf[FINGER_TX_QUEUE_LEN];
+  volatile uint32_t v_finger_tx_pkt_len = 0;
+  // flush any queued tx requests
+  for (int i = 0; i < 5; i++)
+  {
+    // copy out tx buffer while not being interrupted by udp rx interrupts
+    __disable_irq();
+    v_finger_tx_pkt_len = g_finger_tx_queue_len[i];
+    for (int j = 0; j < v_finger_tx_pkt_len; j++)
+      v_finger_tx_pkt_buf[j] = g_finger_tx_queue[i][j];
+    g_finger_tx_queue_len[i] = 0;
+    __enable_irq();
+    // fine if we get interrupted from here on
+    if (v_finger_tx_pkt_len)
+      finger_tx_raw(i, (uint8_t *)v_finger_tx_pkt_buf, 
+                    (uint32_t)v_finger_tx_pkt_len);
+  }
+}
+
 void finger_systick()
 {
   static uint32_t s_finger_systick_count = 0;
   s_finger_systick_count++;
-  if (!g_finger_autopoll_timeout)
-    return; // disabled
-  if (s_finger_systick_count % g_finger_autopoll_timeout == 0)  
+  uint32_t t = s_finger_systick_count % g_finger_autopoll_timeout;
+  if (g_finger_autopoll_timeout && t == 0)
     g_finger_status_request = 1; // schedule query message to fingers
+  if (!g_finger_autopoll_timeout || t > 2)
+    finger_flush_tx_queues();
 }
 
 void finger_set_autopoll_rate(uint16_t hz)
@@ -316,6 +354,6 @@ void finger_set_mobo_effort_limit(const uint8_t finger_idx,
   pkt[4] = 0x23; // set mobo effort limit
   pkt[5] = mobo_max_effort;
   *((uint16_t *)(&pkt[6])) = finger_calc_crc(pkt);
-  finger_tx_raw(finger_idx, pkt, 8);
+  finger_enqueue_tx_raw(finger_idx, pkt, 8);
 }
 

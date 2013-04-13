@@ -199,9 +199,9 @@ typedef struct
   uint32_t fmcb_time;
   uint16_t pp_tactile[6];
   uint16_t dp_tactile[12];
-  uint16_t pp_imu[6];
-  uint16_t dp_imu[6];
-  uint16_t fmcb_imu[6];
+  int16_t  pp_imu[6];
+  int16_t  dp_imu[6];
+  int16_t  fmcb_imu[6];
   uint16_t pp_temp[4];
   uint16_t dp_temp[4];
   uint16_t fmcb_temp[3];
@@ -231,11 +231,11 @@ void rxFingerStatus(const uint8_t finger_idx,
   rfs->pp_strain = p->pp_strain;
   for (int i = 0; i < 3; i++)
   {
-    rfs->mm_accel[i] = (int16_t)p->fmcb_imu[i];
+    rfs->mm_accel[i] = p->fmcb_imu[i];
     rfs->mm_mag[i]   = p->fmcb_imu[i+3];
-    rfs->pp_accel[i] = (int16_t)p->pp_imu[i];
+    rfs->pp_accel[i] = p->pp_imu[i];
     rfs->pp_mag[i]   = p->pp_imu[i+3];
-    rfs->dp_accel[i] = (int16_t)p->dp_imu[i];
+    rfs->dp_accel[i] = p->dp_imu[i];
     rfs->dp_mag[i]   = p->dp_imu[i+3];
   }
   for (int i = 0; i < 4; i++)
@@ -249,10 +249,11 @@ void rxFingerStatus(const uint8_t finger_idx,
   rfs->fmcb_pb_current = p->fmcb_pb_current;
   for (int i = 0; i < 3; i++)
   {
-    rfs->hall_tgt[i] = p->fmcb_hall_tgt[i];
-    rfs->hall_pos[i] = p->fmcb_hall_pos[i];
-    rfs->fmcb_effort[i] = p->fmcb_effort[i];
-    g_last_fmcb_hall_pos[finger_idx][i] = p->fmcb_hall_pos[i];
+    // ugh. electronics and firmware has joint indices flipped. fix someday.
+    rfs->hall_tgt[i] = p->fmcb_hall_tgt[2-i];
+    rfs->hall_pos[i] = p->fmcb_hall_pos[2-i];
+    rfs->fmcb_effort[i] = p->fmcb_effort[2-i];
+    g_last_fmcb_hall_pos[finger_idx][i] = p->fmcb_hall_pos[i]; // gross
   }
   if (g_raw_finger_status_pubs[finger_idx])
     g_raw_finger_status_pubs[finger_idx]->publish(g_raw_finger_status);

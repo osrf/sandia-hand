@@ -84,7 +84,7 @@ void enet_udp_rx(uint8_t *pkt, const uint32_t len)
     finger_raw_tx_t *p = (finger_raw_tx_t *)cmd_data;
     if (p->finger_idx > 4 || p->tx_data_len > FINGER_RAW_TX_MAX_LEN)
       return;
-    finger_tx_raw(p->finger_idx, p->tx_data, p->tx_data_len);
+    finger_enqueue_tx_raw(p->finger_idx, p->tx_data, p->tx_data_len);
   }
   else if (cmd == CMD_ID_SET_MOBO_STATUS_RATE)
     power_set_mobo_status_rate(

@@ -46,11 +46,11 @@ class AutoTab : public QWidget
 {
   Q_OBJECT
 public:
-  AutoTab(QWidget *parent, ros::NodeHandle &nh, ros::Publisher *finger_pubs);
+  AutoTab(QWidget *parent, ros::NodeHandle &nh, ros::Publisher *finger_pub);
   QPushButton *home_button_;
 private:
   ros::NodeHandle   nh_;
-  ros::Publisher   *finger_pubs_[4];
+  ros::Publisher   *relative_finger_pub_;
   ros::Subscriber   cal_finger_status_subs_[4];
   void cal_finger_status_cb(
                       const uint8_t finger_idx, 
@@ -70,7 +70,7 @@ public:
   HomingDialog(QWidget *parent = 0);
   virtual ~HomingDialog();
   ros::ServiceClient set_joint_policy_client_;
-  ros::Publisher     finger_pubs_[4];
+  ros::Publisher     finger_pubs_[4], relative_finger_pub_;
 private:
   QTabWidget       *tabs_;
   ros::NodeHandle   nh_;

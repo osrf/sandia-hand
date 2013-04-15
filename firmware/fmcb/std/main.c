@@ -335,6 +335,9 @@ void rs485_process_packet(uint8_t pkt_addr, uint16_t payload_len,
                payload_len == 16)
         control_set_jointspace_with_max_effort((float *)(payload+1),
                                                payload+13);
+      else if (cm == CM_JOINT_SPACE_RELATIVE &&
+               payload_len == 16)
+        control_set_relative_jointspace((float *)(payload+1), payload+13);
     }
     // avoid generating (potentially colliding) return traffic to this stream.
     //if (payload[0] < (uint8_t)CM_JOINT_SPACE) 

@@ -13,6 +13,7 @@
 #include <sandia_hand_msgs/SetJointLimitPolicy.h>
 #include <osrf_msgs/JointCommands.h>
 #include <sandia_hand_msgs/SetFingerHome.h>
+#include <sandia_hand_msgs/RelativeJointCommands.h>
 using namespace sandia_hand;
 using std::string;
 
@@ -168,8 +169,31 @@ void fingerJointCommandsCallback(Hand *hand, const uint8_t finger_idx,
 {
   //ROS_INFO("finger %d joint command %.3f %.3f %.3f",
   //         finger_idx, msg->position[0], msg->position[1], msg->position[2]);
+  if (msg->position.size() < 3)
+  {
+    ROS_WARN("ignoring joint commands message with insufficient length");
+    return; // woah there partner
+  }
   hand->setFingerJointPos(finger_idx,
                       msg->position[0], msg->position[1], msg->position[2]);
+}
+
+void relativeJointCommandsCallback(Hand *hand,
+                const sandia_hand_msgs::RelativeJointCommands::ConstPtr &msg)
+{
+  if (msg->position.size() < 12)
+  {
+    ROS_WARN("ignoring joint commands message with insufficient length");
+    return; // woah there partner
+  }
+  uint8_t max_effort_dummy[12]; // todo: if max_effort is populated, take it.
+  float relative_joint_angles[12];
+  for (int i = 0; i < 12; i++)
+  {
+    max_effort_dummy[i] = 50;
+    relative_joint_angles[i] = msg->position[i];
+  }
+  hand->setAllRelativeFingerJointPos(relative_joint_angles, max_effort_dummy);
 }
 
 void jointCommandsCallback(Hand *hand, 
@@ -181,6 +205,11 @@ void jointCommandsCallback(Hand *hand,
   hand->setFingerJointPos(0, 
          msg->position[0], msg->position[1], msg->position[2]);
   */
+  if (msg->position.size() < 12)
+  {
+    ROS_WARN("ignoring joint commands message with insufficient length");
+    return; // woah there partner
+  }
   uint8_t max_effort_dummy[12]; // todo: if max_effort is populated, take it.
   float joint_angles[12];
   for (int i = 0; i < 12; i++)
@@ -453,6 +482,11 @@ int main(int argc, char **argv)
   ros::Subscriber joint_commands_sub = 
     nh.subscribe<osrf_msgs::JointCommands>("joint_commands", 1, 
         boost::bind(jointCommandsCallback, &hand, _1));
+
+  ros::Subscriber relative_joint_commands_sub = 
+    nh.subscribe<sandia_hand_msgs::RelativeJointCommands>
+       ("relative_joint_commands", 1, 
+        boost::bind(relativeJointCommandsCallback, &hand, _1));
 
   ros::Subscriber finger_joint_commands_subs[Hand::NUM_FINGERS];
   for (int i = 0; i < Hand::NUM_FINGERS; i++)

@@ -46,6 +46,16 @@ static volatile uint32_t g_pb_tc0_ovf_count = 0;
 #define PB_PP_ADDR 1
 #define PB_DP_ADDR 2
 
+inline void pb_systick_disable()
+{
+  SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
+}
+
+inline void pb_systick_enable()
+{
+  SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;
+}
+
 void pb_init()
 {
   PMC_EnablePeripheral(ID_TC0);
@@ -87,7 +97,7 @@ void pb_send_block(uint8_t *block, uint32_t len)
   */
   //__disable_irq(); // must not be interrupted during this burst? think...
   NVIC_DisableIRQ(ADC_IRQn);
-  control_systick_disable();
+  pb_systick_disable();
   USART1->US_CR |= US_CR_RXDIS; // avoid loopback
   while ((USART1->US_CSR & US_CSR_TXRDY) == 0) { }
   PIO_Set(&pin_phal_de);
@@ -104,7 +114,7 @@ void pb_send_block(uint8_t *block, uint32_t len)
   USART1->US_CR |= US_CR_RXEN;
   if (USART1->US_CSR & US_CSR_RXRDY)
     USART1->US_RHR; // clear rx buffer
-  control_systick_enable();
+  pb_systick_enable();
   NVIC_EnableIRQ(ADC_IRQn);
   //__enable_irq();
 }
@@ -264,9 +274,9 @@ void pb_wait_for_traffic(uint16_t max_ms,
                          volatile uint16_t *num_bytes_recv, 
                          volatile uint8_t *bytes_recv)
 {
-  control_systick_disable();
+  pb_systick_disable();
   g_pb_txrx_ms = 0;
-  control_systick_enable();
+  pb_systick_enable();
   g_pb_auto_drain = false; // we'll drain it ourselves...
   while (g_pb_txrx_ms < max_ms)
   {

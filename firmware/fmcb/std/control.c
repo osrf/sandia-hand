@@ -13,6 +13,16 @@ volatile float g_control_joint_tgt[3];
 volatile uint8_t g_control_joint_max_effort[3], g_control_max_effort_mobo;
 volatile int16_t g_control_effort[3];
 
+inline void control_systick_disable()
+{
+  SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
+}
+
+inline void control_systick_enable()
+{
+  SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;
+}
+
 #define CONTROL_FREQ 1000
 void control_init()
 {
@@ -124,6 +134,20 @@ void control_set_jointspace_fp(const int16_t *fp_targets)
   control_set_jointspace(targets);
 }
 
+void control_set_relative_jointspace(const float *relative_targets,
+                                     const uint8_t *efforts)
+{
+  float targets[3] = {0};
+  control_systick_disable();
+  for (int i = 0; i < 3; i++)
+  {
+    targets[i] = g_control_joint_tgt[i] + relative_targets[i];
+    g_control_joint_max_effort[i]  = efforts[i];
+  }
+  control_systick_enable();
+  control_set_jointspace(targets);
+}
+
 void control_halt()
 {
   control_systick_disable();
@@ -135,16 +159,6 @@ void control_halt()
   PWM->PWM_CH_NUM[1].PWM_CDTYUPD = 255;
   PWM->PWM_CH_NUM[3].PWM_CDTYUPD = 255;
   control_systick_enable();
-}
-
-void control_systick_disable()
-{
-  SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
-}
-
-void control_systick_enable()
-{
-  SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;
 }
 
 void control_set_jointspace_with_max_effort(const float   *targets, 

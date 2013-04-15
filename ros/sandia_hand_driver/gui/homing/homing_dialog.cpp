@@ -9,6 +9,7 @@
 #include <osrf_msgs/JointCommands.h>
 #include <sandia_hand_msgs/SetFingerHome.h>
 #include <boost/bind.hpp>
+#include <sandia_hand_msgs/RelativeJointCommands.h>
 using std::string;
 using std::vector;
 using std::pair;
@@ -36,9 +37,12 @@ HomingDialog::HomingDialog(QWidget *parent)
     snprintf(topic, sizeof(topic), "finger_%d/joint_commands", i);
     finger_pubs_[i] = nh_.advertise<osrf_msgs::JointCommands>(topic, 1);
   }
+  relative_finger_pub_ =
+    nh_.advertise<sandia_hand_msgs::RelativeJointCommands>
+      ("relative_joint_commands", 1);
   tabs_ = new QTabWidget;
   tabs_->addTab(new ManualTab(this, nh_, finger_pubs_), tr("Manual"));
-  tabs_->addTab(new AutoTab(this, nh_, finger_pubs_), tr("Auto"));
+  tabs_->addTab(new AutoTab(this, nh_, &relative_finger_pub_), tr("Auto"));
   //button_box_ = new QDialogButtonBox(QDialogButtonBox::Ok);
   //connect(button_box_, SIGNAL(accepted()), this, SLOT(accept()));
   //connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
@@ -229,15 +233,15 @@ ManualTab::ManualTab(QWidget *parent, ros::NodeHandle &nh,
 }
 
 AutoTab::AutoTab(QWidget *parent, ros::NodeHandle &nh, 
-                 ros::Publisher *finger_pubs)
+                 ros::Publisher *relative_finger_pub)
 : QWidget(parent),
   nh_(nh),
+  relative_finger_pub_(relative_finger_pub),
   homing_enabled_(false),
   last_homing_time_(0)
 {
   for (int i = 0; i < 4; i++)
   {
-    finger_pubs_[i] = &finger_pubs[i];
     char topic_name[100];
     snprintf(topic_name, sizeof(topic_name), "cal_finger_status_%d", i);
     cal_finger_status_subs_[i] = 
@@ -279,6 +283,14 @@ void AutoTab::cal_finger_status_cb(
     if (d_j2 < -max_move)
       d_j2 = -max_move;
     printf("sending command: move j2 %.3f radians\n", d_j2);
+    sandia_hand_msgs::RelativeJointCommands rjc;
+    for (int i = 0; i < 12; i++)
+    {
+      rjc.position[i] = 0;
+      rjc.max_effort[i] = 50;
+    }
+    rjc.position[finger_idx*3+2] = d_j2;
+    relative_finger_pub_->publish(rjc);
   }
 
   //printf("inertial encoding j2 for finger 0: %.3f\n", msg->joints_inertial[2]);

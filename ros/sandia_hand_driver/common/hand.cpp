@@ -173,6 +173,30 @@ bool Hand::setAllFingerJointPos(const float   *joint_pos,
   return true;
 }
 
+// todo: factor this method and the previous one somehow
+bool Hand::setAllRelativeFingerJointPos(const float   *relative_joint_pos,
+                                        const uint8_t *joint_max_effort)
+{
+  uint8_t pkt[100];
+  *((uint32_t *)pkt) = CMD_ID_HAND_JOINT_COMMANDS;
+  relative_joint_commands_t *p = (relative_joint_commands_t *)(pkt + 4);
+  for (int finger_idx = 0; finger_idx < NUM_FINGERS; finger_idx++)
+  {
+    p->relative_joint_angles[finger_idx*3  ] =  
+         relative_joint_pos[finger_idx*3+2];
+    p->relative_joint_angles[finger_idx*3+1] =  
+         relative_joint_pos[finger_idx*3+1];
+    p->relative_joint_angles[finger_idx*3+2] = 
+        -relative_joint_pos[finger_idx*3  ];
+    p->max_efforts[finger_idx*3  ] =   joint_max_effort[finger_idx*3+2];
+    p->max_efforts[finger_idx*3+1] =   joint_max_effort[finger_idx*3+1];
+    p->max_efforts[finger_idx*3+2] =   joint_max_effort[finger_idx*3  ];
+  }
+  if (!tx_udp(pkt, 4 + sizeof(relative_joint_commands_t)))
+    return false;
+  return true;
+}
+
 bool Hand::setCameraStreaming(const bool cam_0_streaming, 
                               const bool cam_1_streaming)
 {

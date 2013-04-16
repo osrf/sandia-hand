@@ -13,6 +13,7 @@
 #include <sandia_hand_msgs/SetJointLimitPolicy.h>
 #include <osrf_msgs/JointCommands.h>
 #include <sandia_hand_msgs/SetFingerHome.h>
+#include <sandia_hand_msgs/RelativeJointCommands.h>
 using namespace sandia_hand;
 using std::string;
 
@@ -145,7 +146,7 @@ bool setHomeSrv(Hand *hand,
   hand->setFingerAutopollHz(0); // we need a clear channel to the finger
   listenToHand(hand, 0.1); // wait for scheduler to realize we're stopped
   hand->setFingerControlMode(req.finger_idx, Hand::FCM_IDLE); // no controller
-  listenToHand(hand, 0.001);
+  listenToHand(hand, 0.1);
   if (!hand->fingers[req.finger_idx].mm.setHallOffsets(
                                      g_last_fmcb_hall_pos[req.finger_idx]))
     ROS_ERROR("unable to set finger %d hall offsets", req.finger_idx);
@@ -168,8 +169,31 @@ void fingerJointCommandsCallback(Hand *hand, const uint8_t finger_idx,
 {
   //ROS_INFO("finger %d joint command %.3f %.3f %.3f",
   //         finger_idx, msg->position[0], msg->position[1], msg->position[2]);
+  if (msg->position.size() < 3)
+  {
+    ROS_WARN("ignoring joint commands message with insufficient length");
+    return; // woah there partner
+  }
   hand->setFingerJointPos(finger_idx,
                       msg->position[0], msg->position[1], msg->position[2]);
+}
+
+void relativeJointCommandsCallback(Hand *hand,
+                const sandia_hand_msgs::RelativeJointCommands::ConstPtr &msg)
+{
+  if (msg->position.size() < 12)
+  {
+    ROS_WARN("ignoring joint commands message with insufficient length");
+    return; // woah there partner
+  }
+  uint8_t max_effort_dummy[12]; // todo: if max_effort is populated, take it.
+  float relative_joint_angles[12];
+  for (int i = 0; i < 12; i++)
+  {
+    max_effort_dummy[i] = 50;
+    relative_joint_angles[i] = msg->position[i];
+  }
+  hand->setAllRelativeFingerJointPos(relative_joint_angles, max_effort_dummy);
 }
 
 void jointCommandsCallback(Hand *hand, 
@@ -181,6 +205,11 @@ void jointCommandsCallback(Hand *hand,
   hand->setFingerJointPos(0, 
          msg->position[0], msg->position[1], msg->position[2]);
   */
+  if (msg->position.size() < 12)
+  {
+    ROS_WARN("ignoring joint commands message with insufficient length");
+    return; // woah there partner
+  }
   uint8_t max_effort_dummy[12]; // todo: if max_effort is populated, take it.
   float joint_angles[12];
   for (int i = 0; i < 12; i++)
@@ -199,9 +228,9 @@ typedef struct
   uint32_t fmcb_time;
   uint16_t pp_tactile[6];
   uint16_t dp_tactile[12];
-  uint16_t pp_imu[6];
-  uint16_t dp_imu[6];
-  uint16_t fmcb_imu[6];
+  int16_t  pp_imu[6];
+  int16_t  dp_imu[6];
+  int16_t  fmcb_imu[6];
   uint16_t pp_temp[4];
   uint16_t dp_temp[4];
   uint16_t fmcb_temp[3];
@@ -249,10 +278,11 @@ void rxFingerStatus(const uint8_t finger_idx,
   rfs->fmcb_pb_current = p->fmcb_pb_current;
   for (int i = 0; i < 3; i++)
   {
-    rfs->hall_tgt[i] = p->fmcb_hall_tgt[i];
-    rfs->hall_pos[i] = p->fmcb_hall_pos[i];
-    rfs->fmcb_effort[i] = p->fmcb_effort[i];
-    g_last_fmcb_hall_pos[finger_idx][i] = p->fmcb_hall_pos[i];
+    // ugh. electronics and firmware has joint indices flipped. fix someday.
+    rfs->hall_tgt[i] = p->fmcb_hall_tgt[2-i];
+    rfs->hall_pos[i] = p->fmcb_hall_pos[2-i];
+    rfs->fmcb_effort[i] = p->fmcb_effort[2-i];
+    g_last_fmcb_hall_pos[finger_idx][i] = p->fmcb_hall_pos[i]; // gross
   }
   if (g_raw_finger_status_pubs[finger_idx])
     g_raw_finger_status_pubs[finger_idx]->publish(g_raw_finger_status);
@@ -452,6 +482,11 @@ int main(int argc, char **argv)
   ros::Subscriber joint_commands_sub = 
     nh.subscribe<osrf_msgs::JointCommands>("joint_commands", 1, 
         boost::bind(jointCommandsCallback, &hand, _1));
+
+  ros::Subscriber relative_joint_commands_sub = 
+    nh.subscribe<sandia_hand_msgs::RelativeJointCommands>
+       ("relative_joint_commands", 1, 
+        boost::bind(relativeJointCommandsCallback, &hand, _1));
 
   ros::Subscriber finger_joint_commands_subs[Hand::NUM_FINGERS];
   for (int i = 0; i < Hand::NUM_FINGERS; i++)

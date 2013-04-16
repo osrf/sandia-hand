@@ -84,7 +84,7 @@ void enet_udp_rx(uint8_t *pkt, const uint32_t len)
     finger_raw_tx_t *p = (finger_raw_tx_t *)cmd_data;
     if (p->finger_idx > 4 || p->tx_data_len > FINGER_RAW_TX_MAX_LEN)
       return;
-    finger_tx_raw(p->finger_idx, p->tx_data, p->tx_data_len);
+    finger_enqueue_tx_raw(p->finger_idx, p->tx_data, p->tx_data_len);
   }
   else if (cmd == CMD_ID_SET_MOBO_STATUS_RATE)
     power_set_mobo_status_rate(
@@ -146,6 +146,15 @@ void enet_udp_rx(uint8_t *pkt, const uint32_t len)
   {
     hand_joint_commands_t *p = (hand_joint_commands_t *)cmd_data;
     memcpy(control_target_joint_angles, p->joint_angles, sizeof(float)*12);
+    memcpy(control_target_max_efforts, p->max_efforts, sizeof(uint8_t)*12);
+    finger_set_all_joint_angles_with_max_efforts(control_target_joint_angles,
+                                                 control_target_max_efforts);
+  }
+  else if (cmd == CMD_ID_HAND_RELATIVE_JOINT_COMMANDS)
+  {
+    relative_joint_commands_t *p = (relative_joint_commands_t *)cmd_data;
+    memcpy(control_target_joint_angles, 
+           p->relative_joint_angles, sizeof(float)*12);
     memcpy(control_target_max_efforts, p->max_efforts, sizeof(uint8_t)*12);
     finger_set_all_joint_angles_with_max_efforts(control_target_joint_angles,
                                                  control_target_max_efforts);

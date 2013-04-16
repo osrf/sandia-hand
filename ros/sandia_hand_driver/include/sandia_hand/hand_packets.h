@@ -4,25 +4,26 @@
 #include <stdint.h>
 
 // this file is compiled into both the C++ driver library and the C firmware
-static const uint32_t CMD_ID_SET_FINGER_POWER_STATE      =  1;
-static const uint32_t CMD_ID_SET_FINGER_CONTROL_MODE     =  2;
-static const uint32_t CMD_ID_SET_FINGER_JOINT_POS        =  3;
-static const uint32_t CMD_ID_CONFIGURE_CAMERA_STREAM     =  4;
-static const uint32_t CMD_ID_FINGER_RAW_TX               =  5; // pass-through
-static const uint32_t CMD_ID_SET_MOBO_STATUS_RATE        =  6;
-static const uint32_t CMD_ID_MOBO_STATUS                 =  7;
-static const uint32_t CMD_ID_SET_FINGER_AUTOPOLL         =  8;
-static const uint32_t CMD_ID_SET_ALL_FINGER_POWER_STATES =  9;
-static const uint32_t CMD_ID_ENABLE_LOWVOLT_REGULATOR    = 10;
-static const uint32_t CMD_ID_READ_FPGA_FLASH_PAGE        = 11;
-static const uint32_t CMD_ID_FPGA_FLASH_PAGE             = 12;
-static const uint32_t CMD_ID_FPGA_FLASH_ERASE_SECTOR     = 13;
-static const uint32_t CMD_ID_FPGA_FLASH_ERASE_SECTOR_ACK = 14;
-static const uint32_t CMD_ID_BL_MOBO_MCU_FLASH_PAGE      = 15;
-static const uint32_t CMD_ID_MOBO_BOOT_CTRL              = 16;
-static const uint32_t CMD_ID_MOBO_PING                   = 17;
-static const uint32_t CMD_ID_HAND_JOINT_COMMANDS         = 18;
-static const uint32_t CMD_ID_MOBO_SET_CURRENT_LIMIT      = 19;
+static const uint32_t CMD_ID_SET_FINGER_POWER_STATE        =  1;
+static const uint32_t CMD_ID_SET_FINGER_CONTROL_MODE       =  2;
+static const uint32_t CMD_ID_SET_FINGER_JOINT_POS          =  3;
+static const uint32_t CMD_ID_CONFIGURE_CAMERA_STREAM       =  4;
+static const uint32_t CMD_ID_FINGER_RAW_TX                 =  5; // pass-through
+static const uint32_t CMD_ID_SET_MOBO_STATUS_RATE          =  6;
+static const uint32_t CMD_ID_MOBO_STATUS                   =  7;
+static const uint32_t CMD_ID_SET_FINGER_AUTOPOLL           =  8;
+static const uint32_t CMD_ID_SET_ALL_FINGER_POWER_STATES   =  9;
+static const uint32_t CMD_ID_ENABLE_LOWVOLT_REGULATOR      = 10;
+static const uint32_t CMD_ID_READ_FPGA_FLASH_PAGE          = 11;
+static const uint32_t CMD_ID_FPGA_FLASH_PAGE               = 12;
+static const uint32_t CMD_ID_FPGA_FLASH_ERASE_SECTOR       = 13;
+static const uint32_t CMD_ID_FPGA_FLASH_ERASE_SECTOR_ACK   = 14;
+static const uint32_t CMD_ID_BL_MOBO_MCU_FLASH_PAGE        = 15;
+static const uint32_t CMD_ID_MOBO_BOOT_CTRL                = 16;
+static const uint32_t CMD_ID_MOBO_PING                     = 17;
+static const uint32_t CMD_ID_HAND_JOINT_COMMANDS           = 18;
+static const uint32_t CMD_ID_MOBO_SET_CURRENT_LIMIT        = 19;
+static const uint32_t CMD_ID_HAND_RELATIVE_JOINT_COMMANDS  = 20;
 
 typedef struct 
 {
@@ -167,6 +168,13 @@ typedef struct
 } __attribute__((packed)) set_mobo_current_limit_t;
 static const uint8_t MOBO_CURRENT_LIMIT_STATE_REQUEST  = 0;
 static const uint8_t MOBO_CURRENT_LIMIT_STATE_RESPONSE = 1;
+
+typedef struct
+{
+  float   relative_joint_angles[12];
+  uint8_t max_efforts [12];
+} __attribute__((packed)) relative_joint_commands_t;
+
 
 #endif
 

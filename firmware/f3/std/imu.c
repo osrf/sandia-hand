@@ -71,18 +71,20 @@ void imu_twi_cb()
       ((uint8_t *)g_imu_mag_data)[2*i+1] = swap;
     }
     __disable_irq(); // copy into global buffer now
-    g_imu_data[3] = g_imu_mag_data[0];
-    g_imu_data[4] = g_imu_mag_data[1];
-    g_imu_data[5] = g_imu_mag_data[2];
+    // sign flips to align data stream to f2 and fmcb
+    g_imu_data[3] = -g_imu_mag_data[0];
+    g_imu_data[4] =  g_imu_mag_data[1];
+    g_imu_data[5] = -g_imu_mag_data[2];
     __enable_irq();
   }
   else if (g_imu_meas == IMU_MEAS_ACCEL)
   {
     // accelerometer measurements are 12-bit masquerading as 16-bit...
     __disable_irq(); // copy into global buffer now
-    g_imu_data[0] = g_imu_accel_data[0] >> 4;
-    g_imu_data[1] = g_imu_accel_data[1] >> 4;
-    g_imu_data[2] = g_imu_accel_data[2] >> 4;
+    // sign flips to align data stream to f2 and fmcb
+    g_imu_data[0] = -(g_imu_accel_data[0] >> 4);
+    g_imu_data[1] =   g_imu_accel_data[1] >> 4;
+    g_imu_data[2] = -(g_imu_accel_data[2] >> 4);
     __enable_irq();
   }
 }

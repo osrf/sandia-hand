@@ -1,7 +1,9 @@
 set (model_basenames
      sandia_hand_left_on_box
      sandia_hand_right_on_box
-     sandia_hand_both_on_box)
+     sandia_hand_both_on_box
+     sandia_hand_stumps_on_box
+     )
 
 foreach(model_basename ${model_basenames})
   # Bourne shell is not happy with cmake auto quoting for declaring variables 

@@ -8,6 +8,8 @@
 #include <utility>
 #include <osrf_msgs/JointCommands.h>
 #include <sandia_hand_msgs/SetFingerHome.h>
+#include <boost/bind.hpp>
+#include <sandia_hand_msgs/RelativeJointCommands.h>
 using std::string;
 using std::vector;
 using std::pair;
@@ -29,9 +31,18 @@ HomingDialog::HomingDialog(QWidget *parent)
   }
   else
     ROS_INFO("Released joint limits. Be careful...");
+  for (int i = 0; i < 4; i++)
+  {
+    char topic[100];
+    snprintf(topic, sizeof(topic), "finger_%d/joint_commands", i);
+    finger_pubs_[i] = nh_.advertise<osrf_msgs::JointCommands>(topic, 1);
+  }
+  relative_finger_pub_ =
+    nh_.advertise<sandia_hand_msgs::RelativeJointCommands>
+      ("relative_joint_commands", 1);
   tabs_ = new QTabWidget;
-  tabs_->addTab(new ManualTab(this, nh_), tr("Manual"));
-  tabs_->addTab(new AutoTab(this), tr("Auto"));
+  tabs_->addTab(new ManualTab(this, nh_, finger_pubs_), tr("Manual"));
+  tabs_->addTab(new AutoTab(this, nh_, &relative_finger_pub_), tr("Auto"));
   //button_box_ = new QDialogButtonBox(QDialogButtonBox::Ok);
   //connect(button_box_, SIGNAL(accepted()), this, SLOT(accept()));
   //connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
@@ -166,22 +177,19 @@ void ManualFingerSubtab::setFingerHome()
   is_resetting_ = false;
 }
 
-ManualTab::ManualTab(QWidget *parent, ros::NodeHandle &nh)
+ManualTab::ManualTab(QWidget *parent, ros::NodeHandle &nh, 
+                     ros::Publisher *finger_pubs)
 : QWidget(parent),
   nh_(nh)
 {
   for (int i = 0; i < 4; i++)
-  {
-    char topic[100];
-    snprintf(topic, sizeof(topic), "finger_%d/joint_commands", i);
-    finger_pubs_[i] = nh_.advertise<osrf_msgs::JointCommands>(topic, 1);
-  }
+    finger_pubs_[i] = &finger_pubs[i];
   QVBoxLayout *main_layout = new QVBoxLayout;
   tabs_ = new QTabWidget;
   const char *tab_names[4] = { "Index", "Middle", "Pinkie", "Thumb" };
   for (int i = 0; i < 4; i++)
     tabs_->addTab(finger_tabs_[i] = 
-                      new ManualFingerSubtab(this, nh_, &finger_pubs_[i], i), 
+                      new ManualFingerSubtab(this, nh_, finger_pubs_[i], i), 
                   tr(tab_names[i]));
   main_layout->addWidget(tabs_);
   main_layout->addStretch(1);
@@ -224,11 +232,74 @@ ManualTab::ManualTab(QWidget *parent, ros::NodeHandle &nh)
   */
 }
 
-AutoTab::AutoTab(QWidget *parent)
-: QWidget(parent)
+AutoTab::AutoTab(QWidget *parent, ros::NodeHandle &nh, 
+                 ros::Publisher *relative_finger_pub)
+: QWidget(parent),
+  nh_(nh),
+  relative_finger_pub_(relative_finger_pub),
+  homing_enabled_(false),
+  last_homing_time_(0)
 {
+  for (int i = 0; i < 4; i++)
+  {
+    char topic_name[100];
+    snprintf(topic_name, sizeof(topic_name), "cal_finger_status_%d", i);
+    cal_finger_status_subs_[i] = 
+      nh_.subscribe<sandia_hand_msgs::CalFingerStatus>(topic_name, 1, 
+                    boost::bind(&AutoTab::cal_finger_status_cb, this, i, _1));
+  }
   QVBoxLayout *main_layout = new QVBoxLayout;
   main_layout->addStretch(1);
+  main_layout->addWidget(home_button_ = new QPushButton(tr("Home")));
+  home_button_->setCheckable(true);
+  connect(home_button_, SIGNAL(toggled(bool)), this, SLOT(home(bool)));
   setLayout(main_layout);
+  ros_update_timer_ = new QTimer(this);
+  connect(ros_update_timer_, SIGNAL(timeout()), this, SLOT(rosTimerTimeout()));
+  ros_update_timer_->start(1);
+}
+
+void AutoTab::rosTimerTimeout()
+{
+  ros::spinOnce();
+}
+
+void AutoTab::cal_finger_status_cb(
+                       const uint8_t finger_idx,
+                       const sandia_hand_msgs::CalFingerStatus::ConstPtr &msg)
+{
+  if (!homing_enabled_)
+    return;
+  if (finger_idx != 0)
+    return;
+  double t = ros::Time::now().toSec();
+  if (t - last_homing_time_ > 5.0)
+  {
+    last_homing_time_ = t;
+    double d_j2 = -msg->joints_inertial[2];
+    const double max_move = 0.1;
+    if (d_j2 > max_move)
+      d_j2 = max_move;
+    if (d_j2 < -max_move)
+      d_j2 = -max_move;
+    printf("sending command: move j2 %.3f radians\n", d_j2);
+    sandia_hand_msgs::RelativeJointCommands rjc;
+    for (int i = 0; i < 12; i++)
+    {
+      rjc.position[i] = 0;
+      rjc.max_effort[i] = 50;
+    }
+    rjc.position[finger_idx*3+2] = d_j2;
+    relative_finger_pub_->publish(rjc);
+  }
+
+  //printf("inertial encoding j2 for finger 0: %.3f\n", msg->joints_inertial[2]);
+  //printf("finger status cb for finger %d\n", finger_idx);
+}
+
+void AutoTab::home(bool enabled)
+{
+  printf("AutoTab::home(%d)\n", (int)enabled);
+  homing_enabled_ = enabled;
 }
 

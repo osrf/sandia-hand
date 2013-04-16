@@ -266,7 +266,10 @@
     <xacro:finger_gazebo side="${side}" idx="${idx}"/>
   </xacro:macro>
 
+  <!--
   <xacro:macro name="sandia_hand" params="side parent reflect joint_type thumb_angle *origin">
+  -->
+  <xacro:macro name="sandia_hand" params="side parent reflect *origin">
     <link name="${side}_palm">
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <inertial>
@@ -411,10 +414,16 @@
       <insert_block name="origin" />
     </joint>
 
+    <!--
     <xacro:finger side="${side}" idx="0" x="0.140" y="0.00000" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" joint_type="${joint_type}" />
     <xacro:finger side="${side}" idx="1" x="0.115" y="${0.03122*reflect}" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" joint_type="${joint_type}" />
     <xacro:finger side="${side}" idx="2" x="0.090" y="${0.06245*reflect}" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" joint_type="${joint_type}" />
     <xacro:finger side="${side}" idx="3" x="0.03995" y="${-0.04383*reflect}" z="0.014" r="0" p="-${M_pi/2 + thumb_angle}" yaw="${-(2.3562+thumb_angle)*reflect}" reflect="${reflect}" joint_type="${joint_type}" />
+    -->
+    <xacro:finger side="${side}" idx="0" x="0.140" y="0.00000" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" joint_type="revolute" />
+    <xacro:finger side="${side}" idx="1" x="0.115" y="${0.03122*reflect}" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" joint_type="revolute" />
+    <xacro:finger side="${side}" idx="2" x="0.090" y="${0.06245*reflect}" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" joint_type="revolute" />
+    <xacro:finger side="${side}" idx="3" x="0.03995" y="${-0.04383*reflect}" z="0.014" r="0" p="-${M_pi/2}" yaw="${-(2.3562)*reflect}" reflect="${reflect}" joint_type="joint_type" />
 
     <!-- not needed unless simulating the hand by itself
     <xacro:sandia_hand_gazebo_controller side="${side}" />

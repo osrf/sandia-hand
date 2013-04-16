@@ -7,8 +7,10 @@
   <include filename="$(find sandia_hand_description)/urdf/sandia_hand.transmission.xacro" />
 
   <xacro:property name="M_pi" value="3.1415926535897931" />
-  <xacro:property name="damping_coefficient" value="20" />
-  <xacro:property name="velocity_limit" value="1" />
+  <xacro:property name="damping_coefficient_j0" value="30" />
+  <xacro:property name="damping_coefficient_j1" value="30" />
+  <xacro:property name="damping_coefficient_j2" value="30" />
+  <xacro:property name="velocity_limit" value="100" />
 
   <xacro:macro name="finger" params="idx x y z r p yaw side reflect">
     <link name="${side}_f${idx}_base">
@@ -35,7 +37,7 @@
         <mass value="0.106"/> <!-- F1 -->
         <origin xyz="0 0 0"/>
         <!-- solid cylinder -->
-        <inertia izz="0.000011925" ixy="0" ixz="0" iyy="0.00011505" iyz="0" ixx="0.00011505"/>
+        <inertia ixx="0.000011925" ixy="0" ixz="0" iyy="0.00011505" iyz="0" izz="0.00011505"/>
       </inertial>
       <!-- begin simple shape approximation of f0 -->
       <collision group="default">
@@ -227,7 +229,7 @@
       <child link="${side}_f${idx}_0"/>
       <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="11" velocity="${velocity_limit}"/>
       <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
-      <dynamics damping="${damping_coefficient}"/>
+      <dynamics damping="${damping_coefficient_j0}"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
     </joint>
     <joint name="${side}_f${idx}_j1" type="revolute">
@@ -236,7 +238,7 @@
       <child link="${side}_f${idx}_1"/>
       <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="28" velocity="${velocity_limit}"/>
       <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
-      <dynamics damping="${damping_coefficient}"/>
+      <dynamics damping="${damping_coefficient_j1}"/>
       <origin xyz="0.028 0 0" rpy="${M_pi/2} 0 0"/>
     </joint>
     <joint name="${side}_f${idx}_j2" type="revolute">
@@ -245,7 +247,7 @@
       <child link="${side}_f${idx}_2"/>
       <origin xyz="0.05 0 0" rpy="0 0 0"/>
       <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
-      <dynamics damping="${damping_coefficient}"/>
+      <dynamics damping="${damping_coefficient_j2}"/>
       <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="28" velocity="${velocity_limit}"/>
     </joint>
 

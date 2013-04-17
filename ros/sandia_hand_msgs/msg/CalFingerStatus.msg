@@ -18,5 +18,6 @@ float32 fmcb_pb_current
 int32[3] hall_tgt
 int32[3] hall_pos
 int16[3] fmcb_effort
-float32[3] joints_inertial
 float32[3] joints_hall
+float32[3] joints_inertial
+float32[3] joints_inertial_variance

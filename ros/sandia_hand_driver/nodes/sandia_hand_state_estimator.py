@@ -40,15 +40,84 @@ class HandStateEstimator:
   def finger_3_cb(self, msg):
     self.finger_cb(3, msg)
 
+  def simplify_angle(self, x):
+    if x < -3.1415:
+      return x + 2 * 3.1415 
+    elif x > 3.1415:
+      return x - 2 * 3.1415
+    else:
+      return x
+
+  def normalize_accel(self, a):
+    mag = math.sqrt(a[0]*a[0] + a[1]*a[1] + a[2]*a[2])
+    if mag == 0:
+      mag = 1 # we're hosed
+    return [float(x) / mag for x in a]
+
   def finger_cb(self, finger_idx, msg):
-    #print "finger %d rx" % finger_idx
-    mma = [float(x)/1023.0 for x in msg.mm_accel]
-    ppa = [float(x)/1023.0 for x in msg.pp_accel]
-    dpa = [float(x)/1023.0 for x in msg.dp_accel]
+    ########################################################################
+    # calcluate joint angles based on accelerometers
+    mma = self.normalize_accel(msg.mm_accel)
+    #if (finger_idx == 3):
+    #  print [msg.mm_accel, mma]
+    ppa = self.normalize_accel(msg.pp_accel)
+    dpa = self.normalize_accel(msg.dp_accel)
+    self.cfs[finger_idx].joints_inertial_variance = [1e6, 1e6, 1e6] # no bueno
     #print [dpa, ppa, mma]
     #print msg.mm_accel, msg.pp_accel, msg.dp_accel
+    # first, estimate the easy one: the distal joint.
     j2 = math.atan2(ppa[2], ppa[0]) - math.atan2(dpa[2], dpa[0])
+    self.cfs[finger_idx].joints_inertial_variance[2] = 0.1 # todo
     self.cfs[finger_idx].joints_inertial[2] = j2
+    # next, estimate the proximal joint
+    x0 = mma[0]
+    y0 = mma[1]
+    z0 = mma[2]
+    x2 = ppa[0]
+    y2 = ppa[1]
+    det_j0 = x0*x0 + y0*y0 - y2*y2
+    j0_sol = []
+    if det_j0 > 0:
+      j0_sol = [math.atan2(y2,  math.sqrt(det_j0)) - math.atan2(y0,-x0), \
+                math.atan2(y2, -math.sqrt(det_j0)) - math.atan2(y0,-x0)]
+    j0_valid = []
+    for j0 in j0_sol:
+      x = self.simplify_angle(j0)
+      if finger_idx < 3:
+        if x > -1.6 and x < 1.6:
+          j0_valid.append(x)
+      elif finger_idx == 3: # thumb has more severe constraints (fortunately)
+        if x > -0.1 and x < 1.6:
+          j0_valid.append(x)
+    if len(j0_valid) == 1:
+      j0 = j0_valid[0]
+      self.cfs[finger_idx].joints_inertial[0] = j0
+      self.cfs[finger_idx].joints_inertial_variance[0] = 0.1 # finite
+      # finally, estimate the middle joint
+      gamma = (x0*math.cos(j0) + y0*math.sin(j0))
+      det_j1 = gamma**2 - z0*z0 - x2*x2
+      if det_j1 > 0:
+        j1_sol = [math.atan2(x2,  math.sqrt(det_j1)) - math.atan2(gamma,-z0), \
+                  math.atan2(x2, -math.sqrt(det_j1)) - math.atan2(gamma,-z0)]
+        j1_valid = []
+        for j1 in j1_sol:
+          x = self.simplify_angle(j1)
+          if x > -1.6 and x < 1.6:
+            j1_valid.append(x)
+        if finger_idx == 1:
+          print j1_valid
+      else:
+        if finger_idx == 1:
+          print "j1 estimate invalid"
+        #if len(j1_valid) == 1:
+
+    #if finger_idx == 3:
+    #  print "j0: %.3f   %.3f" % (j0[0], j0[1])
+    #  print j0_cand
+      #print "  %.3f  %.3f" % (self.simplify_angle(j0[0]), self.simplify_angle(j0[1]))
+      #print "    det: %.3f" % det
+    ########################################################################
+    # calculate joint angles based on hall sensor offsets
     H2R = 3.14159 * 2.0 / 36.0  # hall state to radians conversion
     R0_INV = 1.0 / 231.0
     R1_INV = 1.0 / 196.7

@@ -318,27 +318,24 @@ void rs485_process_packet(uint8_t pkt_addr, uint16_t payload_len,
   }
   else if (pkt_type == 0x1d) // set control mode
   {
-    if (payload[0] <= (uint8_t)CM_JOINT_SPACE_WITH_MAX_EFFORT)
-    {
-      enum control_mode_t cm = payload[0];
-      if (cm == CM_IDLE)
-        control_halt();
-      else if (cm == CM_MOTOR_SPACE)
-        control_set_motorspace((int16_t *)(payload+1));
-      else if (cm == CM_JOINT_SPACE &&
-               payload_len == 13)
-        control_set_jointspace((float *)(payload+1));
-      else if (cm == CM_JOINT_SPACE_FP &&
-               payload_len == 7)
-        control_set_jointspace_fp((int16_t *)(payload+1));
-      else if (cm == CM_JOINT_SPACE_WITH_MAX_EFFORT &&
-               payload_len == 16)
-        control_set_jointspace_with_max_effort((float *)(payload+1),
-                                               payload+13);
-      else if (cm == CM_JOINT_SPACE_RELATIVE &&
-               payload_len == 16)
-        control_set_relative_jointspace((float *)(payload+1), payload+13);
-    }
+    enum control_mode_t cm = payload[0];
+    if (cm == CM_IDLE)
+      control_halt();
+    else if (cm == CM_MOTOR_SPACE)
+      control_set_motorspace((int16_t *)(payload+1));
+    else if (cm == CM_JOINT_SPACE &&
+             payload_len == 13)
+      control_set_jointspace((float *)(payload+1));
+    else if (cm == CM_JOINT_SPACE_FP &&
+             payload_len == 7)
+      control_set_jointspace_fp((int16_t *)(payload+1));
+    else if (cm == CM_JOINT_SPACE_WITH_MAX_EFFORT &&
+             payload_len == 16)
+      control_set_jointspace_with_max_effort((float *)(payload+1),
+                                             payload+13);
+    else if (cm == CM_JOINT_SPACE_RELATIVE &&
+             payload_len == 16)
+      control_set_relative_jointspace((float *)(payload+1), payload+13);
     // avoid generating (potentially colliding) return traffic to this stream.
     //if (payload[0] < (uint8_t)CM_JOINT_SPACE) 
     //  rs485_send_packet(0x1d, 0); // only generate traffic for motor msgs

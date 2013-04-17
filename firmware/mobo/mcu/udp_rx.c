@@ -148,7 +148,7 @@ void enet_udp_rx(uint8_t *pkt, const uint32_t len)
     memcpy(control_target_joint_angles, p->joint_angles, sizeof(float)*12);
     memcpy(control_target_max_efforts, p->max_efforts, sizeof(uint8_t)*12);
     finger_set_all_joint_angles_with_max_efforts(control_target_joint_angles,
-                                                 control_target_max_efforts);
+                                                 control_target_max_efforts, 4);
   }
   else if (cmd == CMD_ID_HAND_RELATIVE_JOINT_COMMANDS)
   {
@@ -157,7 +157,7 @@ void enet_udp_rx(uint8_t *pkt, const uint32_t len)
            p->relative_joint_angles, sizeof(float)*12);
     memcpy(control_target_max_efforts, p->max_efforts, sizeof(uint8_t)*12);
     finger_set_all_joint_angles_with_max_efforts(control_target_joint_angles,
-                                                 control_target_max_efforts);
+                                                 control_target_max_efforts, 5);
   }
   else if (cmd == CMD_ID_MOBO_SET_CURRENT_LIMIT)
   {

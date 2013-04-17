@@ -9,7 +9,6 @@
 #include <osrf_msgs/JointCommands.h>
 #include <sandia_hand_msgs/SetFingerHome.h>
 #include <boost/bind.hpp>
-#include <sandia_hand_msgs/RelativeJointCommands.h>
 using std::string;
 using std::vector;
 using std::pair;
@@ -247,6 +246,7 @@ AutoTab::AutoTab(QWidget *parent, ros::NodeHandle &nh,
     cal_finger_status_subs_[i] = 
       nh_.subscribe<sandia_hand_msgs::CalFingerStatus>(topic_name, 1, 
                     boost::bind(&AutoTab::cal_finger_status_cb, this, i, _1));
+    status_rx_complete_[i] = false;
   }
   QVBoxLayout *main_layout = new QVBoxLayout;
   main_layout->addStretch(1);
@@ -264,33 +264,62 @@ void AutoTab::rosTimerTimeout()
   ros::spinOnce();
 }
 
+inline static double clamp_mag(double d, const double mag)
+{
+  if (d > mag)
+    return mag;
+  else if (d < -mag)
+    return -mag;
+  return d;
+}
+
 void AutoTab::cal_finger_status_cb(
                        const uint8_t finger_idx,
                        const sandia_hand_msgs::CalFingerStatus::ConstPtr &msg)
 {
+  if (finger_idx >= 4)
+    return;
   if (!homing_enabled_)
     return;
-  if (finger_idx != 0)
-    return;
+  //if (finger_idx != 0)
+  //  return;
   double t = ros::Time::now().toSec();
-  if (t - last_homing_time_ > 5.0)
+  if (t - last_homing_time_ > 3.0)
   {
-    last_homing_time_ = t;
-    double d_j2 = -msg->joints_inertial[2];
+    status_rx_complete_[finger_idx] = true;
     const double max_move = 0.1;
-    if (d_j2 > max_move)
-      d_j2 = max_move;
-    if (d_j2 < -max_move)
-      d_j2 = -max_move;
-    printf("sending command: move j2 %.3f radians\n", d_j2);
-    sandia_hand_msgs::RelativeJointCommands rjc;
-    for (int i = 0; i < 12; i++)
+    for (int i = 0; i < 3; i++)
     {
-      rjc.position[i] = 0;
-      rjc.max_effort[i] = 50;
+      if (msg->joints_inertial_variance[i] < 1)
+      {
+        double home_pos = 0;
+        if (finger_idx == 3 && i == 0)
+          home_pos = M_PI / 4; // avoid measurement singularity badness...
+        rjc_.position[finger_idx*3+i] = 
+          clamp_mag(-(msg->joints_inertial[i] - home_pos), max_move);
+      }
     }
-    rjc.position[finger_idx*3+2] = d_j2;
-    relative_finger_pub_->publish(rjc);
+    bool all_ok = true;
+    for (int i = 0; i < 4; i++)
+      all_ok &= status_rx_complete_[i];
+    if (all_ok)
+    {
+      for (int f = 0; f < 4; f++)
+        printf("  %d: %.3f  %.3f  %.3f\n",
+               f, 
+               rjc_.position[f*3],
+               rjc_.position[f*3+1],
+               rjc_.position[f*3+2]);
+      relative_finger_pub_->publish(rjc_);
+      for (int i = 0; i < 12; i++)
+      {
+        rjc_.position[i] = 0;
+        rjc_.max_effort[i] = 50;
+      }
+      for (int i = 0; i < 4; i++)
+        status_rx_complete_[i] = false;
+      last_homing_time_ = t;
+    }
   }
 
   //printf("inertial encoding j2 for finger 0: %.3f\n", msg->joints_inertial[2]);

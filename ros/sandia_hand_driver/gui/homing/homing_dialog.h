@@ -7,6 +7,7 @@
 #include <ros/ros.h>
 #include <sandia_hand_msgs/SetJointLimitPolicy.h>
 #include <sandia_hand_msgs/CalFingerStatus.h>
+#include <sandia_hand_msgs/RelativeJointCommands.h>
 
 class QTabWidget;
 
@@ -58,6 +59,8 @@ private:
   QTimer *ros_update_timer_;
   bool homing_enabled_;
   double last_homing_time_;
+  bool status_rx_complete_[4];
+  sandia_hand_msgs::RelativeJointCommands rjc_;
 public slots:
   void home(bool enabled);
   void rosTimerTimeout();

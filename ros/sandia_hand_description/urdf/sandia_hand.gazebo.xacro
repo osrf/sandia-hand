@@ -7,7 +7,7 @@
     <gazebo reference ="${side}_f${idx}_base">
       <mu1>0.9</mu1>
       <mu2>0.9</mu2>
-      <kp>10000.0</kp>
+      <kp>1000000000.0</kp>
       <kd>1.0</kd>
       <maxVel>0.1</maxVel>
       <minDepth>0.0</minDepth>
@@ -15,25 +15,25 @@
     <gazebo reference="${side}_f${idx}_0">
       <mu1>0.9</mu1>
       <mu2>0.9</mu2>
-      <kp>10000.0</kp>
+      <kp>1000000000.0</kp>
       <kd>1.0</kd>
-      <maxVel>1.0</maxVel>
+      <maxVel>0.1</maxVel>
       <minDepth>0.0</minDepth>
     </gazebo>
     <gazebo reference="${side}_f${idx}_1">
       <mu1>0.9</mu1>
       <mu2>0.9</mu2>
-      <kp>10000.0</kp>
+      <kp>1000000000.0</kp>
       <kd>1.0</kd>
-      <maxVel>0.1</maxVel>
+      <maxVel>1.0</maxVel>
       <minDepth>0.0</minDepth>
     </gazebo>
     <gazebo reference="${side}_f${idx}_2">
       <mu1>0.9</mu1>
       <mu2>0.9</mu2>
-      <kp>10000.0</kp>
+      <kp>1000000000.0</kp>
       <kd>1.0</kd>
-      <maxVel>0.1</maxVel>
+      <maxVel>1.0</maxVel>
       <minDepth>0.0</minDepth>
     </gazebo>
     <gazebo reference="${side}_f${idx}_j0">

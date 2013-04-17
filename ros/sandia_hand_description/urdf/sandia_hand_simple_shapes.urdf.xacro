@@ -7,7 +7,12 @@
   <include filename="$(find sandia_hand_description)/urdf/sandia_hand.transmission.xacro" />
 
   <xacro:property name="M_pi" value="3.1415926535897931" />
-  <xacro:macro name="finger" params="idx x y z r p yaw side reflect joint_type">
+  <xacro:property name="damping_coefficient_j0" value="30" />
+  <xacro:property name="damping_coefficient_j1" value="30" />
+  <xacro:property name="damping_coefficient_j2" value="30" />
+  <xacro:property name="velocity_limit" value="100" />
+
+  <xacro:macro name="finger" params="idx x y z r p yaw side reflect">
     <link name="${side}_f${idx}_base">
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <inertial>
@@ -32,7 +37,7 @@
         <mass value="0.106"/> <!-- F1 -->
         <origin xyz="0 0 0"/>
         <!-- solid cylinder -->
-        <inertia izz="0.000011925" ixy="0" ixz="0" iyy="0.00011505" iyz="0" ixx="0.00011505"/>
+        <inertia ixx="0.000011925" ixy="0" ixz="0" iyy="0.00011505" iyz="0" izz="0.00011505"/>
       </inertial>
       <!-- begin simple shape approximation of f0 -->
       <collision group="default">
@@ -218,32 +223,32 @@
       <child link="${side}_f${idx}_base"/>
       <origin xyz="${x} ${y} ${z}" rpy="${r} ${p} ${yaw}"/>
     </joint>
-    <joint name="${side}_f${idx}_j0" type="${joint_type}">
+    <joint name="${side}_f${idx}_j0" type="revolute">
       <axis xyz="0 0 ${reflect}"/>
       <parent link="${side}_f${idx}_base"/>
       <child link="${side}_f${idx}_0"/>
-      <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="11" velocity="1"/>
+      <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="11" velocity="${velocity_limit}"/>
       <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
-      <dynamics damping="30.0"/>
+      <dynamics damping="${damping_coefficient_j0}"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
     </joint>
-    <joint name="${side}_f${idx}_j1" type="${joint_type}">
+    <joint name="${side}_f${idx}_j1" type="revolute">
       <axis xyz="0 0 1"/>
       <parent link="${side}_f${idx}_0"/>
       <child link="${side}_f${idx}_1"/>
-      <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="28" velocity="1"/>
+      <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="28" velocity="${velocity_limit}"/>
       <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
-      <dynamics damping="30.0"/>
+      <dynamics damping="${damping_coefficient_j1}"/>
       <origin xyz="0.028 0 0" rpy="${M_pi/2} 0 0"/>
     </joint>
-    <joint name="${side}_f${idx}_j2" type="${joint_type}">
+    <joint name="${side}_f${idx}_j2" type="revolute">
       <axis xyz="0 0 1"/>
       <parent link="${side}_f${idx}_1"/>
       <child link="${side}_f${idx}_2"/>
       <origin xyz="0.05 0 0" rpy="0 0 0"/>
       <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
-      <dynamics damping="30.0"/>
-      <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="28" velocity="1"/>
+      <dynamics damping="${damping_coefficient_j2}"/>
+      <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="28" velocity="${velocity_limit}"/>
     </joint>
 
     <joint name="${side}_f${idx}_fixed_accel" type="fixed">
@@ -266,7 +271,10 @@
     <xacro:finger_gazebo side="${side}" idx="${idx}"/>
   </xacro:macro>
 
-  <xacro:macro name="sandia_hand" params="side parent reflect joint_type thumb_angle *origin">
+  <!--
+  <xacro:macro name="sandia_hand" params="side parent reflect thumb_angle *origin">
+  -->
+  <xacro:macro name="sandia_hand" params="side parent reflect *origin">
     <link name="${side}_palm">
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <inertial>
@@ -411,10 +419,16 @@
       <insert_block name="origin" />
     </joint>
 
-    <xacro:finger side="${side}" idx="0" x="0.140" y="0.00000" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" joint_type="${joint_type}" />
-    <xacro:finger side="${side}" idx="1" x="0.115" y="${0.03122*reflect}" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" joint_type="${joint_type}" />
-    <xacro:finger side="${side}" idx="2" x="0.090" y="${0.06245*reflect}" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" joint_type="${joint_type}" />
-    <xacro:finger side="${side}" idx="3" x="0.03995" y="${-0.04383*reflect}" z="0.014" r="0" p="-${M_pi/2 + thumb_angle}" yaw="${-(2.3562+thumb_angle)*reflect}" reflect="${reflect}" joint_type="${joint_type}" />
+    <!--
+    <xacro:finger side="${side}" idx="0" x="0.140" y="0.00000" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" />
+    <xacro:finger side="${side}" idx="1" x="0.115" y="${0.03122*reflect}" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" />
+    <xacro:finger side="${side}" idx="2" x="0.090" y="${0.06245*reflect}" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" />
+    <xacro:finger side="${side}" idx="3" x="0.03995" y="${-0.04383*reflect}" z="0.014" r="0" p="-${M_pi/2 + thumb_angle}" yaw="${-(2.3562+thumb_angle)*reflect}" reflect="${reflect}" />
+    -->
+    <xacro:finger side="${side}" idx="0" x="0.140" y="0.00000" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" />
+    <xacro:finger side="${side}" idx="1" x="0.115" y="${0.03122*reflect}" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" />
+    <xacro:finger side="${side}" idx="2" x="0.090" y="${0.06245*reflect}" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" />
+    <xacro:finger side="${side}" idx="3" x="0.03995" y="${-0.04383*reflect}" z="0.014" r="0" p="-${M_pi/2}" yaw="${-(2.3562)*reflect}" reflect="${reflect}" />
 
     <!-- not needed unless simulating the hand by itself
     <xacro:sandia_hand_gazebo_controller side="${side}" />

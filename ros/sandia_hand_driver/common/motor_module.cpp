@@ -53,7 +53,7 @@ typedef struct
   int32_t  fmcb_hall_tgt[3];
   int32_t  fmcb_hall_pos[3];
 } finger_status_t;
-
+/*
 static void print_uint16_array(const char *name, 
                                const uint16_t *p, const uint16_t len)
 {
@@ -62,7 +62,7 @@ static void print_uint16_array(const char *name,
     printf("%06d ", p[i]);
   printf("\n");
 }
-
+*/
 void MotorModule::rxFingerStatus(const uint8_t *payload, 
                                  const uint16_t payload_len)
 {

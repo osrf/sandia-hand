@@ -241,12 +241,16 @@ void pb_process_packet(const uint8_t pkt_addr,
       g_status.pp_tactile_time = 0; // TODO
       for (int i = 0; i < PP_NUM_TAXELS*2; i++) 
         *(((uint8_t *)g_status.pp_tactile) + i) = payload[i];
+      for (int i = 0; i < STATUS_IMU_LEN*2; i++)
+        *(((uint8_t *)g_status.pp_imu_data)+i) = payload[PP_NUM_TAXELS*2 + i];
     }
     else if (g_pb_poll_state == PB_PS_DP_TACTILE)
     {
       g_status.dp_tactile_time = 0; // TODO
       for (int i = 0; i < DP_NUM_TAXELS*2; i++)
         *(((uint8_t *)g_status.dp_tactile) + i) = payload[i];
+      for (int i = 0; i < STATUS_IMU_LEN*2; i++)
+        *(((uint8_t *)g_status.dp_imu_data)+i) = payload[DP_NUM_TAXELS*2 + i];
     }
   }
   else if (pkt_type == 0x12) // imu query

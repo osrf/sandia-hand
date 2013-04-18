@@ -282,7 +282,7 @@ void rxFingerStatus(const uint8_t finger_idx,
     rfs->hall_tgt[i] = p->fmcb_hall_tgt[2-i];
     rfs->hall_pos[i] = p->fmcb_hall_pos[2-i];
     rfs->fmcb_effort[i] = p->fmcb_effort[2-i];
-    g_last_fmcb_hall_pos[finger_idx][i] = p->fmcb_hall_pos[i]; // gross
+    g_last_fmcb_hall_pos[finger_idx][i] = p->fmcb_hall_pos[2-i]; // gross
   }
   if (g_raw_finger_status_pubs[finger_idx])
     g_raw_finger_status_pubs[finger_idx]->publish(g_raw_finger_status);

@@ -157,9 +157,9 @@ bool MotorModule::setJointLimits(const float *lower, const float *upper)
 bool MotorModule::setHallOffsets(const int32_t *offsets)
 {
   bool all_ok = true;
-  all_ok &= setParamInt("m0_offset", offsets[0]);
+  all_ok &= setParamInt("m0_offset", offsets[2]);
   all_ok &= setParamInt("m1_offset", offsets[1]);
-  all_ok &= setParamInt("m2_offset", offsets[2]);
+  all_ok &= setParamInt("m2_offset", offsets[0]);
   return all_ok;
 }
 

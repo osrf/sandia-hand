@@ -12,7 +12,7 @@ static Async g_twid_async; // callback structure. presumably can't be automatic
 static bool g_imu_take_measurement = false;
 volatile int16_t g_imu_data[6] = {0}; // global buffer
 static int16_t g_imu_accel_data[3] = {0}, g_imu_mag_data[3] = {0};
-typedef enum { IMU_POWER_ON_REQ , IMU_POWER_ON,
+typedef enum { IMU_POWER_ON_REQ , IMU_POWER_ON, IMU_POWER_JUST_ACCEL,
                IMU_POWER_OFF_REQ, IMU_POWER_OFF } imu_power_state_t; 
 static imu_power_state_t g_imu_power_state = IMU_POWER_OFF;
 #define ACCEL_ADDR 0x19
@@ -122,6 +122,13 @@ void imu_idle()
         TWID_Read(&g_twid, MAG_ADDR  , 0x03, 1, 
                   (uint8_t *)g_imu_mag_data, 6, &g_twid_async);
     }
+    else if (g_imu_power_state == IMU_POWER_JUST_ACCEL)
+    {
+      g_imu_meas = (g_imu_meas + 1) % (IMU_MEAS_LAST + 1);
+      if (g_imu_meas == IMU_MEAS_ACCEL)
+        TWID_Read(&g_twid, ACCEL_ADDR, 0x28 | 0x80, 1,
+                  (uint8_t *)g_imu_accel_data, 6, &g_twid_async);
+    }
     else if (g_imu_power_state == IMU_POWER_ON_REQ)
     {
       imu_reg_write(MAG_ADDR  , 0x02, 0x00); // continuous-conversion mode
@@ -131,8 +138,8 @@ void imu_idle()
     else if (g_imu_power_state == IMU_POWER_OFF_REQ)
     {
       imu_reg_write(MAG_ADDR  , 0x02, 0x03); // sleep mode zzzzzzzzz
-      imu_reg_write(ACCEL_ADDR, 0x20, 0x03); // low-power mode
-      g_imu_power_state = IMU_POWER_OFF;
+      //imu_reg_write(ACCEL_ADDR, 0x20, 0x03); // low-power mode
+      g_imu_power_state = IMU_POWER_JUST_ACCEL;
     }
   }
 }

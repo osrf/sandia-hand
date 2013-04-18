@@ -250,9 +250,14 @@ AutoTab::AutoTab(QWidget *parent, ros::NodeHandle &nh,
   }
   QVBoxLayout *main_layout = new QVBoxLayout;
   main_layout->addStretch(1);
-  main_layout->addWidget(home_button_ = new QPushButton(tr("Home")));
-  home_button_->setCheckable(true);
-  connect(home_button_, SIGNAL(toggled(bool)), this, SLOT(home(bool)));
+  main_layout->addWidget(automove_button_ = new QPushButton(tr("Auto-Move")));
+  main_layout->addWidget(home_button_ = new QPushButton(tr("Set Home")));
+  main_layout->addWidget(move_thumb_button_ = 
+                         new QPushButton(tr("Offset Thumb")));
+  automove_button_->setCheckable(true);
+  connect(move_thumb_button_, SIGNAL(clicked()), this, SLOT(move_thumb()));
+  connect(home_button_, SIGNAL(clicked()), this, SLOT(home()));
+  connect(automove_button_, SIGNAL(toggled(bool)), this, SLOT(automove(bool)));
   setLayout(main_layout);
   ros_update_timer_ = new QTimer(this);
   connect(ros_update_timer_, SIGNAL(timeout()), this, SLOT(rosTimerTimeout()));
@@ -284,7 +289,7 @@ void AutoTab::cal_finger_status_cb(
   //if (finger_idx != 0)
   //  return;
   double t = ros::Time::now().toSec();
-  if (t - last_homing_time_ > 3.0)
+  if (t - last_homing_time_ > 1.0)
   {
     status_rx_complete_[finger_idx] = true;
     const double max_move = 0.1;
@@ -326,9 +331,43 @@ void AutoTab::cal_finger_status_cb(
   //printf("finger status cb for finger %d\n", finger_idx);
 }
 
-void AutoTab::home(bool enabled)
+void AutoTab::automove(bool enabled)
 {
   printf("AutoTab::home(%d)\n", (int)enabled);
   homing_enabled_ = enabled;
+}
+
+void AutoTab::home()
+{
+  printf("set home\n");
+  for (int finger_idx = 0; finger_idx < 4; finger_idx++)
+  {
+    ros::ServiceClient set_home_client = 
+      nh_.serviceClient<sandia_hand_msgs::SetFingerHome>("set_finger_home");
+    sandia_hand_msgs::SetFingerHome srv;
+    srv.request.finger_idx = finger_idx;
+    if (!set_home_client.call(srv))
+    {
+      ROS_ERROR("couldn't set finger %d home", finger_idx);
+      return;
+    }
+    ROS_INFO("set home, finger %d", finger_idx);
+  }
+}
+
+void AutoTab::move_thumb()
+{
+  if (homing_enabled_)
+  {
+    printf("couldn't move thumb since it's still trying to auto move\n");
+    return;
+  }
+  printf("moving thumb\n");
+  for (int i = 0; i < 12; i++)
+    rjc_.position[i] = 0;
+  rjc_.position[9] = -M_PI/4;
+  relative_finger_pub_->publish(rjc_);
+  for (int i = 0; i < 12; i++)
+    rjc_.position[i] = 0;
 }
 

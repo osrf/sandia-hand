@@ -268,8 +268,10 @@ void comms_process_packet(uint8_t pkt_addr, uint16_t payload_len,
     __disable_irq(); // todo: something less drastic. just prevent systicks.
     for (int i = 0; i < TACTILE_NUM_TAXELS; i++)
       *((uint16_t *)(&g_tx_pkt_buf[5+i*2])) = g_tactile_last_scan[i];
+    for (int i = 0; i < 12; i++)
+      g_tx_pkt_buf[5+TACTILE_NUM_TAXELS*2+i] = ((uint8_t *)g_imu_data)[i];
     __enable_irq();
-    comms_send_packet(0x10, 12);
+    comms_send_packet(0x10, 2*TACTILE_NUM_TAXELS + 12);
   }
   else if (pkt_type == 0x11) // subsystem power
   {

@@ -48,7 +48,7 @@ class AutoTab : public QWidget
   Q_OBJECT
 public:
   AutoTab(QWidget *parent, ros::NodeHandle &nh, ros::Publisher *finger_pub);
-  QPushButton *home_button_;
+  QPushButton *automove_button_, *home_button_, *move_thumb_button_;
 private:
   ros::NodeHandle   nh_;
   ros::Publisher   *relative_finger_pub_;
@@ -62,7 +62,9 @@ private:
   bool status_rx_complete_[4];
   sandia_hand_msgs::RelativeJointCommands rjc_;
 public slots:
-  void home(bool enabled);
+  void automove(bool enabled);
+  void home();
+  void move_thumb();
   void rosTimerTimeout();
 };
 

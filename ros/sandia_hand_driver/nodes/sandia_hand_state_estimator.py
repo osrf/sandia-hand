@@ -75,6 +75,7 @@ class HandStateEstimator:
     z0 = mma[2]
     x2 = ppa[0]
     y2 = ppa[1]
+    z2 = ppa[2]
     det_j0 = x0*x0 + y0*y0 - y2*y2
     j0_sol = []
     if det_j0 > 0:
@@ -92,24 +93,53 @@ class HandStateEstimator:
     if len(j0_valid) == 1:
       j0 = j0_valid[0]
       self.cfs[finger_idx].joints_inertial[0] = j0
-      self.cfs[finger_idx].joints_inertial_variance[0] = 0.1 # finite
-      # finally, estimate the middle joint
+      self.cfs[finger_idx].joints_inertial_variance[0] = 0.1 # it's finite
+      # finally, estimate the middle joint against both measurement
+      # singularities
       gamma = (x0*math.cos(j0) + y0*math.sin(j0))
-      det_j1 = gamma**2 - z0*z0 - x2*x2
-      if det_j1 > 0:
-        j1_sol = [math.atan2(x2,  math.sqrt(det_j1)) - math.atan2(gamma,-z0), \
-                  math.atan2(x2, -math.sqrt(det_j1)) - math.atan2(gamma,-z0)]
-        j1_valid = []
+      det_j1_z = gamma**2 + z0*z0 - z2*z2
+      j1_valid_z = []
+      if det_j1_z > 0:
+        j1_sol = [math.atan2(z2, math.sqrt(det_j1_z))-math.atan2(z0,gamma),\
+                  math.atan2(z2,-math.sqrt(det_j1_z))-math.atan2(z0,gamma)]
         for j1 in j1_sol:
-          x = self.simplify_angle(j1)
+          x = -self.simplify_angle(j1) # flip sign to change to hand frame...
           if x > -1.6 and x < 1.6:
-            j1_valid.append(x)
-        if finger_idx == 1:
-          print j1_valid
-      else:
-        if finger_idx == 1:
-          print "j1 estimate invalid"
-        #if len(j1_valid) == 1:
+            j1_valid_z.append(x)
+      # try it against the other measurement singularity now
+      j1_valid_x = []
+      det_j1_x = gamma**2 + z0*z0 - x2*x2
+      if det_j1_x > 0:
+        j1_sol = [math.atan2(x2, math.sqrt(det_j1_x))-math.atan2(gamma,-z0),\
+                  math.atan2(x2,-math.sqrt(det_j1_x))-math.atan2(gamma,-z0)]
+        for j1 in j1_sol:
+          x = -self.simplify_angle(j1) # flip sign to change to hand frame...
+          if x > -1.6 and x < 1.6:
+            j1_valid_x.append(x)
+
+      # the "right" answer for middle joint will emerge from both calculations
+      # if x or z calculations are hosed, take the other
+      j1_winner = 0
+      j1_valid = False
+      if   len(j1_valid_x) == 0 and len(j1_valid_z) == 1:
+        j1_winner = j1_valid_z[0]
+        j1_valid = True
+      elif len(j1_valid_z) == 0 and len(j1_valid_x) == 1:
+        j1_winner = j1_valid_x[0]
+        j1_valid = True
+      else: 
+        for j1_x in j1_valid_x:
+          for j1_z in j1_valid_z:
+            if abs(j1_x - j1_z) < 0.001:
+              j1_winner = j1_x
+              j1_valid = True
+
+      if j1_valid:
+        self.cfs[finger_idx].joints_inertial[1] = j1_winner
+        self.cfs[finger_idx].joints_inertial_variance[1] = 0.1 # it's finite
+
+      #if finger_idx == 3:
+      #  print [j1_valid_x, j1_valid_z]
 
     #if finger_idx == 3:
     #  print "j0: %.3f   %.3f" % (j0[0], j0[1])
@@ -118,7 +148,7 @@ class HandStateEstimator:
       #print "    det: %.3f" % det
     ########################################################################
     # calculate joint angles based on hall sensor offsets
-    H2R = 3.14159 * 2.0 / 36.0  # hall state to radians conversion
+    H2R = 3.14159 * 2.0 / 36.0  # hall state to radians: 18 pole pairs
     R0_INV = 1.0 / 231.0
     R1_INV = 1.0 / 196.7
     R2_INV = 1.0 / 170.0

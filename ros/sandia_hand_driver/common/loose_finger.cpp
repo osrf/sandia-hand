@@ -10,7 +10,7 @@ LooseFinger::LooseFinger() :
   serial_(NULL)
 {
   mm.setRawTx(boost::bind(&LooseFinger::tx, this, _1, _2));
-  mm.registerListenHandler(boost::bind(&LooseFinger::listen, this, _1));
+  registerListenHandler(boost::bind(&LooseFinger::listen, this, _1));
 }
 
 LooseFinger::~LooseFinger()

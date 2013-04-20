@@ -4,6 +4,7 @@
 #include <cstring>
 #include <unistd.h>
 #include <boost/function.hpp>
+#include <boost/bind.hpp>
 #include "sandia_hand/loose_finger.h"
 #include "ros/time.h"
 using namespace sandia_hand;
@@ -80,8 +81,45 @@ int pb(int argc, char **argv, LooseFinger &lf)
   return 0;
 }
 
+typedef struct
+{
+  uint32_t pp_tactile_time;
+  uint32_t dp_tactile_time;
+  uint32_t fmcb_time;
+  uint16_t pp_tactile[6];
+  uint16_t dp_tactile[12];
+  int16_t  pp_imu[6];
+  int16_t  dp_imu[6];
+  int16_t  fmcb_imu[6];
+  uint16_t pp_temp[4];
+  uint16_t dp_temp[4];
+  uint16_t fmcb_temp[3];
+  uint16_t fmcb_voltage;
+  uint16_t fmcb_pb_current;
+  uint32_t pp_strain;
+  int32_t  fmcb_hall_tgt[3];
+  int32_t  fmcb_hall_pos[3];
+  int16_t  fmcb_effort[3];
+} finger_status_t;
+
+void rxFingerStatus(const uint8_t *payload, const uint16_t payload_len)
+{
+  printf("rxFingerStatus\n");
+  printf("  ");
+  finger_status_t *fst = (finger_status_t *)payload;
+  printf("imu: ");
+  for (int i = 0; i < 6; i++)
+    printf("%06d ", fst->dp_imu[i]);
+  printf("\ntactile: ");
+  for (int i = 0; i < 12; i++)
+    printf("%06d ", fst->dp_tactile[i]);
+  printf("\n\n");
+}
+
 int stream(int argc, char **argv, LooseFinger &lf)
 {
+  lf.mm.registerRxHandler(MotorModule::PKT_FINGER_STATUS,
+                          boost::bind(rxFingerStatus, _1, _2));
   if (!lf.mm.setPhalangeAutopoll(true))
   {
     printf("couldn't start phalange autopoll\n");
@@ -166,11 +204,6 @@ int pburn(int argc, char **argv, LooseFinger &lf)
   if (!f)
   {
     printf("couldn't open file %s\n", fn);
-    return 1;
-  }
-  if (fseek(f, 32 * 256, SEEK_SET))
-  {
-    printf("couldn't seek to application image in %s\n", fn);
     return 1;
   }
   printf("powering down phalange bus...\n");
@@ -285,11 +318,6 @@ int dburn(int argc, char **argv, LooseFinger &lf)
   if (!f)
   {
     printf("couldn't open file %s\n", fn);
-    return 1;
-  }
-  if (fseek(f, 32 * 256, SEEK_SET))
-  {
-    printf("couldn't seek to application image in %s\n", fn);
     return 1;
   }
   printf("powering down phalange bus...\n");

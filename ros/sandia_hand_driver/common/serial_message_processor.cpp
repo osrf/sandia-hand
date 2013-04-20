@@ -28,18 +28,13 @@ bool SerialMessageProcessor::ping()
 {
   if (!sendTxBuffer(PKT_PING))
     return false;
-  return listenFor(PKT_PING, 0.1);
+  return listenFor(PKT_PING, 0.2);
 }
 
 void SerialMessageProcessor::rxPing(const uint8_t *data, 
                                     const uint16_t data_len)
 {
   //printf("SerialMessageProcessor::rxPing()\n");
-}
-
-uint8_t *SerialMessageProcessor::getTxBuffer()
-{
-  return (uint8_t *)(&outgoing_packet_[5]);
 }
 
 bool SerialMessageProcessor::sendTxBuffer(const uint8_t pkt_id, 

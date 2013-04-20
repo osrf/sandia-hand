@@ -115,6 +115,48 @@ bool MotorModule::phalangeTxRx(const uint8_t *data, const uint16_t data_len)
   memcpy(getTxBuffer()+4, data, data_len);
   return sendTxBuffer(PKT_PHALANGE_TXRX, data_len + 4);
 }
+
+bool MotorModule::setControlMode(const uint8_t  control_mode,
+                                 const float   *pos,
+                                 const uint8_t *effort)
+{
+  // this is a private function because it's easy to make the hand go bonkers
+  // if you send wild inputs here.
+  getTxBuffer()[0] = control_mode;
+  for (int i = 0; i < 3; i++)
+  {
+    serializeFloat32(pos ? pos[i] : 0, getTxBuffer() + 1 + 4*i);
+    getTxBuffer()[13+i] = effort ? effort[i] : 50;
+  }
+  if (!sendTxBuffer(PKT_CONTROL_MODE, 1 + 4*3 + 3))
+    return false;
+  return true;
+}
+
+bool MotorModule::setMotorsIdle()
+{
+  return setControlMode(CM_IDLE, NULL, NULL);
+}
+
+bool MotorModule::setJointPosHome()
+{
+  return setControlMode(CM_JOINT_SPACE_WITH_MAX_EFFORT, NULL, NULL);
+}
+
+bool MotorModule::setJointPos(const float *pos, const uint8_t *effort)
+{
+  if (!pos || !effort)
+    return false;
+  return setControlMode(CM_JOINT_SPACE_WITH_MAX_EFFORT, pos, effort);
+}
+
+bool MotorModule::setRelativeJointPos(const float *pos, const uint8_t *effort)
+{
+  if (!pos || !effort)
+    return false;
+  return setControlMode(CM_JOINT_SPACE_RELATIVE, pos, effort);
+}
+
 /*  
                                const uint16_t timeout_ms)
   if (listenFor(PKT_PHALANGE_TXRX, 0.1f + 0.001f * timeout_ms))

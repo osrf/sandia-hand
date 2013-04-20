@@ -5,3 +5,8 @@ message("library dirs: " ${sandia_hand_driver_LIBRARY_DIRS})
 message("blah" ${blah})
 set_target_properties(sandia_hand_node PROPERTIES INSTALL_RPATH ${${PKG_NAME}_LIBRARY_DIRS})
 install(TARGETS sandia_hand_node DESTINATION bin)
+
+rosbuild_add_executable(sandia_hand_loose_finger_node sandia_hand_loose_finger_node.cpp)
+target_link_libraries(sandia_hand_loose_finger_node sandia_hand)
+set_target_properties(sandia_hand_loose_finger_node PROPERTIES INSTALL_RPATH ${${PKG_NAME}_LIBRARY_DIRS})
+install(TARGETS sandia_hand_loose_finger_node DESTINATION bin)

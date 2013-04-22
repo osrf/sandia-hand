@@ -4,13 +4,12 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import roslib.packages
 import roslib; roslib.load_manifest('sandia_hand_driver')
-import rospy, math
+import rospy, math, signal
 from sandia_hand_msgs.msg import RawFingerStatus
 
 class MaintenanceWindow(QWidget):
   def __init__(self):
     super(MaintenanceWindow, self).__init__()
-    rospy.init_node('sandia_hand_maintenance')
     self.bootloader_btn = QPushButton("Install Bootloader via JTAG")
     self.bootloader_btn.clicked.connect(self.bootloaderClicked)
     self.application_btn = QPushButton("Install Application over USB/serial")
@@ -32,11 +31,11 @@ class MaintenanceWindow(QWidget):
 
     test_grid = QGridLayout(test_tab)
     test_grid.setSpacing(5)
-    test_grid.setColumnMinimumWidth(0, 40)
+    test_grid.setColumnMinimumWidth(0, 15)
     test_grid.setColumnStretch(2, 1)
     test_grid.addWidget(QLabel("Accelerometer magnitude"), 0, 2)
-    self.accel_mag_light = QLabel("FAIL")
-    #self.accel_mag_light.setStyleSheet("QWidget {background-color:red}")
+    self.accel_mag_light = QLabel() #"FAIL")
+    self.accel_mag_light.setStyleSheet("QWidget {background-color:red}")
     self.accel_mag_label = QLabel("0")
     self.tactile_min = [65535] * 12
     self.tactile_max = [0] * 12
@@ -46,7 +45,8 @@ class MaintenanceWindow(QWidget):
     test_grid.addWidget(self.accel_mag_light, 0, 0)
     test_grid.addWidget(self.accel_mag_label, 0, 1)
     for i in xrange(0,12):
-      self.tactile_lights.append(QLabel("FAIL"))
+      self.tactile_lights.append(QLabel())
+      self.tactile_lights[i].setStyleSheet("QWidget {background-color:red}")
       test_grid.addWidget(self.tactile_lights[i], i+1, 0)
       self.tactile_labels.append(QLabel("0"))
       test_grid.addWidget(self.tactile_labels[i], i+1, 1)
@@ -69,32 +69,42 @@ class MaintenanceWindow(QWidget):
     self.show()
     self.finger_sub = rospy.Subscriber('raw_finger_status', RawFingerStatus, 
                                        self.finger_status_cb)
+    self.connect(self, SIGNAL('updateUI'), self.onUpdateUI)
   def finger_status_cb(self, msg):
     #print "finger status"
     f3_accel_mag_squared = 0
     for i in xrange(0,3):
       f3_accel_mag_squared += msg.dp_accel[i]**2
     f3_accel_mag = math.sqrt(f3_accel_mag_squared)
-    self.accel_mag_label.setText("%d" % f3_accel_mag)
-    if (f3_accel_mag > 800 and f3_accel_mag < 1200):
-      #self.accel_mag_light.setStyleSheet("QWidget {background-color:green}")
-      self.accel_mag_light.setText("OK")
-    else:
-      #self.accel_mag_light.setStyleSheet("QWidget {background-color:red}")
-      self.accel_mag_light.setText("FAIL")
+    tactile_raw = [0]*12
+    tactile_range = [0]*12
     for i in xrange(0,12):
       t = msg.dp_tactile[i]
-      self.tactile_desc[i].setText("Tactile %02d: %d" % (i, t))
+      tactile_raw[i] = t
       if t > self.tactile_max[i]:
         self.tactile_max[i] = t
       if t < self.tactile_min[i]:
         self.tactile_min[i] = t
-      td = self.tactile_max[i] - self.tactile_min[i]
-      self.tactile_labels[i].setText("%d" % td)
-      if td > 3000:
-        self.tactile_lights[i].setText("OK")
+      tactile_range[i] = self.tactile_max[i] - self.tactile_min[i]
+    self.emit(SIGNAL('updateUI'), f3_accel_mag, tactile_raw, tactile_range)
+  def onUpdateUI(self, f3_accel_mag, tactile_raw, tactile_range):
+    #print "onUpdateUI %d" % f3_accel_mag
+    self.accel_mag_label.setText("%d" % f3_accel_mag)
+    if (f3_accel_mag > 800 and f3_accel_mag < 1200):
+      self.accel_mag_light.setStyleSheet("QWidget {background-color:green}")
+      #self.accel_mag_light.setText("OK")
+    else:
+      self.accel_mag_light.setStyleSheet("QWidget {background-color:red}")
+      #self.accel_mag_light.setText("FAIL")
+    for i in xrange(0,12):
+      self.tactile_desc[i].setText("Tactile %02d: %d" % (i, tactile_raw[i]))
+      self.tactile_labels[i].setText("%d" % tactile_range[i])
+      if tactile_range[i] > 3000:
+        self.tactile_lights[i].setStyleSheet("QWidget {background-color:green}")
+        #self.tactile_lights[i].setText("OK")
       else:
-        self.tactile_lights[i].setText("FAIL")
+        self.tactile_lights[i].setStyleSheet("QWidget {background-color:red}")
+        #self.tactile_lights[i].setText("FAIL")
   def bootloaderClicked(self):
     cmd = "cd %s && bin/loose_finger_cli /dev/ttyUSB0 pb on && sleep 1 && cd %s/../../firmware/build && make f3-bl-gpnvm && make f3-bl-program && echo \"\ntasks complete\"" % (self.shd, self.shd)
     self.process = QProcess(self)
@@ -120,6 +130,8 @@ class MaintenanceWindow(QWidget):
     print "readerrors"
 
 if __name__ == '__main__':
+  rospy.init_node('sandia_hand_maintenance')
+  signal.signal(signal.SIGINT, signal.SIG_DFL) 
   app = QApplication(sys.argv)
   mw = MaintenanceWindow()
   sys.exit(app.exec_())

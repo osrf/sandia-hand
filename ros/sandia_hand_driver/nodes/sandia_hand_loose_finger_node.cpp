@@ -74,7 +74,9 @@ void jointCommandsCallback(LooseFinger *finger,
     ROS_WARN("ignoring joint commands message with insufficient length");
     return; // woah there partner
   }
-  float pos[3] = {msg->position[0], msg->position[1], msg->position[2]};
+  float pos[3] = { (float)msg->position[0], 
+                   (float)msg->position[1], 
+                   (float)msg->position[2]  };
   uint8_t max_effort_dummy[3] = {50, 50, 50}; // todo: use max_effort params
   finger->mm.setJointPos(pos, max_effort_dummy);
 }
@@ -199,7 +201,7 @@ int main(int argc, char **argv)
   ros::Publisher raw_finger_status_pub;
   if (!finger.pp.ping())
     finger.mm.setPhalangeBusPower(true);
-  listenToFinger(&finger, 1.0);
+  listenToFinger(&finger, 2.0);
   if (!finger.pp.blBoot())
     ROS_WARN("couldn't boot finger proximal phalange");
   if (!finger.dp.blBoot())

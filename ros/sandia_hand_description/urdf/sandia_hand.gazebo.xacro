@@ -72,10 +72,10 @@
   <xacro:property name="image_format" value="L8" />
   <xacro:property name="clip_near" value="0.02" />
   <xacro:property name="clip_far" value="100" />
-  <!-- Noise is sampled independently per pixel on each frame.  
+  <!-- Noise is sampled independently per pixel on each frame.
        That pixel's noise value is added to each of its color
        channels, which at that point lie in the range [0,1].
-       The stddev value of 0.007 is based on experimental data 
+       The stddev value of 0.007 is based on experimental data
        from a camera in a Sandia hand pointed at a static scene
        in a couple of different lighting conditions.  -->
   <xacro:property name="noise_type" value="gaussian" />
@@ -196,5 +196,34 @@
       </plugin>
     </gazebo>
   </xacro:macro>
-</robot>
 
+  <xacro:macro name="finger_tactile_sensors_gazebo" params="side idx">
+    <gazebo reference="${side}_f${idx}_1">
+      <sensor name="${side}_f${idx}_tactile" type="contact">
+        <update_rate>30.0</update_rate>
+        <contact>
+          <collision>${side}_f${idx}_1_collision</collision>
+        </contact>
+      </sensor>
+    </gazebo>
+    <gazebo reference="${side}_f${idx}_2">
+      <sensor name="${side}_f${idx}_tactile" type="contact">
+        <update_rate>30.0</update_rate>
+        <contact>
+          <collision>${side}_f${idx}_2_collision</collision>
+        </contact>
+      </sensor>
+    </gazebo>
+  </xacro:macro>
+  <xacro:macro name="sandia_hand_tactile_sensors_gazebo" params="side">
+    <gazebo reference="${side}_palm">
+      <sensor name="${side}_palm_tactile" type="contact">
+        <update_rate>30.0</update_rate>
+        <contact>
+          <collision>${side}_palm_collision</collision>
+        </contact>
+      </sensor>
+    </gazebo>
+  </xacro:macro>
+
+</robot>

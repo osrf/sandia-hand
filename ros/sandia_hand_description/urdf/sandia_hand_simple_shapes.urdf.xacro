@@ -269,6 +269,7 @@
 
     <xacro:finger_transmission side="${side}" idx="${idx}" x="${x}" y="${y}" z="${z}" r="${r}" p="${p}" yaw="${yaw}"/>
     <xacro:finger_gazebo side="${side}" idx="${idx}"/>
+    <xacro:finger_tactile_sensors_gazebo side="${side}" idx="${idx}" />
   </xacro:macro>
 
   <!--
@@ -435,6 +436,6 @@
     -->
     <xacro:sandia_hand_gazebo side="${side}" />
     <xacro:sandia_hand_cameras_gazebo side="${side}" reflect="${reflect}" parent="${parent}" />
+    <xacro:sandia_hand_tactile_sensors_gazebo side="${side}" />
   </xacro:macro>
 </robot>
-

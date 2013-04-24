@@ -481,14 +481,14 @@ bool SerialMessageProcessor::setParamFloat(const std::string &name,
                                            const float val)
 {
   //printf("setParamFloat(%s, %f)\n", name.c_str(), val);
-  if (param_names_.size() == 0)
-    if (!retrieveParamNames())
+  if (params_.size() == 0)
+    if (!retrieveParams())
       return false;
   // search through the param names vector to find what we want.
   // todo: if it ever matters, set up a STL map to do this
   int found_idx = -1;
-  for (int i = 0; found_idx < 0 && i < (int)param_names_.size(); i++)
-    if (name == param_names_[i])
+  for (int i = 0; found_idx < 0 && i < (int)params_.size(); i++)
+    if (name == params_[i].getName())
       found_idx = i;
   if (found_idx < 0)
   {
@@ -511,8 +511,8 @@ bool SerialMessageProcessor::setParamInt(const std::string &name,
                                          const int32_t val)
 {
   //printf("setParamInt(%s, %d)\n", name.c_str(), val);
-  if (param_names_.size() == 0)
-    if (!retrieveParamNames())
+  if (params_.size() == 0)
+    if (!retrieveParams())
     {
       printf("unable to retrieve param names\n");
       return false;
@@ -520,8 +520,8 @@ bool SerialMessageProcessor::setParamInt(const std::string &name,
   // search through the param names vector to find what we want.
   // todo: if it ever matters, set up a STL map to do this
   int found_idx = -1;
-  for (int i = 0; found_idx < 0 && i < (int)param_names_.size(); i++)
-    if (name == param_names_[i])
+  for (int i = 0; found_idx < 0 && i < (int)params_.size(); i++)
+    if (name == params_[i].getName())
       found_idx = i;
   if (found_idx < 0)
   {
@@ -545,7 +545,7 @@ bool SerialMessageProcessor::setParamInt(const std::string &name,
   return true;
 }
 
-bool SerialMessageProcessor::retrieveParamNames()
+bool SerialMessageProcessor::retrieveParams()
 {
   // first, figure out how many parameters are stored on the device
   //printf("retrieveParamNames()\n");
@@ -561,8 +561,7 @@ bool SerialMessageProcessor::retrieveParamNames()
   }
   uint16_t n_params = deserializeUint16(&rx_pkt_data_[0]);
   //printf("%d params on the device\n", n_params);
-  vector<string> name_buf;
-  name_buf.resize(n_params);
+  vector<Param> param_buf;
   for (uint16_t param_idx = 0; param_idx < n_params; param_idx++)
   {
     serializeUint16(param_idx, getTxBuffer());
@@ -588,18 +587,35 @@ bool SerialMessageProcessor::retrieveParamNames()
     strncpy(name_cstr, (const char *)&rx_pkt_data_[2], len - 1);
     //printf("param %d has len %d\n", param_idx, len);
     name_cstr[len - 1] = 0; // null terminate plz
-    name_buf[param_idx] = string(name_cstr);
+    const char param_name_prefix = rx_pkt_data_[1];
+    // retrieve param value
+    serializeUint16(param_idx, getTxBuffer());
+    if (!sendTxBuffer(PKT_READ_PARAM_VALUE, 2))
+      return false;
+    if (!listenFor(PKT_READ_PARAM_VALUE, 0.25))
+      return false;
+    if (rx_pkt_data_.size() != 4)
+      return false;
+    if (param_name_prefix == 'f')
+      param_buf.push_back(Param(name_cstr, *((float *)(&rx_pkt_data_[0]))));
+    else
+    {
+      uint32_t ui = *((uint32_t *)(&rx_pkt_data_[0]));
+      param_buf.push_back(Param(name_cstr, (int)ui));
+    }
   }
-  param_names_ = name_buf; // we got em all.
+  params_ = param_buf; // we got em all. bag em.
   return true;
 }
 
 bool SerialMessageProcessor::getParamNames(vector<string> &names)
 {
-  if (param_names_.size() == 0)
-    if (!retrieveParamNames())
+  if (!params_.size())
+    if (!retrieveParams())
       return false;
-  names = param_names_;
+  names.resize(params_.size());
+  for (int i = 0; i < (int)params_.size(); i++)
+    names[i] = params_[i].getName();
   return true;
 }
 

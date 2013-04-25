@@ -9,7 +9,4 @@
   <depend package="camera_info_manager"/>
   <depend package="sandia_hand_msgs"/>
   <depend package="osrf_msgs"/>
-  <depend package="dynamic_reconfigure"/>
 </package>
-
-

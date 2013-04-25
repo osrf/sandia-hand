@@ -47,7 +47,9 @@
     </gazebo>
   </xacro:macro>
   <xacro:macro name="sandia_hand_gazebo" params="side">
-    <gazebo reference="${side}_palm">
+<!--    <gazebo reference="${side}_palm">-->
+    <gazebo reference="sandia_hand">
+
       <mu1>0.9</mu1>
       <mu2>0.9</mu2>
     </gazebo>
@@ -197,7 +199,7 @@
     </gazebo>
   </xacro:macro>
 
-  <xacro:macro name="finger_tactile_sensors_gazebo" params="side idx">
+<!--  <xacro:macro name="finger_tactile_sensors_gazebo" params="side idx">
     <gazebo reference="${side}_f${idx}_1">
       <sensor name="${side}_f${idx}_tactile" type="contact">
         <update_rate>30.0</update_rate>
@@ -214,15 +216,36 @@
         </contact>
       </sensor>
     </gazebo>
-  </xacro:macro>
-  <xacro:macro name="sandia_hand_tactile_sensors_gazebo" params="side">
-    <gazebo reference="${side}_palm">
-      <sensor name="${side}_palm_tactile" type="contact">
+  </xacro:macro>-->
+  <xacro:macro name="sandia_hand_tactile_sensors_gazebo" params="side" >
+    <gazebo>
+<!--      <sensor name="${side}_tactile" type="contact">
         <update_rate>30.0</update_rate>
         <contact>
           <collision>${side}_palm_collision</collision>
+          <collision>${side}_f1_1_collision</collision>
+          <collision>${side}_f1_2_collision</collision>
+          <collision>${side}_f2_1_collision</collision>
+          <collision>${side}_f2_2_collision</collision>
+          <collision>${side}_f3_1_collision</collision>
+          <collision>${side}_f3_2_collision</collision>
         </contact>
-      </sensor>
+        <plugin filename="libContactPlugin.so" name="sandia_contact_plugin">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>0.0</updateRate>
+        </plugin>
+      </sensor>-->
+      <plugin filename="libContactPlugin.so" name="sandia_contact_plugin">
+         <contact>
+          <collision>${side}_palm::${side}_palm_collision</collision>
+          <collision>${side}_f1_1::${side}_f1_1_collision</collision>
+          <collision>${side}_f1_2::${side}_f1_2_collision</collision>
+          <collision>${side}_f2_1::${side}_f2_1_collision</collision>
+          <collision>${side}_f2_2::${side}_f2_2_collision</collision>
+          <collision>${side}_f3_1::${side}_f3_1_collision</collision>
+          <collision>${side}_f3_2::${side}_f3_2_collision</collision>
+        </contact>
+      </plugin>
     </gazebo>
   </xacro:macro>
 

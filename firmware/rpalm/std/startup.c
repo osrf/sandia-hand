@@ -4,7 +4,7 @@
 #include "sam3s/core_cm3.h"
 #include "comms.h"
 #include "imu.h"
-#include "status.h"
+#include "state.h"
 
 #define STACK_SIZE       0x2000     /** Stack size (in 32-bit words) */
 __attribute__ ((aligned(8),section(".stack"))) uint32_t pdwStack[STACK_SIZE];
@@ -59,7 +59,7 @@ IntFunc exception_table[] = {
     unmapped_error, //TWI1_IrqHandler,    /* 20 TWI 1 */
     unmapped_error, //SPI_IrqHandler,     /* 21 SPI */
     unmapped_error, //SSC_IrqHandler,     /* 22 SSC */
-    status_tc0_irq, //TC0_IrqHandler,     /* 23 Timer Counter 0 */
+    state_tc0_irq, //TC0_IrqHandler,     /* 23 Timer Counter 0 */
     unmapped_error, //TC1_IrqHandler,     /* 24 Timer Counter 1 */
     unmapped_error, //TC2_IrqHandler,     /* 25 Timer Counter 2 */
     unmapped_error, //TC3_IrqHandler,     /* 26 Timer Counter 3 */

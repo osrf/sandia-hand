@@ -8,6 +8,7 @@
 #include <sandia_hand_msgs/RelativeJointCommands.h>
 #include "sandia_hand/loose_finger.h"
 #include <sandia_hand_msgs/GetParameters.h>
+#include <sandia_hand_msgs/SetParameters.h>
 using namespace sandia_hand;
 using std::string;
 using std::vector;
@@ -89,6 +90,23 @@ bool getParametersSrv(LooseFinger *finger,
     }
   }
   return true;
+}
+
+bool setParametersSrv(LooseFinger *finger,
+                      sandia_hand_msgs::SetParameters::Request &req,
+                      sandia_hand_msgs::SetParameters::Response &res)
+{
+  ROS_INFO("get parameters");
+  bool all_ok = true;
+  for (size_t i = 0; i < req.parameters.size(); i++)
+  {
+    const sandia_hand_msgs::Parameter *p = &req.parameters[i]; // save typing
+    if (p->val_type == sandia_hand_msgs::Parameter::INTEGER) //Param::PARAM_INT)
+      all_ok &= finger->mm.setParamInt(p->name, (int32_t)p->i_val);
+    else
+      all_ok &= finger->mm.setParamFloat(p->name, (float)p->f_val);
+  }
+  return all_ok;
 }
 
 void jointCommandsCallback(LooseFinger *finger, 
@@ -266,6 +284,11 @@ int main(int argc, char **argv)
     nh.advertiseService<sandia_hand_msgs::GetParameters::Request,
                         sandia_hand_msgs::GetParameters::Response>
       ("get_parameters", boost::bind(getParametersSrv, &finger, _1, _2));
+
+  ros::ServiceServer param_set_srv =
+    nh.advertiseService<sandia_hand_msgs::SetParameters::Request,
+                        sandia_hand_msgs::SetParameters::Response>
+      ("set_parameters", boost::bind(setParametersSrv, &finger, _1, _2));
 
   listenToFinger(&finger, 0.001);
   ros::spinOnce();

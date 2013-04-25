@@ -11,7 +11,7 @@ Param::Param(const char *name, float val)
 {
 }
 
-int Param::getIntVal()
+int Param::getIntVal() const
 {
   if (type_ == PARAM_INT)
     return val_int_;
@@ -19,7 +19,7 @@ int Param::getIntVal()
     return (int)val_float_;
 }
 
-float Param::getFloatVal()
+float Param::getFloatVal() const
 {
   if (type_ == PARAM_FLOAT)
     return val_float_;

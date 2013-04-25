@@ -619,3 +619,9 @@ bool SerialMessageProcessor::getParamNames(vector<string> &names)
   return true;
 }
 
+const vector<Param> &SerialMessageProcessor::getParams()
+{
+  if (!params_.size())
+    retrieveParams();
+  return params_;
+}

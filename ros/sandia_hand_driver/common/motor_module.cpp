@@ -9,7 +9,7 @@ MotorModule::MotorModule(const uint8_t addr)
 : SerialMessageProcessor(addr)
 {
   registerRxHandler(PKT_FINGER_STATUS, 
-                    boost::bind(&MotorModule::rxFingerStatus, this, _1, _2));
+                    boost::bind(&MotorModule::rxFingerState, this, _1, _2));
   registerRxHandler(PKT_PHALANGE_TXRX,
                     boost::bind(&MotorModule::rxPhalangeTxRx, this, _1, _2));
 }
@@ -52,7 +52,7 @@ typedef struct
   uint32_t pp_strain;
   int32_t  fmcb_hall_tgt[3];
   int32_t  fmcb_hall_pos[3];
-} finger_status_t;
+} finger_state_t;
 /*
 static void print_uint16_array(const char *name, 
                                const uint16_t *p, const uint16_t len)
@@ -63,8 +63,8 @@ static void print_uint16_array(const char *name,
   printf("\n");
 }
 */
-void MotorModule::rxFingerStatus(const uint8_t *payload, 
-                                 const uint16_t payload_len)
+void MotorModule::rxFingerState(const uint8_t *payload, 
+                                const uint16_t payload_len)
 {
   /*
   printf("rx finger status %d bytes\n  ", payload_len);
@@ -72,7 +72,7 @@ void MotorModule::rxFingerStatus(const uint8_t *payload,
     printf("%02x ", payload[i]);
   printf("\n");
   */
-  finger_status_t *p = (finger_status_t *)payload;
+  finger_state_t *p = (finger_state_t *)payload;
   /*
   print_uint16_array("pp tactile", p->pp_tactile,  6);
   print_uint16_array("dp tactile", p->dp_tactile, 12);
@@ -94,12 +94,12 @@ void MotorModule::rxFingerStatus(const uint8_t *payload,
   printf("hall positions: %d %d %d\n", 
          p->fmcb_hall_pos[0], p->fmcb_hall_pos[1], p->fmcb_hall_pos[2]);
   */
-  printf("MotorModule::rxFingerStatus fmcb time: %.6f\n", 
+  printf("MotorModule::rxFingerState fmcb time: %.6f\n", 
          p->fmcb_time * 1.0e-6);
   printf("\n");
 }
 
-bool MotorModule::pollFingerStatus()
+bool MotorModule::pollFingerState()
 {
   if (!sendTxBuffer(PKT_FINGER_STATUS, 0))
     return false;

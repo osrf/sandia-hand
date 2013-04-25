@@ -1,17 +1,20 @@
 #include <signal.h>
 #include <cstdio>
+#include <vector>
 #include <ros/ros.h>
-#include <sandia_hand_msgs/RawFingerStatus.h>
+#include <sandia_hand_msgs/RawFingerState.h>
 #include <sandia_hand_msgs/SetFingerHome.h>
 #include <osrf_msgs/JointCommands.h>
 #include <sandia_hand_msgs/RelativeJointCommands.h>
 #include "sandia_hand/loose_finger.h"
+#include <sandia_hand_msgs/GetParameters.h>
 using namespace sandia_hand;
 using std::string;
+using std::vector;
 
 /////////////////////////////////////////////////////////////////////////
-sandia_hand_msgs::RawFingerStatus g_raw_finger_status;
-ros::Publisher *g_raw_finger_status_pub = NULL;
+sandia_hand_msgs::RawFingerState g_raw_finger_state;
+ros::Publisher *g_raw_finger_state_pub = NULL;
 bool g_done = false;
 static int32_t g_last_fmcb_hall_pos[3]; // hack
 static const float upper_limits_none[3] = {  1.57,  1.57,  1.57 };
@@ -61,6 +64,30 @@ bool setHomeSrv(LooseFinger *finger,
   if (!finger->mm.setHallOffsets(g_last_fmcb_hall_pos))
     ROS_ERROR("unable to set finger hall offsets");
   finger->mm.setJointPosHome();
+  return true;
+}
+
+bool getParametersSrv(LooseFinger *finger,
+                      sandia_hand_msgs::GetParameters::Request &req,
+                      sandia_hand_msgs::GetParameters::Response &res)
+{
+  ROS_INFO("get parameters");
+  const vector<sandia_hand::Param> params = finger->mm.getParams();
+  res.parameters.resize(params.size());
+  for (size_t i = 0; i < params.size(); i++)
+  {
+    res.parameters[i].name = params[i].getName();
+    if (params[i].getType() == Param::PARAM_INT)
+    {
+      res.parameters[i].val_type = sandia_hand_msgs::Parameter::INTEGER;
+      res.parameters[i].i_val = params[i].getIntVal();
+    }
+    else
+    {
+      res.parameters[i].val_type = sandia_hand_msgs::Parameter::FLOAT;
+      res.parameters[i].f_val = params[i].getFloatVal();
+    }
+  }
   return true;
 }
 
@@ -119,15 +146,15 @@ typedef struct
   int32_t  fmcb_hall_tgt[3];
   int32_t  fmcb_hall_pos[3];
   int16_t  fmcb_effort[3];
-} finger_status_t;
+} finger_state_t;
 
-void rxFingerStatus(const uint8_t *payload, const uint16_t payload_len)
+void rxFingerState(const uint8_t *payload, const uint16_t payload_len)
 {
-  //printf("rxFingerStatus: %d bytes\n", payload_len);
-  if (payload_len < sizeof(finger_status_t))
+  //printf("rxFingerState: %d bytes\n", payload_len);
+  if (payload_len < sizeof(finger_state_t))
     return; // buh bye
-  const finger_status_t *p = (const finger_status_t *)payload;
-  sandia_hand_msgs::RawFingerStatus *rfs = &g_raw_finger_status; // save typing
+  const finger_state_t *p = (const finger_state_t *)payload;
+  sandia_hand_msgs::RawFingerState *rfs = &g_raw_finger_state; // save typing
   rfs->fmcb_time = p->fmcb_time;
   rfs->pp_time = p->pp_tactile_time;
   rfs->dp_time = p->dp_tactile_time;
@@ -162,8 +189,8 @@ void rxFingerStatus(const uint8_t *payload, const uint16_t payload_len)
     rfs->fmcb_effort[i] = p->fmcb_effort[2-i];
     g_last_fmcb_hall_pos[i] = p->fmcb_hall_pos[2-i]; // gross
   }
-  if (g_raw_finger_status_pub)
-    g_raw_finger_status_pub->publish(g_raw_finger_status);
+  if (g_raw_finger_state_pub)
+    g_raw_finger_state_pub->publish(g_raw_finger_state);
 }
 
 int main(int argc, char **argv)
@@ -198,7 +225,7 @@ int main(int argc, char **argv)
     return 1;
   }
   signal(SIGINT, signal_handler);
-  ros::Publisher raw_finger_status_pub;
+  ros::Publisher raw_finger_state_pub;
   if (!finger.pp.ping())
     finger.mm.setPhalangeBusPower(true);
   listenToFinger(&finger, 2.0);
@@ -212,13 +239,13 @@ int main(int argc, char **argv)
   if (!finger.dp.ping())
     return perish("couldn't ping distal phalange", &finger);
 
-  raw_finger_status_pub = 
-      nh.advertise<sandia_hand_msgs::RawFingerStatus>("raw_finger_status", 1);
-  g_raw_finger_status_pub = &raw_finger_status_pub;
+  raw_finger_state_pub = 
+      nh.advertise<sandia_hand_msgs::RawFingerState>("raw_state", 1);
+  g_raw_finger_state_pub = &raw_finger_state_pub;
   // todo: some sort of auto-home sequence. for now, the fingers assume they 
   // were powered up in (0,0,0)
   listenToFinger(&finger, 0.001);
-  finger.mm.registerRxHandler(MotorModule::PKT_FINGER_STATUS, rxFingerStatus);
+  finger.mm.registerRxHandler(MotorModule::PKT_FINGER_STATUS, rxFingerState);
   if (!finger.mm.setPhalangeAutopoll(true))
     return perish("couldn't start phalange autopoll", &finger);
   finger.mm.setJointPosHome();
@@ -235,6 +262,11 @@ int main(int argc, char **argv)
                         sandia_hand_msgs::SetFingerHome::Response>
       ("set_finger_home", boost::bind(setHomeSrv, &finger, _1, _2));
 
+  ros::ServiceServer param_dump_srv =
+    nh.advertiseService<sandia_hand_msgs::GetParameters::Request,
+                        sandia_hand_msgs::GetParameters::Response>
+      ("get_parameters", boost::bind(getParametersSrv, &finger, _1, _2));
+
   listenToFinger(&finger, 0.001);
   ros::spinOnce();
   ros::Time t_prev_spin = ros::Time::now();
@@ -247,7 +279,7 @@ int main(int argc, char **argv)
         break;
       ros::spinOnce();
       t_prev_spin = ros::Time::now();
-      finger.mm.pollFingerStatus();
+      finger.mm.pollFingerState();
     }
   }
   shutdownFinger(&finger);

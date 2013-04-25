@@ -2,14 +2,14 @@
 #include <cstdio>
 #include <ros/ros.h>
 #include "sandia_hand/hand.h"
-#include "sandia_hand/palm_status.h"
+#include "sandia_hand/palm_state.h"
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/fill_image.h>
 #include <image_transport/image_transport.h>
 #include <camera_info_manager/camera_info_manager.h>
-#include <sandia_hand_msgs/RawFingerStatus.h>
-#include <sandia_hand_msgs/RawPalmStatus.h>
-#include <sandia_hand_msgs/RawMoboStatus.h>
+#include <sandia_hand_msgs/RawFingerState.h>
+#include <sandia_hand_msgs/RawPalmState.h>
+#include <sandia_hand_msgs/RawMoboState.h>
 #include <sandia_hand_msgs/SetJointLimitPolicy.h>
 #include <osrf_msgs/JointCommands.h>
 #include <sandia_hand_msgs/SetFingerHome.h>
@@ -18,12 +18,12 @@ using namespace sandia_hand;
 using std::string;
 
 /////////////////////////////////////////////////////////////////////////
-sandia_hand_msgs::RawFingerStatus g_raw_finger_status;
-sandia_hand_msgs::RawMoboStatus   g_raw_mobo_status;
-sandia_hand_msgs::RawPalmStatus   g_raw_palm_status;
-ros::Publisher *g_raw_finger_status_pubs[Hand::NUM_FINGERS] = {NULL};
-ros::Publisher *g_raw_mobo_status_pub = NULL;
-ros::Publisher *g_raw_palm_status_pub = NULL;
+sandia_hand_msgs::RawFingerState g_raw_finger_state;
+sandia_hand_msgs::RawMoboState   g_raw_mobo_state;
+sandia_hand_msgs::RawPalmState   g_raw_palm_state;
+ros::Publisher *g_raw_finger_state_pubs[Hand::NUM_FINGERS] = {NULL};
+ros::Publisher *g_raw_mobo_state_pub = NULL;
+ros::Publisher *g_raw_palm_state_pub = NULL;
 bool g_done = false;
 static int32_t g_last_fmcb_hall_pos[Hand::NUM_FINGERS][3]; // hack
 
@@ -75,7 +75,7 @@ void shutdownHand(Hand *hand)
   listenToHand(hand, 0.001); // todo: something smarter
   hand->setFingerAutopollHz(0);
   listenToHand(hand, 0.001); // todo: something smarter
-  hand->setMoboStatusHz(0);
+  hand->setMoboStateHz(0);
   listenToHand(hand, 0.001); // todo: something smarter
   hand->setAllFingerPowers(Hand::FPS_OFF);
 }
@@ -240,16 +240,16 @@ typedef struct
   int32_t  fmcb_hall_tgt[3];
   int32_t  fmcb_hall_pos[3];
   int16_t  fmcb_effort[3];
-} finger_status_t;
+} finger_state_t;
 
-void rxFingerStatus(const uint8_t finger_idx, 
+void rxFingerState(const uint8_t finger_idx, 
                     const uint8_t *payload, const uint16_t payload_len)
 {
-  //printf("rxFingerStatus %d:   %d bytes\n", finger_idx, payload_len);
-  if (payload_len < sizeof(finger_status_t) || finger_idx >= Hand::NUM_FINGERS)
+  //printf("rxFingerState %d:   %d bytes\n", finger_idx, payload_len);
+  if (payload_len < sizeof(finger_state_t) || finger_idx >= Hand::NUM_FINGERS)
     return; // buh bye
-  const finger_status_t *p = (const finger_status_t *)payload;
-  sandia_hand_msgs::RawFingerStatus *rfs = &g_raw_finger_status; // save typing
+  const finger_state_t *p = (const finger_state_t *)payload;
+  sandia_hand_msgs::RawFingerState *rfs = &g_raw_finger_state; // save typing
   rfs->fmcb_time = p->fmcb_time;
   rfs->pp_time = p->pp_tactile_time;
   rfs->dp_time = p->dp_tactile_time;
@@ -284,44 +284,44 @@ void rxFingerStatus(const uint8_t finger_idx,
     rfs->fmcb_effort[i] = p->fmcb_effort[2-i];
     g_last_fmcb_hall_pos[finger_idx][i] = p->fmcb_hall_pos[2-i]; // gross
   }
-  if (g_raw_finger_status_pubs[finger_idx])
-    g_raw_finger_status_pubs[finger_idx]->publish(g_raw_finger_status);
+  if (g_raw_finger_state_pubs[finger_idx])
+    g_raw_finger_state_pubs[finger_idx]->publish(g_raw_finger_state);
 }
 
-void rxPalmStatus(const uint8_t *data, const uint16_t data_len)
+void rxPalmState(const uint8_t *data, const uint16_t data_len)
 {
-  if (!g_raw_palm_status_pub)
+  if (!g_raw_palm_state_pub)
     return;
-  const palm_status_t *p = (palm_status_t *)data;
-  g_raw_palm_status.palm_time = p->palm_time;
+  const palm_state_t *p = (palm_state_t *)data;
+  g_raw_palm_state.palm_time = p->palm_time;
   for (int i = 0; i < 3; i++)
   {
-    g_raw_palm_status.palm_accel[i] = p->palm_accel[i];
-    g_raw_palm_status.palm_gyro[i] = p->palm_accel[i];
-    g_raw_palm_status.palm_mag[i] = p->palm_accel[i];
+    g_raw_palm_state.palm_accel[i] = p->palm_accel[i];
+    g_raw_palm_state.palm_gyro[i] = p->palm_accel[i];
+    g_raw_palm_state.palm_mag[i] = p->palm_accel[i];
   }
   for (int i = 0; i < 7; i++)
-    g_raw_palm_status.palm_temps[i] = p->palm_temps[i];
+    g_raw_palm_state.palm_temps[i] = p->palm_temps[i];
   for (int i = 0; i < 32; i++)
-    g_raw_palm_status.palm_tactile[i] = p->palm_tactile[i];
-  g_raw_palm_status_pub->publish(g_raw_palm_status);
+    g_raw_palm_state.palm_tactile[i] = p->palm_tactile[i];
+  g_raw_palm_state_pub->publish(g_raw_palm_state);
 }
 
-void rxMoboStatus(const uint8_t *data, const uint16_t data_len)
+void rxMoboState(const uint8_t *data, const uint16_t data_len)
 {
-  if (!g_raw_mobo_status_pub)
+  if (!g_raw_mobo_state_pub)
     return;
-  const mobo_status_t *p = (mobo_status_t *)data;
-  g_raw_mobo_status.mobo_time = p->mobo_time_ms;
+  const mobo_state_t *p = (mobo_state_t *)data;
+  g_raw_mobo_state.mobo_time = p->mobo_time_ms;
   for (int i = 0; i < 4; i++)
-    g_raw_mobo_status.finger_currents[i] = p->finger_currents[i];
+    g_raw_mobo_state.finger_currents[i] = p->finger_currents[i];
   for (int i = 0; i < 3; i++)
   {
-    g_raw_mobo_status.logic_currents[i] = p->logic_currents[i];
-    g_raw_mobo_status.mobo_temp[i] = p->mobo_raw_temperatures[i];
+    g_raw_mobo_state.logic_currents[i] = p->logic_currents[i];
+    g_raw_mobo_state.mobo_temp[i] = p->mobo_raw_temperatures[i];
   }
-  g_raw_mobo_status.mobo_max_effort = p->mobo_max_effort;
-  g_raw_mobo_status_pub->publish(g_raw_mobo_status);
+  g_raw_mobo_state.mobo_max_effort = p->mobo_max_effort;
+  g_raw_mobo_state_pub->publish(g_raw_mobo_state);
 }
 
 static const unsigned NUM_CAMS = 2;
@@ -376,7 +376,7 @@ int main(int argc, char **argv)
   listenToHand(&hand, 0.001); // todo: something smarter
   hand.setFingerAutopollHz(0);
   listenToHand(&hand, 0.001); // todo: something smarter
-  hand.setMoboStatusHz(0);
+  hand.setMoboStateHz(0);
 
   signal(SIGINT, signal_handler);
   g_cinfo[0] = boost::shared_ptr<camera_info_manager::CameraInfoManager>
@@ -395,7 +395,7 @@ int main(int argc, char **argv)
   g_image_pub[1] = &image_pub[1];
   hand.setImageCallback(&image_cb); 
 
-  ros::Publisher raw_finger_status_pubs[Hand::NUM_FINGERS];
+  ros::Publisher raw_finger_state_pubs[Hand::NUM_FINGERS];
   for (int finger_idx = 0; finger_idx < Hand::NUM_FINGERS; finger_idx++)
     if (!hand.fingers[finger_idx].mm.ping())
       hand.setFingerPower(finger_idx, Hand::FPS_LOW);
@@ -447,34 +447,34 @@ int main(int argc, char **argv)
   {
     char topic_name[100];
     snprintf(topic_name, sizeof(topic_name), 
-             "raw_finger_status_%d",finger_idx);
+             "finger_%d/raw_state",finger_idx);
     printf("advertising topic [%s]\n", topic_name);
-    raw_finger_status_pubs[finger_idx] = 
-      nh.advertise<sandia_hand_msgs::RawFingerStatus>(topic_name, 1);
-    g_raw_finger_status_pubs[finger_idx] = &raw_finger_status_pubs[finger_idx];
+    raw_finger_state_pubs[finger_idx] = 
+      nh.advertise<sandia_hand_msgs::RawFingerState>(topic_name, 1);
+    g_raw_finger_state_pubs[finger_idx] = &raw_finger_state_pubs[finger_idx];
     // todo: some sort of auto-home sequence. for now, the fingers assume they 
     // were powered up in (0,0,0)
     listenToHand(&hand, 0.001);
     hand.fingers[finger_idx].mm.registerRxHandler(
                               MotorModule::PKT_FINGER_STATUS,
-                              boost::bind(rxFingerStatus, finger_idx, _1, _2));
+                              boost::bind(rxFingerState, finger_idx, _1, _2));
     if (!hand.fingers[finger_idx].mm.setPhalangeAutopoll(true))
       return perish("couldn't start phalange autopoll", &hand);
     ROS_INFO("finger %d is autopolling its phalanges", finger_idx);
   }
-  ros::Publisher raw_mobo_status_pub = 
-    nh.advertise<sandia_hand_msgs::RawMoboStatus>("raw_mobo_status", 1);
-  g_raw_mobo_status_pub = &raw_mobo_status_pub;
+  ros::Publisher raw_mobo_state_pub = 
+    nh.advertise<sandia_hand_msgs::RawMoboState>("mobo/raw_state", 1);
+  g_raw_mobo_state_pub = &raw_mobo_state_pub;
  
   // if we get here, all fingers are up and running. let's start everything now
   listenToHand(&hand, 0.001);
-  hand.registerRxHandler(CMD_ID_MOBO_STATUS, rxMoboStatus);
+  hand.registerRxHandler(CMD_ID_MOBO_STATUS, rxMoboState);
 
-  ros::Publisher raw_palm_status_pub =
-    nh.advertise<sandia_hand_msgs::RawPalmStatus>("raw_palm_status", 1);
-  g_raw_palm_status_pub = &raw_palm_status_pub;
+  ros::Publisher raw_palm_state_pub =
+    nh.advertise<sandia_hand_msgs::RawPalmState>("palm/raw_state", 1);
+  g_raw_palm_state_pub = &raw_palm_state_pub;
   hand.palm.registerRxHandler(Palm::PKT_PALM_STATUS,
-                              boost::bind(rxPalmStatus, _1, _2));
+                              boost::bind(rxPalmState, _1, _2));
 
   for (int finger_idx = 0; finger_idx < Hand::NUM_FINGERS; finger_idx++)
     hand.setFingerControlMode(finger_idx, Hand::FCM_JOINT_POS);
@@ -515,7 +515,7 @@ int main(int argc, char **argv)
   ROS_INFO("hand is autopolling its fingers");
 
 
-  hand.setMoboStatusHz(100);
+  hand.setMoboStateHz(100);
   hand.setCameraStreaming(true, true);
   ros::spinOnce();
   ros::Time t_prev_spin = ros::Time::now();

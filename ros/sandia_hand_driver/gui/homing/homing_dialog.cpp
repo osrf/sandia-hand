@@ -242,10 +242,10 @@ AutoTab::AutoTab(QWidget *parent, ros::NodeHandle &nh,
   for (int i = 0; i < 4; i++)
   {
     char topic_name[100];
-    snprintf(topic_name, sizeof(topic_name), "cal_finger_status_%d", i);
+    snprintf(topic_name, sizeof(topic_name), "finger_%d/cal_state", i);
     cal_finger_status_subs_[i] = 
-      nh_.subscribe<sandia_hand_msgs::CalFingerStatus>(topic_name, 1, 
-                    boost::bind(&AutoTab::cal_finger_status_cb, this, i, _1));
+      nh_.subscribe<sandia_hand_msgs::CalFingerState>(topic_name, 1, 
+                    boost::bind(&AutoTab::cal_finger_state_cb, this, i, _1));
     status_rx_complete_[i] = false;
   }
   QVBoxLayout *main_layout = new QVBoxLayout;
@@ -278,9 +278,9 @@ inline static double clamp_mag(double d, const double mag)
   return d;
 }
 
-void AutoTab::cal_finger_status_cb(
+void AutoTab::cal_finger_state_cb(
                        const uint8_t finger_idx,
-                       const sandia_hand_msgs::CalFingerStatus::ConstPtr &msg)
+                       const sandia_hand_msgs::CalFingerState::ConstPtr &msg)
 {
   if (finger_idx >= 4)
     return;

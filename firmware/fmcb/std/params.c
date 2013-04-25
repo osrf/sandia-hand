@@ -33,12 +33,24 @@ const struct registered_param_t const g_registered_params[] =
   {&g_params.torque_limit[0], "im0_torque_limit"},
   {&g_params.torque_limit[1], "im1_torque_limit"},
   {&g_params.torque_limit[2], "im2_torque_limit"},
-  {&g_params.accel_zero[0], "ia0_zero"},
-  {&g_params.accel_zero[1], "ia1_zero"},
-  {&g_params.accel_zero[2], "ia2_zero"},
-  {&g_params.accel_scale[0], "fa0_scale"},
-  {&g_params.accel_scale[1], "fa1_scale"},
-  {&g_params.accel_scale[2], "fa2_scale"},
+  {&g_params.accel_bias[0], "imm_accel_bias_x"},
+  {&g_params.accel_bias[1], "imm_accel_bias_y"},
+  {&g_params.accel_bias[2], "imm_accel_bias_z"},
+  {&g_params.accel_bias[3], "ipp_accel_bias_x"},
+  {&g_params.accel_bias[4], "ipp_accel_bias_y"},
+  {&g_params.accel_bias[5], "ipp_accel_bias_z"},
+  {&g_params.accel_bias[6], "idp_accel_bias_x"},
+  {&g_params.accel_bias[7], "idp_accel_bias_y"},
+  {&g_params.accel_bias[8], "idp_accel_bias_z"},
+  {&g_params.accel_scale[0], "imm_accel_scale_x"},
+  {&g_params.accel_scale[1], "imm_accel_scale_y"},
+  {&g_params.accel_scale[2], "imm_accel_scale_z"},
+  {&g_params.accel_scale[3], "ipp_accel_scale_x"},
+  {&g_params.accel_scale[4], "ipp_accel_scale_y"},
+  {&g_params.accel_scale[5], "ipp_accel_scale_z"},
+  {&g_params.accel_scale[6], "idp_accel_scale_x"},
+  {&g_params.accel_scale[7], "idp_accel_scale_y"},
+  {&g_params.accel_scale[8], "idp_accel_scale_z"},
 };
 
 uint16_t g_num_registered_params = sizeof(g_registered_params) / 
@@ -58,8 +70,11 @@ void params_set_all_default()
     g_params.torque_deadband[i] = 50;
     g_params.encoder_offset[i] = 0;
     g_params.torque_limit[i] = 50;
-    g_params.accel_zero[i] = 0;
-    g_params.accel_scale[i] = 1.0f / 1023.0f;
+  }
+  for (i = 0; i < 9; i++)
+  {
+    g_params.accel_bias[i] = 0;
+    g_params.accel_scale[i] = 1023;
   }
   g_params.gear[0] = 170.0f;
   g_params.gear[1] = 196.7f;

@@ -37,6 +37,7 @@ public:
   bool setParamFloat(const std::string &name, const float val);
   bool setParamInt(const std::string &name, const int32_t val);
   bool getParamNames(std::vector<std::string> &names);
+  const std::vector<sandia_hand::Param> &getParams();
 
 protected:
   static const uint32_t MAX_PACKET_LENGTH = 512;

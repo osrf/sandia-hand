@@ -199,45 +199,17 @@
     </gazebo>
   </xacro:macro>
 
-<!--  <xacro:macro name="finger_tactile_sensors_gazebo" params="side idx">
-    <gazebo reference="${side}_f${idx}_1">
-      <sensor name="${side}_f${idx}_tactile" type="contact">
-        <update_rate>30.0</update_rate>
-        <contact>
-          <collision>${side}_f${idx}_1_collision</collision>
-        </contact>
-      </sensor>
-    </gazebo>
-    <gazebo reference="${side}_f${idx}_2">
-      <sensor name="${side}_f${idx}_tactile" type="contact">
-        <update_rate>30.0</update_rate>
-        <contact>
-          <collision>${side}_f${idx}_2_collision</collision>
-        </contact>
-      </sensor>
-    </gazebo>
-  </xacro:macro>-->
-  <xacro:macro name="sandia_hand_tactile_sensors_gazebo" params="side" >
+  <xacro:macro name="sandia_hand_tactile_sensors_gazebo" params="side parent" >
     <gazebo>
-<!--      <sensor name="${side}_tactile" type="contact">
-        <update_rate>30.0</update_rate>
-        <contact>
-          <collision>${side}_palm_collision</collision>
-          <collision>${side}_f1_1_collision</collision>
-          <collision>${side}_f1_2_collision</collision>
-          <collision>${side}_f2_1_collision</collision>
-          <collision>${side}_f2_2_collision</collision>
-          <collision>${side}_f3_1_collision</collision>
-          <collision>${side}_f3_2_collision</collision>
-        </contact>
-        <plugin filename="libContactPlugin.so" name="sandia_contact_plugin">
-          <alwaysOn>true</alwaysOn>
-          <updateRate>0.0</updateRate>
-        </plugin>
-      </sensor>-->
       <plugin filename="libContactPlugin.so" name="sandia_contact_plugin">
          <contact>
-          <collision>${side}_palm::${side}_palm_collision</collision>
+          <collision>${parent}::${parent}_collision_${side}_palm</collision>
+          <collision>${parent}::${parent}_collision_${side}_palm_1</collision>
+          <collision>${parent}::${parent}_collision_${side}_palm_3</collision>
+          <collision>${parent}::${parent}_collision_${side}_palm_4</collision>
+          <collision>${parent}::${parent}_collision_${side}_palm_5</collision>
+          <collision>${side}_f0_1::${side}_f0_1_collision</collision>
+          <collision>${side}_f0_2::${side}_f0_2_collision</collision>
           <collision>${side}_f1_1::${side}_f1_1_collision</collision>
           <collision>${side}_f1_2::${side}_f1_2_collision</collision>
           <collision>${side}_f2_1::${side}_f2_1_collision</collision>

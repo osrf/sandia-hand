@@ -1,5 +1,5 @@
-bool[18] f0
-bool[18] f1
-bool[18] f2
-bool[18] f3
-bool[32] palm
+uint16[] f0
+uint16[] f1
+uint16[] f2
+uint16[] f3
+uint16[] palm

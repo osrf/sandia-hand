@@ -428,5 +428,6 @@
     <xacro:sandia_hand_gazebo side="${side}" />
     <xacro:sandia_hand_cameras_gazebo side="${side}" reflect="${reflect}" parent="${parent}" />
     <xacro:sandia_hand_tactile_sensors_gazebo side="${side}" parent="${parent}" />
+    <xacro:sandia_hand_imu_sensor_gazebo parent="${parent}" />
   </xacro:macro>
 </robot>

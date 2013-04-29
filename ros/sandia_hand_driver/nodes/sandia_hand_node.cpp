@@ -14,8 +14,10 @@
 #include <osrf_msgs/JointCommands.h>
 #include <sandia_hand_msgs/SetFingerHome.h>
 #include <sandia_hand_msgs/RelativeJointCommands.h>
+#include <sandia_hand_msgs/GetParameters.h>
 using namespace sandia_hand;
 using std::string;
+using std::vector;
 
 /////////////////////////////////////////////////////////////////////////
 sandia_hand_msgs::RawFingerState g_raw_finger_state;
@@ -85,6 +87,33 @@ int perish(const char *msg, Hand *hand)
   ROS_FATAL("%s", msg);
   shutdownHand(hand);
   return 1;
+}
+
+bool getParametersSrv(Hand *hand, const int finger_idx, 
+                      sandia_hand_msgs::GetParameters::Request &req,
+                      sandia_hand_msgs::GetParameters::Response &res)
+{
+  //printf("getParametersSrv, finger %d\n", finger_idx);
+  if (finger_idx < 0 || finger_idx > Hand::NUM_FINGERS)
+    return false;
+  const vector<sandia_hand::Param> params = 
+    hand->fingers[finger_idx].mm.getParams();
+  res.parameters.resize(params.size());
+  for (size_t i = 0; i < params.size(); i++)
+  {
+    res.parameters[i].name = params[i].getName();
+    if (params[i].getType() == sandia_hand::Param::PARAM_INT)
+    {
+      res.parameters[i].val_type = sandia_hand_msgs::Parameter::INTEGER;
+      res.parameters[i].i_val = params[i].getIntVal();
+    }
+    else // it's a float
+    {
+      res.parameters[i].val_type = sandia_hand_msgs::Parameter::FLOAT;
+      res.parameters[i].f_val = params[i].getFloatVal();
+    }
+  }
+  return true;
 }
 
 bool setJointLimitPolicy(Hand *hand, const std::string &policy_name,
@@ -489,6 +518,7 @@ int main(int argc, char **argv)
         boost::bind(relativeJointCommandsCallback, &hand, _1));
 
   ros::Subscriber finger_joint_commands_subs[Hand::NUM_FINGERS];
+  ros::ServiceServer get_param_srvs[Hand::NUM_FINGERS];
   for (int i = 0; i < Hand::NUM_FINGERS; i++)
   {
     char topic[100];
@@ -496,6 +526,11 @@ int main(int argc, char **argv)
     finger_joint_commands_subs[i] = 
       nh.subscribe<osrf_msgs::JointCommands>(topic, 1,
         boost::bind(fingerJointCommandsCallback, &hand, i, _1));
+    snprintf(topic, sizeof(topic), "finger_%d/get_parameters", i);
+    get_param_srvs[i] =
+      nh.advertiseService<sandia_hand_msgs::GetParameters::Request,
+                          sandia_hand_msgs::GetParameters::Response>
+        (topic, boost::bind(getParametersSrv, &hand, i, _1, _2));
   }
 
   ros::ServiceServer joint_limit_srv = 
@@ -516,7 +551,7 @@ int main(int argc, char **argv)
 
 
   hand.setMoboStateHz(100);
-  hand.setCameraStreaming(true, true);
+  //hand.setCameraStreaming(true, true);
   ros::spinOnce();
   ros::Time t_prev_spin = ros::Time::now();
   for (int i = 0; !g_done; i++)

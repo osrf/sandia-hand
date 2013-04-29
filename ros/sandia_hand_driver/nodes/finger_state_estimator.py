@@ -8,14 +8,11 @@ from sandia_hand_msgs.srv import *
 # todo: at some point, consider porting this to c++ for speed,
 # or even stuffing it into the driver node. easy to hack on it here though
 
-class HandStateEstimator:
+class FingerStateEstimator:
   def __init__(self, argv):
     rospy.init_node('finger_state_estimator')
     self.cfs = CalFingerState()
-    self.finger_name = rospy.get_param("name", "index")
-    self.finger_pub = rospy.Publisher("cal_state", CalFingerState)
-    self.finger_sub = rospy.Subscriber("raw_state", 
-                                       RawFingerState, self.finger_cb)
+    self.finger_name = rospy.get_param("~name", "index")
     self.finger_get_params = rospy.ServiceProxy('get_parameters',
                                            sandia_hand_msgs.srv.GetParameters)
     print "waiting for finger get_parameter service to become available..."
@@ -37,6 +34,9 @@ class HandStateEstimator:
       self.accel_scale[axis] = next(x.i_val for x in fp if x.name == scales[axis])
     print "accel bias: " + str(self.accel_bias)
     print "accel scale: " + str(self.accel_scale)
+    self.finger_pub = rospy.Publisher("cal_state", CalFingerState)
+    self.finger_sub = rospy.Subscriber("raw_state", 
+                                       RawFingerState, self.finger_cb)
 
   def simplify_angle(self, x):
     if x < -3.1415:
@@ -173,5 +173,5 @@ class HandStateEstimator:
 
 ############################################################################
 if __name__ == '__main__':
-  hse = HandStateEstimator(rospy.myargv())
+  fse = FingerStateEstimator(rospy.myargv())
   rospy.spin()

@@ -269,7 +269,6 @@
 
     <xacro:finger_transmission side="${side}" idx="${idx}" x="${x}" y="${y}" z="${z}" r="${r}" p="${p}" yaw="${yaw}"/>
     <xacro:finger_gazebo side="${side}" idx="${idx}"/>
-<!--    <xacro:finger_tactile_sensors_gazebo side="${side}" idx="${idx}" />-->
   </xacro:macro>
 
   <xacro:macro name="sandia_hand" params="side parent reflect joint_type thumb_angle *origin">

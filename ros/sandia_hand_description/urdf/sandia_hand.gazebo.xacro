@@ -11,6 +11,7 @@
       <kd>1.0</kd>
       <maxVel>0.1</maxVel>
       <minDepth>0.001</minDepth>
+      <material>Gazebo/FlatBlack</material>
     </gazebo>
     <gazebo reference="${side}_f${idx}_0">
       <mu1>0.9</mu1>
@@ -20,6 +21,7 @@
       <maxVel>0.0</maxVel>
       <minDepth>0.003</minDepth>
       <maxContacts>1</maxContacts>
+      <material>Gazebo/FlatBlack</material>
     </gazebo>
     <gazebo reference="${side}_f${idx}_1">
       <mu1>0.9</mu1>
@@ -29,6 +31,7 @@
       <maxVel>0.0</maxVel>
       <minDepth>0.003</minDepth>
       <maxContacts>1</maxContacts>
+      <material>Gazebo/FlatBlack</material>
     </gazebo>
     <gazebo reference="${side}_f${idx}_2">
       <mu1>0.9</mu1>
@@ -38,6 +41,7 @@
       <maxVel>0.0</maxVel>
       <minDepth>0.003</minDepth>
       <maxContacts>1</maxContacts>
+      <material>Gazebo/FlatBlack</material>
     </gazebo>
     <gazebo reference="${side}_f${idx}_j0">
       <cfmDamping>1</cfmDamping>
@@ -53,6 +57,7 @@
     <gazebo reference="${side}_palm">
       <mu1>0.9</mu1>
       <mu2>0.9</mu2>
+      <material>Gazebo/FlatBlack</material>
     </gazebo>
   </xacro:macro>
   <!-- begin cameras -->

@@ -107,12 +107,18 @@ void rxFingerState(const uint8_t *payload, const uint16_t payload_len)
   printf("rxFingerState\n");
   printf("  ");
   finger_state_t *fst = (finger_state_t *)payload;
-  printf("imu: ");
+  printf("  distal imu: ");
   for (int i = 0; i < 6; i++)
     printf("%06d ", fst->dp_imu[i]);
-  printf("\ntactile: ");
+  printf("\n  distal tactile: ");
   for (int i = 0; i < 12; i++)
     printf("%06d ", fst->dp_tactile[i]);
+  printf("\n  proximal imu: ");
+  for (int i = 0; i < 6; i++)
+    printf("%06d ", fst->pp_imu[i]);
+  printf("\n  proximal tactile: ");
+  for (int i = 0; i < 6; i++)
+    printf("%06d ", fst->pp_tactile[i]);
   printf("\n\n");
 }
 

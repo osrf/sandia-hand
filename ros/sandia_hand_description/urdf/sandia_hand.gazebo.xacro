@@ -47,9 +47,7 @@
     </gazebo>
   </xacro:macro>
   <xacro:macro name="sandia_hand_gazebo" params="side">
-<!--    <gazebo reference="${side}_palm">-->
-    <gazebo reference="sandia_hand">
-
+    <gazebo reference="${side}_palm">
       <mu1>0.9</mu1>
       <mu2>0.9</mu2>
     </gazebo>

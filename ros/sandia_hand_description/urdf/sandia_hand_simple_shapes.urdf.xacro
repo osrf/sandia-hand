@@ -7,9 +7,9 @@
   <include filename="$(find sandia_hand_description)/urdf/sandia_hand.transmission.xacro" />
 
   <xacro:property name="M_pi" value="3.1415926535897931" />
-  <xacro:property name="damping_coefficient_j0" value="-2.5" />
-  <xacro:property name="damping_coefficient_j1" value="-2.5" />
-  <xacro:property name="damping_coefficient_j2" value="-2.5" />
+  <xacro:property name="damping_coefficient_j0" value="2.0" />
+  <xacro:property name="damping_coefficient_j1" value="2.0" />
+  <xacro:property name="damping_coefficient_j2" value="2.0" />
   <xacro:property name="velocity_limit" value="-1" />
 
   <xacro:macro name="finger" params="idx x y z r p yaw side reflect">

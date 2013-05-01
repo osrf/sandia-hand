@@ -199,7 +199,7 @@
 
   <xacro:macro name="sandia_hand_tactile_sensors_gazebo" params="side parent" >
     <gazebo>
-      <plugin filename="libContactPlugin.so" name="sandia_contact_plugin">
+      <plugin filename="libContactModelPlugin.so" name="sandia_contact_plugin">
          <contact>
           <collision>${parent}::${parent}_collision_${side}_palm</collision>
           <collision>${parent}::${parent}_collision_${side}_palm_1</collision>

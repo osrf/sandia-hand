@@ -6,7 +6,7 @@
 #include <QScrollBar>
 #include <ros/ros.h>
 #include <sandia_hand_msgs/SetJointLimitPolicy.h>
-#include <sandia_hand_msgs/CalFingerStatus.h>
+#include <sandia_hand_msgs/CalFingerState.h>
 #include <sandia_hand_msgs/RelativeJointCommands.h>
 
 class QTabWidget;
@@ -53,9 +53,9 @@ private:
   ros::NodeHandle   nh_;
   ros::Publisher   *relative_finger_pub_;
   ros::Subscriber   cal_finger_status_subs_[4];
-  void cal_finger_status_cb(
+  void cal_finger_state_cb(
                       const uint8_t finger_idx, 
-                      const sandia_hand_msgs::CalFingerStatus::ConstPtr &msg);
+                      const sandia_hand_msgs::CalFingerState::ConstPtr &msg);
   QTimer *ros_update_timer_;
   bool homing_enabled_;
   double last_homing_time_;

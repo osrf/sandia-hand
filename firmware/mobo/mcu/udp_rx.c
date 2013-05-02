@@ -88,7 +88,7 @@ void enet_udp_rx(uint8_t *pkt, const uint32_t len)
   }
   else if (cmd == CMD_ID_SET_MOBO_STATUS_RATE)
     power_set_mobo_status_rate(
-                      ((set_mobo_status_rate_t *)cmd_data)->mobo_status_hz);
+                      ((set_mobo_state_rate_t *)cmd_data)->mobo_state_hz);
   else if (cmd == CMD_ID_SET_FINGER_AUTOPOLL)
     finger_set_autopoll_rate(
                    ((set_finger_autopoll_t *)cmd_data)->finger_autopoll_hz);

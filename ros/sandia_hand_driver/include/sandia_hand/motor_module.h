@@ -13,7 +13,7 @@ public:
   virtual ~MotorModule();
   bool setPhalangeBusPower(bool on);
   bool setPhalangeAutopoll(bool on); 
-  bool pollFingerStatus();
+  bool pollFingerState();
   bool phalangeTxRx(const uint8_t *data, const uint16_t data_len);
                     //const uint16_t timeout_ms);
   void addPhalangeRxFunctor(RxFunctor f);
@@ -34,7 +34,7 @@ private:
                      CM_JOINT_SPACE, CM_JOINT_SPACE_FP,
                      CM_JOINT_SPACE_WITH_MAX_EFFORT,
                      CM_JOINT_SPACE_RELATIVE };
-  void rxFingerStatus(const uint8_t *payload, const uint16_t payload_len);
+  void rxFingerState(const uint8_t *payload, const uint16_t payload_len);
   void rxPhalangeTxRx(const uint8_t *data, const uint16_t data_len);
   bool setControlMode(const uint8_t control_mode,
                       const float *joint_pos, 

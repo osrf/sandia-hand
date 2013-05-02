@@ -54,7 +54,7 @@ public:
   void registerRxHandler(const uint32_t msg_id, RxFunctor f);
   void setImageCallback(ImageCallback callback);
   bool pingFinger(const uint8_t finger_idx);
-  bool setMoboStatusHz(const uint16_t mobo_status_hz);
+  bool setMoboStateHz(const uint16_t mobo_state_hz);
   bool setFingerAutopollHz(const uint16_t finger_autopoll_hz);
   // todo: bake all of these SAM3S bootloader burns into a single function
   bool programMotorModuleAppFile(const uint8_t finger_idx, FILE *bin_file);

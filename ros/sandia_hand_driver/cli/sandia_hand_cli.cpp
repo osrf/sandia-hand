@@ -9,7 +9,7 @@
 #include "sandia_hand/hand.h"
 #include "ros/time.h"
 #include <string>
-#include "sandia_hand/palm_status.h"
+#include "sandia_hand/palm_state.h"
 using namespace sandia_hand;
 using std::vector;
 using std::string;
@@ -244,7 +244,7 @@ int cam_pgm(int argc, char **argv, Hand &hand)
 int test_finger_currents(int argc, char **argv, Hand &hand)
 {
   printf("testing finger currents during boot cycle...\n");
-  hand.setMoboStatusHz(1);
+  hand.setMoboStateHz(1);
   ros::Time t_start(ros::Time::now());
   bool finger_states[4] = {false, false, false, false};
   int next_finger_powerup = 0;
@@ -257,17 +257,17 @@ int test_finger_currents(int argc, char **argv, Hand &hand)
       // turn on a finger to observe current ramp
     }
   }
-  hand.setMoboStatusHz(0);
+  hand.setMoboStateHz(0);
   return 0;
 }
 
-void mobo_status_rx(const uint8_t *data, const uint16_t data_len)
+void mobo_state_rx(const uint8_t *data, const uint16_t data_len)
 {
   static FILE *f_log = NULL;
   if (!f_log)
     f_log = fopen("current_log.txt", "w");
   //printf("mobo status\n");
-  const mobo_status_t *p = (mobo_status_t *)data;
+  const mobo_state_t *p = (mobo_state_t *)data;
   printf("\n\n  mobo time: %d\n", p->mobo_time_ms);
   fprintf(f_log, "%d ", p->mobo_time_ms);
   for (int i = 0; i < 4; i++)
@@ -291,9 +291,9 @@ void mobo_status_rx(const uint8_t *data, const uint16_t data_len)
 
 int test_finger_stream(int argc, char **argv, Hand &hand)
 {
-  hand.registerRxHandler(CMD_ID_MOBO_STATUS, mobo_status_rx);
-  printf("turning on mobo status streaming...\n");
-  hand.setMoboStatusHz(100);
+  hand.registerRxHandler(CMD_ID_MOBO_STATUS, mobo_state_rx);
+  printf("turning on mobo state streaming...\n");
+  hand.setMoboStateHz(100);
   //listen_hand(1.0, hand);
   /*
   printf("powering finger sockets...\n");
@@ -314,16 +314,16 @@ int test_finger_stream(int argc, char **argv, Hand &hand)
   */
   while (!g_done)
     listen_hand(0.1, hand);
-  hand.setMoboStatusHz(0);
+  hand.setMoboStateHz(0);
   usleep(200000);
   printf("bye\n");
   return 0;
 }
 
-void palmStatusRx(const uint8_t *data, const uint16_t data_len)
+void palmStateRx(const uint8_t *data, const uint16_t data_len)
 {
-  printf("palmStatusRx\n");
-  palm_status_t *p = (palm_status_t *)data;
+  printf("palmStateRx\n");
+  palm_state_t *p = (palm_state_t *)data;
   printf("  time: %d\n", p->palm_time);
   printf("  tactile: %d %d\n", p->palm_tactile[0], p->palm_tactile[1]);
 }
@@ -331,8 +331,8 @@ void palmStatusRx(const uint8_t *data, const uint16_t data_len)
 int palm_stream(int argc, char **argv, Hand &hand)
 {
   //hand.registerRxHandler(CMD_ID_MOBO_STATUS, mobo_status_rx);
-  hand.palm.registerRxHandler(Palm::PKT_PALM_STATUS, palmStatusRx);
-  printf("turning on palm status streaming...\n");
+  hand.palm.registerRxHandler(Palm::PKT_PALM_STATUS, palmStateRx);
+  printf("turning on palm state streaming...\n");
   hand.setFingerAutopollHz(2);
   //listen_hand(1.0, hand);
   /*

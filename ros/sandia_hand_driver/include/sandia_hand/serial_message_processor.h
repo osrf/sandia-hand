@@ -5,6 +5,7 @@
 #include <boost/function.hpp>
 #include <vector>
 #include <map>
+#include "sandia_hand/param.h"
 
 namespace sandia_hand
 {
@@ -36,6 +37,7 @@ public:
   bool setParamFloat(const std::string &name, const float val);
   bool setParamInt(const std::string &name, const int32_t val);
   bool getParamNames(std::vector<std::string> &names);
+  const std::vector<sandia_hand::Param> &getParams();
 
 protected:
   static const uint32_t MAX_PACKET_LENGTH = 512;
@@ -56,7 +58,7 @@ protected:
   void serializeInt32(const int32_t x, uint8_t *p);
   void serializeFloat32(const float x, uint8_t *p);
   void resetParser();
-  bool retrieveParamNames();
+  bool retrieveParams();
 
 private:
   uint8_t addr_;
@@ -84,7 +86,7 @@ private:
   ListenFunctor listen_functor_;
   bool done_listening_;
   uint8_t listen_pkt_type_;
-  std::vector<std::string> param_names_;
+  std::vector<sandia_hand::Param> params_;
 };
 
 }

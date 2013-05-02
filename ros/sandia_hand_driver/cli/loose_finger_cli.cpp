@@ -60,10 +60,10 @@ int ping(int argc, char **argv, LooseFinger &lf)
 
 int status(int argc, char **argv, LooseFinger &lf)
 {
-  if (lf.mm.pollFingerStatus())
-    printf("finger status poll ok\n");
+  if (lf.mm.pollFingerState())
+    printf("finger state poll ok\n");
   else
-    printf("finger status poll fail\n");
+    printf("finger state poll fail\n");
   return 0;
 }
 
@@ -100,26 +100,32 @@ typedef struct
   int32_t  fmcb_hall_tgt[3];
   int32_t  fmcb_hall_pos[3];
   int16_t  fmcb_effort[3];
-} finger_status_t;
+} finger_state_t;
 
-void rxFingerStatus(const uint8_t *payload, const uint16_t payload_len)
+void rxFingerState(const uint8_t *payload, const uint16_t payload_len)
 {
-  printf("rxFingerStatus\n");
+  printf("rxFingerState\n");
   printf("  ");
-  finger_status_t *fst = (finger_status_t *)payload;
-  printf("imu: ");
+  finger_state_t *fst = (finger_state_t *)payload;
+  printf("  distal imu: ");
   for (int i = 0; i < 6; i++)
     printf("%06d ", fst->dp_imu[i]);
-  printf("\ntactile: ");
+  printf("\n  distal tactile: ");
   for (int i = 0; i < 12; i++)
     printf("%06d ", fst->dp_tactile[i]);
+  printf("\n  proximal imu: ");
+  for (int i = 0; i < 6; i++)
+    printf("%06d ", fst->pp_imu[i]);
+  printf("\n  proximal tactile: ");
+  for (int i = 0; i < 6; i++)
+    printf("%06d ", fst->pp_tactile[i]);
   printf("\n\n");
 }
 
 int stream(int argc, char **argv, LooseFinger &lf)
 {
   lf.mm.registerRxHandler(MotorModule::PKT_FINGER_STATUS,
-                          boost::bind(rxFingerStatus, _1, _2));
+                          boost::bind(rxFingerState, _1, _2));
   if (!lf.mm.setPhalangeAutopoll(true))
   {
     printf("couldn't start phalange autopoll\n");
@@ -128,7 +134,7 @@ int stream(int argc, char **argv, LooseFinger &lf)
   while (!g_done)
   {
     listen_loose_finger(0.01, lf);
-    lf.mm.pollFingerStatus();
+    lf.mm.pollFingerState();
   }
   lf.mm.setPhalangeAutopoll(false);
   return 0;
@@ -413,6 +419,12 @@ int dump(int argc, char **argv, LooseFinger &lf)
   return 0;
 }
 
+bool reset_finger(LooseFinger &lf)
+{
+  lf.mm.reset();
+  return true; // return true even if we couldn't ack the reset request
+}
+
 bool fake_set_finger_power()
 {
   return true;
@@ -428,7 +440,8 @@ int burn(int argc, char **argv, LooseFinger &lf)
     printf("couldn't open motor module application image %s\n", fn);
     return 1;
   }
-  if (!lf.mm.programAppFile(f, fake_set_finger_power, fake_set_finger_power))
+  if (!lf.mm.programAppFile(f, boost::bind(reset_finger, boost::ref(lf)), 
+                            fake_set_finger_power))
   {
     printf("failed to program motor module with image %s\n", fn);
     return 1;

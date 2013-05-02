@@ -201,6 +201,17 @@ int pdump(int argc, char **argv, LooseFinger &lf)
   return 0;
 }
 
+int jp(int argc, char **argv, LooseFinger &lf)
+{
+  verify_argc(argc, 6, "usage: jp J0 J1 J2");
+  float j0 = atof(argv[3]), j1 = atof(argv[4]), j2 = atof(argv[5]);
+  float joint_pos[3] = {j0, j1, j2};
+  uint8_t max_efforts[3] = {50, 50, 50};
+  lf.mm.setJointPos(joint_pos, max_efforts);
+  return 0;
+}
+
+
 int pburn(int argc, char **argv, LooseFinger &lf)
 {
   verify_argc(argc, 4, "usage: pburn FILENAME");
@@ -549,6 +560,8 @@ int main(int argc, char **argv)
     return dump(argc, argv, lf);
   if (!strcmp(cmd, "burn"))
     return burn(argc, argv, lf);
+  if (!strcmp(cmd, "jp"))
+    return jp(argc, argv, lf);
 
   printf("unknown command: [%s]\n", cmd);
   return 1;

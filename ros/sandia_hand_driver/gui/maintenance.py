@@ -142,10 +142,13 @@ class MaintenanceWindow(QWidget):
     self.tab_widget = QTabWidget()
     # todo: parse which tab is auto exit worthy
     auto_exit_board_name = rospy.get_param("~auto_exit_board_name", "")
+    auto_awesome = rospy.get_param("~auto_awesome", False)
     self.f3_tab = TactileBoardTab("f3", 12, auto_exit_board_name == "f3") 
     self.f2_tab = TactileBoardTab("f2",  6, auto_exit_board_name == "f2")
     self.tab_widget.addTab(self.f3_tab, "F3")
     self.tab_widget.addTab(self.f2_tab, "F2")
+    if auto_exit_board_name == "f2":
+      self.tab_widget.setCurrentIndex(1) 
 
     vbox = QVBoxLayout()
     vbox.addWidget(self.tab_widget)
@@ -161,6 +164,10 @@ class MaintenanceWindow(QWidget):
                                        self.finger_status_cb)
     self.connect(self, SIGNAL('updateF3'), self.f3_tab.onUpdateUI)
     self.connect(self, SIGNAL('updateF2'), self.f2_tab.onUpdateUI)
+    if auto_awesome:
+      if auto_exit_board_name == "f2":
+        self.f2_tab.autoClicked()
+
   def finger_status_cb(self, msg):
     # copy everything out of the ROS thread and into UI threads
     f3_accel_raw = [0] * 3

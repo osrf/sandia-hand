@@ -255,7 +255,7 @@ void power_start_poll()
   */
 }
 
-void power_update_current_limits(const mobo_status_t *p)
+void power_update_current_limits(const mobo_state_t *p)
 {
   // this is called from power_i2c_rx_complete. pulled into separate function
   // just to clarify what is happening.
@@ -311,9 +311,9 @@ void power_i2c_rx_complete(const uint16_t rx_data)
     if (g_power_status_send_req)
     {
       g_power_status_send_req = 0;
-      uint8_t status_buf[sizeof(mobo_status_t) + 4];
+      uint8_t status_buf[sizeof(mobo_state_t) + 4];
       *((uint32_t *)(status_buf)) = CMD_ID_MOBO_STATUS;
-      mobo_status_t *p = (mobo_status_t *)(status_buf + 4);
+      mobo_state_t *p = (mobo_state_t *)(status_buf + 4);
       p->mobo_time_ms = g_power_systick_value; // todo: pull from a HW timer
       for (int i = 0; i < 4; i++)
         p->finger_currents[i] = g_power_finger_currents[i] * 0.0001f;
@@ -323,7 +323,7 @@ void power_i2c_rx_complete(const uint16_t rx_data)
         p->mobo_raw_temperatures[i] = g_power_adc_readings[i];
       power_update_current_limits(p);
       p->mobo_max_effort = g_power_mobo_max_effort;
-      enet_tx_udp(status_buf, sizeof(mobo_status_t) + 4);
+      enet_tx_udp(status_buf, sizeof(mobo_state_t) + 4);
     }
   }
 

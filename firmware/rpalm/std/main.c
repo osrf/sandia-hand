@@ -9,7 +9,7 @@
 #include "tactile.h"
 #include "comms.h"
 #include "imu.h"
-#include "status.h"
+#include "state.h"
 #include "console.h"
 
 void systick_irq()
@@ -17,7 +17,7 @@ void systick_irq()
   comms_systick();
   imu_systick();
   tactile_systick();
-  status_systick();
+  state_systick();
 }
 
 int main(void)
@@ -32,7 +32,7 @@ int main(void)
   tactile_init();
   comms_init();
   imu_init();
-  status_init();
+  state_init();
   SysTick_Config(F_CPU / 1000); // 1 ms tick clock
   NVIC_SetPriority(SysTick_IRQn, 8); 
   __enable_irq();
@@ -42,7 +42,7 @@ int main(void)
     comms_idle();
     imu_idle();
     tactile_idle();
-    status_idle();
+    state_idle();
   }
 }
 

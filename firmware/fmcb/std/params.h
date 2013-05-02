@@ -17,6 +17,8 @@ struct params_t
   float lower_joint_limit[3];
   float upper_joint_limit[3];
   int   torque_limit[3];
+  int   accel_bias[9];  // mm, pp, dp
+  int   accel_scale[9]; // mm, pp, dp
 };
 extern struct params_t g_params;
 

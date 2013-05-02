@@ -2,7 +2,7 @@
 #include "sam3s/core_cm3.h"
 #include "tactile.h"
 #include "pins.h"
-#include "status.h"
+#include "state.h"
 
 #define TACTILE_NUM_MUXES 5
 
@@ -212,7 +212,7 @@ void tactile_systick()
     g_tactile_sensor_idx = 0;
     for (int i = 0; i < TACTILE_NUM_TAXELS; i++)
       g_tactile_last_scan[i] = g_tactile_current_scan[i]; // batch update plz
-    g_tactile_last_scan_time = status_get_time();
+    g_tactile_last_scan_time = state_get_time();
   }
   // now, move on to the next photosensor
   const photosensor_t *ps_next = &photosensors[g_tactile_sensor_idx];

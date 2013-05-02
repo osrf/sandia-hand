@@ -205,13 +205,13 @@ bool Hand::setCameraStreaming(const bool cam_0_streaming,
   return tx_udp(pkt, 4 + sizeof(configure_camera_stream_t));
 }
 
-bool Hand::setMoboStatusHz(const uint16_t mobo_status_hz)
+bool Hand::setMoboStateHz(const uint16_t mobo_status_hz)
 {
   uint8_t pkt[50];
   *((uint32_t *)pkt) = CMD_ID_SET_MOBO_STATUS_RATE;
-  set_mobo_status_rate_t *p = (set_mobo_status_rate_t *)(pkt+4);
-  p->mobo_status_hz = mobo_status_hz;
-  return tx_udp(pkt, 4 + sizeof(set_mobo_status_rate_t));
+  set_mobo_state_rate_t *p = (set_mobo_state_rate_t *)(pkt+4);
+  p->mobo_state_hz = mobo_status_hz;
+  return tx_udp(pkt, 4 + sizeof(set_mobo_state_rate_t));
 }
 
 bool Hand::setFingerAutopollHz(const uint16_t autopoll_hz)

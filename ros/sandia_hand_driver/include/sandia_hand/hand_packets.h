@@ -77,8 +77,8 @@ typedef struct
 
 typedef struct
 {
-  uint8_t mobo_status_hz;
-} __attribute__((packed)) set_mobo_status_rate_t;
+  uint8_t mobo_state_hz;
+} __attribute__((packed)) set_mobo_state_rate_t;
 
 typedef struct
 {
@@ -87,7 +87,7 @@ typedef struct
   float logic_currents[3];
   uint16_t mobo_raw_temperatures[3];
   uint8_t mobo_max_effort;
-} __attribute__((packed)) mobo_status_t;
+} __attribute__((packed)) mobo_state_t;
 
 typedef struct
 {

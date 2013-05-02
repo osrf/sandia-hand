@@ -57,7 +57,7 @@ class TactileBoardTab(QWidget):
     self.vbox.addStretch(1)
     self.vbox.addWidget(self.terminal)
     self.setLayout(self.vbox)
-  def onUpdateUI(self, accel_raw, tactile_raw, auto_exit_on_success):
+  def onUpdateUI(self, accel_raw, tactile_raw):
     accel_mag = 0
     for i in xrange(0,3):
       accel_mag += accel_raw[i]**2
@@ -86,8 +86,8 @@ class TactileBoardTab(QWidget):
         ready_to_exit = False
         self.tactile_lights[i].setStyleSheet("QWidget {background-color:red}")
     if ready_to_exit:
-      if self.driver_process:
-        print "stopping driver process"
+      if self.process:
+        print "stopping child process"
         os.system("rosnode kill sandia_hand_loose_finger_node")
         print "sleeping..."
         os.system("sleep 0.25")
@@ -95,13 +95,10 @@ class TactileBoardTab(QWidget):
         self.driver_process = None
         QApplication.quit()
   def bootloaderClicked(self):
-    cmd = "cd %s && bin/loose_finger_cli /dev/ttyUSB0 pb on && sleep 1 && cd %s/../../firmware/build && make %s-bl-gpnvm && make %s-bl-program && echo \"\ntasks complete\"" % (self.shd, self.shd, self.board_name, self.board_name)
-    self.process = QProcess(self)
-    self.process.finished.connect(self.bootloaderOnFinished)
-    self.process.setProcessChannelMode(QProcess.MergedChannels)
-    self.process.readyReadStandardOutput.connect(self.terminalReadOutput)
-    self.process.start("/bin/bash", ["-c", cmd])
-  def bootloaderOnFinished(self, exitCode, exitStatus):
+    self.spawnProcess("cd %s && bin/loose_finger_cli /dev/ttyUSB0 pb on && sleep 1 && cd %s/../../firmware/build && make %s-bl-gpnvm && make %s-bl-program && echo \"\ntasks complete\"" % (self.shd, self.shd, self.board_name, self.board_name), self.processOnFinished)
+  def applicationClicked(self):
+    self.spawnProcess("cd %s && bin/loose_finger_cli /dev/ttyUSB0 %s ../../firmware/build/%s/std/%s-std.bin && echo \"\ntasks complete\"" % (self.shd, self.applicationCmd(), bn, bn), self.processOnFinished)
+  def processOnFinished(self, exitCode, exitStatus):
     if exitCode != 0:
       QMessageBox.about(self, "bad!", "error detected. see terminal output.")
   def autoOnFinished(self, exitCode, exitStatus):
@@ -114,37 +111,39 @@ class TactileBoardTab(QWidget):
     else:
       QMessageBox.about(self, "bad!", "auto button not ready for this board")
       return
-    self.driver_process = QProcess(self)
-    self.driver_process.setProcessChannelMode(QProcess.MergedChannels)
-    self.driver_process.start("/bin/bash", ["-c", cmd])
+    self.spawnProcess(cmd, self.processOnFinished)
   def autoClicked(self):
     bn = self.board_name
     shd = self.shd
-    cmd = "cd %s && bin/loose_finger_cli /dev/ttyUSB0 pb on && sleep 1 && cd %s/../../firmware/build && make %s-bl-gpnvm && make %s-bl-program && cd %s && bin/loose_finger_cli /dev/ttyUSB0 dburn ../../firmware/build/%s/std/%s-std.bin && echo \"\ntasks complete\"" % (shd, shd, bn, bn, shd, bn, bn)
-    self.process = QProcess(self)
-    self.process.finished.connect(self.autoOnFinished)
-    self.process.setProcessChannelMode(QProcess.MergedChannels)
-    self.process.readyReadStandardOutput.connect(self.terminalReadOutput)
-    self.process.start("/bin/bash", ["-c", cmd])
-  def applicationClicked(self):
-    bn = self.board_name
-    cmd = "cd %s && bin/loose_finger_cli /dev/ttyUSB0 dburn ../../firmware/build/%s/std/%s-std.bin && echo \"\ntasks complete\"" % (self.shd, bn, bn)
-    self.process = QProcess(self)
-    self.process.finished.connect(self.bootloaderOnFinished)
-    self.process.setProcessChannelMode(QProcess.MergedChannels)
-    self.process.readyReadStandardOutput.connect(self.terminalReadOutput)
-    self.process.start("/bin/bash", ["-c", cmd])
+    self.spawnProcess("cd %s && bin/loose_finger_cli /dev/ttyUSB0 pb on && sleep 1 && cd %s/../../firmware/build && make %s-bl-gpnvm && make %s-bl-program && cd %s && bin/loose_finger_cli /dev/ttyUSB0 %s ../../firmware/build/%s/std/%s-std.bin && echo \"\ntasks complete\"" % (shd, shd, bn, bn, shd, self.applicationCmd(), bn, bn), self.autoOnFinished)
   def terminalReadOutput(self):
     #sys.stdout.write(self.process.readAllStandardOutput())
     self.terminal.append(QString(self.process.readAllStandardOutput()))
+  def applicationCmd(self):
+    bn = self.board_name
+    if bn == "f3":
+      return "dburn"
+    elif bn == "f2":
+      return "pburn"
+    else:
+      QMessageBox.about(self, "bad!", "application not defined for %s" % bn)
+      return 
+  def spawnProcess(self, cmd, onFinished):
+    self.terminal.append(cmd + "\n")
+    self.process = QProcess(self)
+    self.process.finished.connect(onFinished)
+    self.process.setProcessChannelMode(QProcess.MergedChannels)
+    self.process.readyReadStandardOutput.connect(self.terminalReadOutput)
+    self.process.start("/bin/bash", ["-c", cmd])
 
 class MaintenanceWindow(QWidget):
   def __init__(self):
     super(MaintenanceWindow, self).__init__()
     self.tab_widget = QTabWidget()
     # todo: parse which tab is auto exit worthy
-    self.f3_tab = TactileBoardTab("f3", 12, False) 
-    self.f2_tab = TactileBoardTab("f2",  6, False)
+    auto_exit_board_name = rospy.get_param("~auto_exit_board_name", "")
+    self.f3_tab = TactileBoardTab("f3", 12, auto_exit_board_name == "f3") 
+    self.f2_tab = TactileBoardTab("f2",  6, auto_exit_board_name == "f2")
     self.tab_widget.addTab(self.f3_tab, "F3")
     self.tab_widget.addTab(self.f2_tab, "F2")
 
@@ -184,6 +183,4 @@ if __name__ == '__main__':
   app = QApplication(sys.argv)
   mw = MaintenanceWindow()
   sys.exit(app.exec_())
-  if mw.driver_process:
-    print "stopping driver process on exit"
-    mw.driver_process.terminate() 
+

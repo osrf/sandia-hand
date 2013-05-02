@@ -24,7 +24,7 @@ static const float lower_limits_none[3] = { -1.57, -1.57, -1.57 };
 
 void signal_handler(int signum)
 {
-  if (signum == SIGINT)
+  if (signum == SIGINT || signum == SIGTERM)
     g_done = true;
 }
 
@@ -218,6 +218,9 @@ int main(int argc, char **argv)
   LooseFinger finger;
   std::string serial_device;
   nh_private.param<string>("serial_device", serial_device, "/dev/ttyUSB0");
+  bool use_proximal_phalange, use_distal_phalange;
+  nh_private.param("use_proximal_phalange", use_proximal_phalange, true);
+  nh_private.param("use_distal_phalange", use_distal_phalange, true);
   if (!finger.init(serial_device.c_str()))
   {
     ROS_FATAL("couldn't init hand");
@@ -243,19 +246,25 @@ int main(int argc, char **argv)
     return 1;
   }
   signal(SIGINT, signal_handler);
+  signal(SIGTERM, signal_handler);
   ros::Publisher raw_finger_state_pub;
   if (!finger.pp.ping())
     finger.mm.setPhalangeBusPower(true);
   listenToFinger(&finger, 2.0);
-  if (!finger.pp.blBoot())
-    ROS_WARN("couldn't boot finger proximal phalange");
-  if (!finger.dp.blBoot())
-    ROS_WARN("couldn't boot finger distal phalange");
+  // todo: make proximal/distal phalanges ROS parameters for manufacturing
+  if (use_proximal_phalange)
+    if (!finger.pp.blBoot())
+      ROS_WARN("couldn't boot finger proximal phalange");
+  if (use_distal_phalange)
+    if (!finger.dp.blBoot())
+      ROS_WARN("couldn't boot finger distal phalange");
   listenToFinger(&finger, 0.5);
-  if (!finger.pp.ping())
-    return perish("couldn't ping proximal phalange", &finger);
-  if (!finger.dp.ping())
-    return perish("couldn't ping distal phalange", &finger);
+  if (use_proximal_phalange)
+    if (!finger.pp.ping())
+      return perish("couldn't ping proximal phalange", &finger);
+  if (use_distal_phalange)
+    if (!finger.dp.ping())
+      return perish("couldn't ping distal phalange", &finger);
 
   raw_finger_state_pub = 
       nh.advertise<sandia_hand_msgs::RawFingerState>("raw_state", 1);

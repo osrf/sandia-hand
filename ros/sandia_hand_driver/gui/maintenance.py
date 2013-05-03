@@ -216,7 +216,7 @@ class MaintenanceWindow(QWidget):
     for i in xrange(0, 3):
       f3_accel_raw[i] = msg.dp_accel[i]
       f2_accel_raw[i] = msg.pp_accel[i]
-      fmcb_accel_raw[i] = msg.fmcb_accel[i]
+      fmcb_accel_raw[i] = msg.mm_accel[i]
     for i in xrange(0, 12):
       f3_tactile_raw[i] = msg.dp_tactile[i]
     for i in xrange(0,  6):

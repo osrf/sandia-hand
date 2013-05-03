@@ -31,11 +31,13 @@ const Pin pin_phal_pwr = {PIO_PA27, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT};
 
 const Pin pin_m_brake = {PIO_PA30, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT};
 
-const Pin pin_m0_en =  {PIO_PA24, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT};
+//const Pin pin_m0_en =  {PIO_PA24, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT};
+const Pin pin_m0_en =  {PIO_PA25, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT};
 const Pin pin_m1_en =  {PIO_PA2 , PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT};
 const Pin pin_m2_en =  {PIO_PA26, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT};
 
-const Pin pin_m0_dir = {PIO_PA25, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT};
+//const Pin pin_m0_dir = {PIO_PA25, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT};
+const Pin pin_m0_dir = {PIO_PA24, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT};
 const Pin pin_m1_dir = {PIO_PA0 , PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT};
 const Pin pin_m2_dir = {PIO_PA18, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT};
 

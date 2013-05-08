@@ -21,6 +21,7 @@
 static volatile uint8_t g_tx_pkt_buf[COMMS_MAX_PACKET_LENGTH];
 extern uint32_t _sid;
 static int g_rs485_address = 0xfe; // bogus 
+static uint32_t g_bl_hw_version = 0;    // bogus
 static volatile uint8_t g_rx_buf[COMMS_RX_BUF_LEN];
 static volatile unsigned g_rx_buf_writepos = 0, g_rx_buf_readpos = 0;
 
@@ -62,8 +63,12 @@ void init_clocks()
   // finally, switch to PLL output
   PMC->PMC_MCKR = PMC_MCKR_PRES_CLK_2 | PMC_MCKR_CSS_PLLA_CLK;
   while (!(PMC->PMC_SR & PMC_SR_MCKRDY)) { } // spin until selected
-
   gpio_led(false);
+  g_bl_hw_version = *((uint32_t *)0x0401ff8); // magic, defined in bootloader
+  if (((g_bl_hw_version >> 16) & 0xffff) != 0xbeef) // check for magic bytes
+    g_bl_hw_version = 0; // older bootloaders didn't define this.
+  else
+    g_bl_hw_version &= 0xffff; // mask out the top magic bytes
 }
 
 void rs485_init()
@@ -383,6 +388,12 @@ void rs485_process_packet(uint8_t pkt_addr, uint16_t payload_len,
   {
     control_set_max_effort_mobo(payload[0]);
     // don't send response to this packet, since it will come fairly fast
+  }
+  else if (pkt_type == 0xfa)
+  {
+    // read hardware version
+    *((uint32_t *)(g_tx_pkt_buf + 5)) = g_bl_hw_version;
+    rs485_send_packet(0xfa, 4); // send nack
   }
   else if (pkt_type == 0xfd) // announce myself
   {

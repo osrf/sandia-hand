@@ -2,6 +2,7 @@
 #include "sandia_hand/motor_module.h"
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
+#include <ros/console.h>
 using namespace sandia_hand;
 using std::vector;
 
@@ -136,6 +137,19 @@ bool MotorModule::setControlMode(const uint8_t  control_mode,
 bool MotorModule::setMotorsIdle()
 {
   return setControlMode(CM_IDLE, NULL, NULL);
+}
+
+bool MotorModule::setMotorPos(const int16_t *motor_pos)
+{
+  // caution! bypasses joint limits!
+  if (!motor_pos)
+    return false;
+  getTxBuffer()[0] = CM_MOTOR_SPACE;
+  for (int i = 0; i < 3; i++)
+    serializeInt16(motor_pos[i], getTxBuffer() + 1 + 2*i);
+  if (!sendTxBuffer(PKT_CONTROL_MODE, 1 + 4*2))
+    return false;
+  return true;
 }
 
 bool MotorModule::setJointPosHome()

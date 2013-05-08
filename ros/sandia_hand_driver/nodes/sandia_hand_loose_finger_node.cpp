@@ -9,6 +9,7 @@
 #include "sandia_hand/loose_finger.h"
 #include <sandia_hand_msgs/GetParameters.h>
 #include <sandia_hand_msgs/SetParameters.h>
+#include <sandia_hand_msgs/RawFingerCommands.h>
 using namespace sandia_hand;
 using std::string;
 using std::vector;
@@ -109,6 +110,19 @@ bool setParametersSrv(LooseFinger *finger,
   return all_ok;
 }
 
+void rawCommandsCallback(LooseFinger *finger,
+                     const sandia_hand_msgs::RawFingerCommands::ConstPtr &msg)
+{
+  ROS_INFO("received raw command request: %d %d %d", 
+           msg->motor_targets[0],
+           msg->motor_targets[1],
+           msg->motor_targets[2]);
+  int16_t motor_targets[3] = {0};
+  for (int i = 0; i < 3; i++)
+    motor_targets[i] = msg->motor_targets[i];
+  finger->mm.setMotorPos(motor_targets);
+}
+
 void jointCommandsCallback(LooseFinger *finger, 
                            const osrf_msgs::JointCommandsConstPtr &msg)
 {
@@ -119,9 +133,11 @@ void jointCommandsCallback(LooseFinger *finger,
     ROS_WARN("ignoring joint commands message with insufficient length");
     return; // woah there partner
   }
-  float pos[3] = { (float)msg->position[0], 
-                   (float)msg->position[1], 
-                   (float)msg->position[2]  };
+  float pos[3]; // = { (float)msg->position[0], 
+                //   (float)msg->position[1], 
+                //   (float)msg->position[2]  };
+  for (int i = 0; i < 3; i++)
+    pos[i] = (float)msg->position[i];
   uint8_t max_effort_dummy[3] = {50, 50, 50}; // todo: use max_effort params
   finger->mm.setJointPos(pos, max_effort_dummy);
 }
@@ -283,7 +299,10 @@ int main(int argc, char **argv)
     nh.subscribe<sandia_hand_msgs::RelativeJointCommands>
        ("relative_joint_commands", 1, 
         boost::bind(relativeJointCommandsCallback, &finger, _1));
-  ros::Subscriber finger_joint_commands_sub;
+  ros::Subscriber motor_commands_sub =
+    nh.subscribe<sandia_hand_msgs::RawFingerCommands>("raw_commands", 1,
+                             boost::bind(rawCommandsCallback, &finger, _1));
+
   ros::ServiceServer home_srv = 
     nh.advertiseService<sandia_hand_msgs::SetFingerHome::Request, 
                         sandia_hand_msgs::SetFingerHome::Response>

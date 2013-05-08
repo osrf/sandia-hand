@@ -432,6 +432,13 @@ int dump(int argc, char **argv, LooseFinger &lf)
   return 0;
 }
 
+int ver(int argc, char **argv, LooseFinger &lf)
+{
+  const uint32_t mm_ver = (uint32_t)lf.mm.getHardwareVersion();
+  printf("motor module version: %08x\n", mm_ver);
+  return 0;
+}
+
 bool reset_finger(LooseFinger &lf)
 {
   lf.mm.reset();
@@ -442,6 +449,7 @@ bool fake_set_finger_power()
 {
   return true;
 }
+
 
 int burn(int argc, char **argv, LooseFinger &lf)
 {
@@ -564,6 +572,8 @@ int main(int argc, char **argv)
     return burn(argc, argv, lf);
   if (!strcmp(cmd, "jp"))
     return jp(argc, argv, lf);
+  if (!strcmp(cmd, "ver"))
+    return ver(argc, argv, lf);
 
   printf("unknown command: [%s]\n", cmd);
   return 1;

@@ -625,3 +625,19 @@ const vector<Param> &SerialMessageProcessor::getParams()
     retrieveParams();
   return params_;
 }
+
+uint32_t SerialMessageProcessor::getHardwareVersion()
+{
+  if (!sendTxBuffer(PKT_READ_HW_VERSION))
+  {
+    printf("unable to send hw ver query\n");
+    return 0;
+  }
+  if (!listenFor(PKT_READ_HW_VERSION, 0.1) || rx_pkt_data_.size() != 4)
+  {
+    printf("no response to hw ver query\n");
+    return 0;
+  }
+  return *((const uint32_t *)(&rx_pkt_data_[0]));
+}
+

@@ -15,6 +15,9 @@ SECTIONS
       _sfixed = .;
       KEEP(*bl_sam3s_startup.S.o(*.text))
       KEEP(*(.text*))  
+      . = 0x1ff8;
+      _sid = .;
+      KEEP(*(.bl_hw_version))
       . = 0x1ffc;
       _sid = .;
       KEEP(*(.rs485_addr))

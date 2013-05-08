@@ -30,6 +30,7 @@ public:
   bool blWriteFlashPage(const uint16_t page_num, const uint8_t *page_buf, 
                         bool chop);
   bool reset();
+  uint32_t getHardwareVersion();
 
   typedef boost::function<bool()> PowerFunctor;
   bool programAppFile(FILE *bin_file, 
@@ -81,6 +82,7 @@ private:
   static const uint8_t PKT_READ_PARAM_NAME       = 0x17;
   static const uint8_t PKT_READ_PARAM_VALUE      = 0x18;
   static const uint8_t PKT_WRITE_PARAM_VALUE     = 0x19;
+  static const uint8_t PKT_READ_HW_VERSION       = 0xfa;
   void rxPing(const uint8_t *payload, const uint16_t payload_len);
   void rxByte(const uint8_t b);
   ListenFunctor listen_functor_;

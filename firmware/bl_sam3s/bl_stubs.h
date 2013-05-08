@@ -2,7 +2,9 @@
 #define BL_STUBS_H
 
 #include "sam3s/chip.h"
-extern const int __attribute__((section (".rs485_addr"))) g_rs485_addr;
+extern const int __attribute__((section (".rs485_addr")))    g_rs485_addr;
+extern const uint32_t 
+  __attribute__((section (".bl_hw_version"))) g_bl_hw_version;
 
 typedef enum { BL_LED_OFF=0, BL_LED_ON=1, BL_LED_TOGGLE=2} bl_led_state_t;
 void bl_led(bl_led_state_t state);

@@ -23,6 +23,7 @@ public:
   bool setMotorsIdle();
   bool setJointPosHome();
   bool setJointPos(const float *joint_pos, const uint8_t *max_efforts);
+  bool setMotorPos(const int16_t *motor_pos); // caution! no joint limits!
   bool setRelativeJointPos(const float *joint_pos, const uint8_t *max_efforts);
   static const uint8_t PKT_FINGER_STATUS     = 0x21;
 private:

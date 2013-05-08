@@ -273,6 +273,12 @@ void process_packet() // spaghetti code just to have fewer indents...
       g_tx_pkt_buf[9] = write_error; //0x01; // error flag
     send_packet(0x0e, 5); // send ack
   }
+  else if (g_pkt_type == 0xfa)
+  {
+    // read hardware version
+    *((uint32_t *)(g_tx_pkt_buf + 5)) = g_bl_hw_version; 
+    send_packet(0xfa, 4); // send nack
+  }
   /*
   else if (bl_pkt_type == 0xfb) // read chip serial number. todo someday...
   {

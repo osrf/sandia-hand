@@ -10,3 +10,11 @@ Palm::~Palm()
 {
 }
 
+bool Palm::pollState()
+{
+  if (!sendTxBuffer(PKT_PALM_STATE, 0))
+    return false;
+  return listenFor(PKT_PALM_STATE, 0.5);
+}
+
+

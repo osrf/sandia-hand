@@ -46,8 +46,6 @@ class MotorBoardTab(BoardTab):
     self.application_btn.clicked.connect(self.applicationClicked)
     self.test_btn = QPushButton("Test")
     self.test_btn.clicked.connect(self.testClicked)
-    self.test_btn = QPushButton("Test")
-    self.test_btn.clicked.connect(self.testClicked)
     self.auto_btn = QPushButton("Awesome")
     self.auto_btn.clicked.connect(self.autoClicked)
     button_hbox = QHBoxLayout()
@@ -339,10 +337,12 @@ class MaintenanceWindow(QWidget):
     self.connect(self, SIGNAL('updateF3'), self.f3_tab.onUpdateUI)
     self.connect(self, SIGNAL('updateF2'), self.f2_tab.onUpdateUI)
     self.connect(self, SIGNAL('updateFMCB'), self.fmcb_tab.onUpdateUI)
-    # this is gross
+    # this is gross. figure out a better way sometime
     if auto_awesome:
       if auto_exit_board_name == "f2":
         self.f2_tab.autoClicked()
+      elif auto_exit_board_name == "fmcb":
+        self.fmcb_tab.autoClicked()
 
   def finger_status_cb(self, msg):
     # copy everything out of the ROS thread and into UI threads

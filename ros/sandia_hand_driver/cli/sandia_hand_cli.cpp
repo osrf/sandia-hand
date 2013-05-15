@@ -331,7 +331,7 @@ void palmStateRx(const uint8_t *data, const uint16_t data_len)
 int palm_stream(int argc, char **argv, Hand &hand)
 {
   //hand.registerRxHandler(CMD_ID_MOBO_STATUS, mobo_status_rx);
-  hand.palm.registerRxHandler(Palm::PKT_PALM_STATUS, palmStateRx);
+  hand.palm.registerRxHandler(Palm::PKT_PALM_STATE, palmStateRx);
   printf("turning on palm state streaming...\n");
   hand.setFingerAutopollHz(2);
   //listen_hand(1.0, hand);

@@ -117,7 +117,7 @@
     <link name="${side}_palm_left_camera_optical_frame"/>
     <gazebo reference="${side}_palm_left_camera_frame">
       <sensor name="${side}_palm_stereo_camera" type="multicamera">
-        <update_rate>60.0</update_rate>
+        <update_rate>30.0</update_rate>
         <camera name="left">
           <horizontal_fov>${horizontal_fov_degrees * M_pi / 180}</horizontal_fov>
           <image>

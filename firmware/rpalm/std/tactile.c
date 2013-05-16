@@ -232,7 +232,7 @@ void tactile_systick()
   PIO_Clear(&pin_leds[ps_next->led_idx]); // turn on LED plz
   // set the mux address lines of the activated photosensor
   for (int i = 0; i < 3; i++)
-    set_pin(&pin_mux[ps_next->mux_idx][i], ps_next->mux_chan);
+    set_pin(&pin_mux[ps_next->mux_idx][i], ps_next->mux_chan & (1 << i));
   g_tactile_sensor_state_count = 0; // reset the counter. don't need to tho.
   // now, everything is settling. wait until the next systick fires, at which
   // time we shall sample it a few times and call it good.

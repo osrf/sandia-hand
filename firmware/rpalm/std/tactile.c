@@ -195,6 +195,18 @@ static const uint8_t TACTILE_SETTLE_SYSTICKS = 0;
 
 void tactile_systick()
 {
+#if 0
+  //PIO_Toggle(&pin_leds[18]);
+  //pin_leds[18].pio->PIO_TODR = pin_leds[18].mask;
+  if (++g_tactile_sensor_state_count % 2 == 0)
+    PIOC->PIO_SODR = PIO_PC18;
+    //PIO_Set(&pin_leds[18]);
+  else
+    PIOC->PIO_CODR = PIO_PC18;
+    //PIO_Clear(&pin_leds[18]);
+  return;
+#endif
+
   // since we are reading a tactile sensor each systick, no need for this check
   //if (++g_tactile_sensor_state_count < TACTILE_SETTLE_SYSTICKS)
   //  return; // move along. nothing to see here.
@@ -224,29 +236,5 @@ void tactile_systick()
   g_tactile_sensor_state_count = 0; // reset the counter. don't need to tho.
   // now, everything is settling. wait until the next systick fires, at which
   // time we shall sample it a few times and call it good.
-}
-
-// todo: schedule this reasonably.
-void thermal_scan(uint8_t *data_buf)
-{
-  /*
-  for (int therm_idx = 0; therm_idx < TACTILE_NUM_THERM; therm_idx++)
-  {
-    const sensor_map_t *mapping = &therm_mappings[therm_idx];
-    __disable_irq();
-    // set the muxes
-    set_pin(&pin_mux[0][0], mapping->mux0_chan & 0x01);
-    set_pin(&pin_mux[0][1], mapping->mux0_chan & 0x02);
-    set_pin(&pin_mux[0][2], mapping->mux0_chan & 0x04);
-    set_pin(&pin_mux[1][0], mapping->mux1_chan & 0x01);
-    set_pin(&pin_mux[1][1], mapping->mux1_chan & 0x02);
-    set_pin(&pin_mux[1][2], mapping->mux1_chan & 0x04);
-    uint16_t adc_reading = tactile_read_adc(mapping->adc_chan, 1);
-    for (volatile int i = 0; i < 2000; i++) { } // wait for settling 
-    adc_reading = tactile_read_adc(mapping->adc_chan, 10);
-    __enable_irq();
-    *((uint16_t *)(data_buf + therm_idx*2)) = adc_reading;
-  }
-  */
 }
 

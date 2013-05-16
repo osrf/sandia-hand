@@ -14,7 +14,7 @@ volatile int16_t g_imu_data[6] = {0}; // global buffer
 static int16_t g_imu_accel_data[3] = {0}, g_imu_mag_data[3] = {0};
 typedef enum { IMU_POWER_ON_REQ , IMU_POWER_ON,
                IMU_POWER_OFF_REQ, IMU_POWER_OFF } imu_power_state_t; 
-static imu_power_state_t g_imu_power_state = IMU_POWER_OFF;
+static imu_power_state_t g_imu_power_state = IMU_POWER_ON;
 #define ACCEL_ADDR 0x19
 #define MAG_ADDR 0x1e
 
@@ -37,11 +37,14 @@ void imu_init()
   NVIC_SetPriority(TWI0_IRQn, 2); // lower priority than rs485 comms
   NVIC_EnableIRQ(TWI0_IRQn);
   // write a few registers to init the sensors
-  imu_reg_write(ACCEL_ADDR, 0x20, 0x00); // low-power mode
+  //imu_reg_write(ACCEL_ADDR, 0x20, 0x00); // low-power mode
+  imu_reg_write(ACCEL_ADDR, 0x20, 0x57); // turn on all axes
   imu_reg_write(ACCEL_ADDR, 0x23, 0x88);
   imu_reg_write(MAG_ADDR  , 0x00, 0x9c);
   imu_reg_write(MAG_ADDR  , 0x01, 0x80); // no idea what range should be
-  imu_reg_write(MAG_ADDR  , 0x02, 0x03); // sleep mode
+  //imu_reg_write(MAG_ADDR  , 0x02, 0x03); // sleep mode
+  imu_reg_write(MAG_ADDR  , 0x02, 0x00); // continuous-conversion mode
+
   g_imu_data[0] = 42;
 }
 
@@ -71,18 +74,16 @@ void imu_twi_cb()
       ((uint8_t *)g_imu_mag_data)[2*i+1] = swap;
     }
     __disable_irq(); // copy into global buffer now
-    g_imu_data[3] = g_imu_mag_data[0];
-    g_imu_data[4] = g_imu_mag_data[1];
-    g_imu_data[5] = g_imu_mag_data[2];
+    for (int i = 0; i < 3; i++)
+      g_imu_data[i+3] = g_imu_mag_data[i];
     __enable_irq();
   }
   else if (g_imu_meas == IMU_MEAS_ACCEL)
   {
     // accelerometer measurements are 12-bit masquerading as 16-bit...
     __disable_irq(); // copy into global buffer now
-    g_imu_data[0] = g_imu_accel_data[0] >> 4;
-    g_imu_data[1] = g_imu_accel_data[1] >> 4;
-    g_imu_data[2] = g_imu_accel_data[2] >> 4;
+    for (int i = 0; i < 3; i++)
+      g_imu_data[i] = g_imu_accel_data[i] >> 4;
     __enable_irq();
   }
 }

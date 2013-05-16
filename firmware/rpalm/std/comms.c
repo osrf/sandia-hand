@@ -15,6 +15,7 @@ void comms_process_packet(uint8_t pkt_addr, uint16_t payload_len,
 
 static volatile uint8_t g_tx_pkt_buf[1024];
 static int g_comms_rs485_address = 0xfe; // bogus 
+static uint32_t g_bl_hw_version = 0;
 #define RX_BUF_LEN 512
 static volatile uint8_t g_rx_buf[RX_BUF_LEN];
 static volatile unsigned g_rx_buf_writepos = 0, g_rx_buf_readpos = 0;
@@ -45,6 +46,11 @@ void comms_init()
   NVIC_SetPriority(USART0_IRQn, 1);
   NVIC_EnableIRQ(USART0_IRQn);
   g_comms_rs485_address = *((uint32_t *)0x0401ffc);
+  g_bl_hw_version = *((uint32_t *)0x0401ff8); // magic, defined in bootloader
+  if (((g_bl_hw_version >> 16) & 0xffff) != 0xbeef) // check for magic bytes
+    g_bl_hw_version = 0; // undefined
+  else
+    g_bl_hw_version &= 0xffff; // keep useful lower 16 bits
 }
 
 void comms_send_block(uint8_t *block, uint32_t len)
@@ -290,17 +296,17 @@ void comms_process_packet(uint8_t pkt_addr, uint16_t payload_len,
   }
   else if (pkt_type == 0x21) // poll state buffer
   {
-    if (last_state_send_time == g_state.palm_time)
-      return; // don't send same tactile scan more than once
+    //if (last_state_send_time == g_state.palm_time)
+    //  return; // don't send same tactile scan more than once
     last_state_send_time = g_state.palm_time;
     for (int i = 0; i < sizeof(palm_state_t); i++)
       g_tx_pkt_buf[5+i] = ((uint8_t *)&g_state)[i]; // ugly
     comms_send_packet(0x21, sizeof(palm_state_t));
   }
-  else if (pkt_type == 0x22) // poll thermal array
+  else if (pkt_type == 0xfa) // read hardware version
   {
-    thermal_scan(g_tx_pkt_buf+5);
-    comms_send_packet(0x22, 8);
+    *((uint32_t *)(g_tx_pkt_buf + 5)) = g_bl_hw_version;
+    comms_send_packet(0xfa, 4);
   }
   //else
   //  printf("unknown pkt type: 0x%02x\r\n", pkt_type);

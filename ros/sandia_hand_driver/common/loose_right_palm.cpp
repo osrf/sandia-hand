@@ -10,7 +10,7 @@ using namespace sandia_hand;
 // produce the loose finger, loose right palm, and loose left palm classes
 
 LooseRightPalm::LooseRightPalm() :
-  serial_(NULL)
+  Palm(), serial_(NULL)
 {
   setRawTx(boost::bind(&LooseRightPalm::tx, this, _1, _2));
   registerListenHandler(boost::bind(&LooseRightPalm::listen, this, _1));

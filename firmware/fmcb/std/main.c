@@ -393,7 +393,7 @@ void rs485_process_packet(uint8_t pkt_addr, uint16_t payload_len,
   {
     // read hardware version
     *((uint32_t *)(g_tx_pkt_buf + 5)) = g_bl_hw_version;
-    rs485_send_packet(0xfa, 4); // send nack
+    rs485_send_packet(0xfa, 4); 
   }
   else if (pkt_type == 0xfd) // announce myself
   {

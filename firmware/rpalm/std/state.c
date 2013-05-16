@@ -3,6 +3,7 @@
 #include "state.h"
 #include "tactile.h"
 #include <stdbool.h>
+#include "imu.h"
 
 static volatile uint32_t g_state_tc0_ovf_count = 0;
 static bool g_state_build_packet = false;
@@ -45,7 +46,11 @@ void state_idle()
   for (int i = 0; i < 7; i++)
     g_state.palm_temps[i] = 0; // todo
   for (int i = 0; i < 3; i++)
-    g_state.palm_accel[i] = g_state.palm_gyro[i] = g_state.palm_mag[i] = 0;
+  {
+    g_state.palm_accel[i] = g_imu_data[i];
+    g_state.palm_gyro[i]  = 0;
+    g_state.palm_mag[i]   = g_imu_data[i+3];
+  }
   g_state.palm_time = g_tactile_last_scan_time;
 }
 

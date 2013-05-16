@@ -11,8 +11,6 @@ extern uint16_t g_tactile_last_scan[TACTILE_NUM_TAXELS];
 extern uint32_t g_tactile_last_scan_time;
 
 #define TACTILE_NUM_THERM 4
-// todo: global buffer for last tactile scan data
-void thermal_scan();
 
 #endif
 

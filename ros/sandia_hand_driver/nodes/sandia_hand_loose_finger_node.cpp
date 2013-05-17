@@ -239,7 +239,7 @@ int main(int argc, char **argv)
   nh_private.param("use_distal_phalange", use_distal_phalange, true);
   if (!finger.init(serial_device.c_str()))
   {
-    ROS_FATAL("couldn't init hand");
+    ROS_FATAL("couldn't init loose finger serial port");
     return 1;
   }
   for (int i = 0; i < 3; i++)
@@ -267,7 +267,6 @@ int main(int argc, char **argv)
   if (!finger.pp.ping())
     finger.mm.setPhalangeBusPower(true);
   listenToFinger(&finger, 2.0);
-  // todo: make proximal/distal phalanges ROS parameters for manufacturing
   if (use_proximal_phalange)
     if (!finger.pp.blBoot())
       ROS_WARN("couldn't boot finger proximal phalange");

@@ -3,15 +3,16 @@
 #include <vector>
 #include <ros/ros.h>
 #include <sandia_hand_msgs/RawPalmState.h>
-#include "sandia_hand/loose_right_palm.h"
+#include "sandia_hand/loose_palm.h"
 #include <sandia_hand_msgs/GetParameters.h>
 #include <sandia_hand_msgs/SetParameters.h>
+#include "sandia_hand/palm_state.h"
 using namespace sandia_hand;
 using std::string;
 using std::vector;
 
 /////////////////////////////////////////////////////////////////////////
-sandia_hand_msgs::RawPalmState g_raw_finger_state;
+sandia_hand_msgs::RawPalmState g_raw_palm_state;
 ros::Publisher *g_raw_palm_state_pub = NULL;
 bool g_done = false;
 /////////////////////////////////////////////////////////////////////////
@@ -22,7 +23,7 @@ void signal_handler(int signum)
     g_done = true;
 }
 
-void listenToPalm(LooseRightPalm *palm, const float seconds)
+void listenToPalm(LoosePalm *palm, const float seconds)
 {
   ros::Time t_start(ros::Time::now());
   while (!g_done)
@@ -39,7 +40,7 @@ int perish(const char *msg)
   return 1;
 }
 
-bool getParametersSrv(LooseRightPalm *palm,
+bool getParametersSrv(LoosePalm *palm,
                       sandia_hand_msgs::GetParameters::Request &req,
                       sandia_hand_msgs::GetParameters::Response &res)
 {
@@ -63,7 +64,7 @@ bool getParametersSrv(LooseRightPalm *palm,
   return true;
 }
 
-bool setParametersSrv(LooseRightPalm *palm,
+bool setParametersSrv(LoosePalm *palm,
                       sandia_hand_msgs::SetParameters::Request &req,
                       sandia_hand_msgs::SetParameters::Response &res)
 {
@@ -80,67 +81,38 @@ bool setParametersSrv(LooseRightPalm *palm,
   return all_ok;
 }
 
-#include "sandia_hand/palm_state.h"
 void rxPalmState(const uint8_t *payload, const uint16_t payload_len)
 {
-  printf("rxPalmState\n");
-}
-#if 0
-void rxFingerState(const uint8_t *payload, const uint16_t payload_len)
-{
-  //printf("rxFingerState: %d bytes\n", payload_len);
-  if (payload_len < sizeof(finger_state_t))
+  printf("rxPalmState: %d bytes\n", payload_len);
+  if (payload_len < sizeof(palm_state_t))
     return; // buh bye
-  const finger_state_t *p = (const finger_state_t *)payload;
-  sandia_hand_msgs::RawFingerState *rfs = &g_raw_finger_state; // save typing
-  rfs->fmcb_time = p->fmcb_time;
-  rfs->pp_time = p->pp_tactile_time;
-  rfs->dp_time = p->dp_tactile_time;
-  for (int i = 0; i < 6; i++)
-    rfs->pp_tactile[i] = p->pp_tactile[i];
-  for (int i = 0; i < 12; i++)
-    rfs->dp_tactile[i] = p->dp_tactile[i];
-  rfs->pp_strain = p->pp_strain;
+  const palm_state_t *p = (const palm_state_t *)payload;
+  sandia_hand_msgs::RawPalmState *rps = &g_raw_palm_state; // save typing
+  rps->palm_time = p->palm_time;
+  for (int i = 0; i < PALM_STATE_NUM_TAXELS; i++)
+    rps->palm_tactile[i] = p->palm_tactile[i];
   for (int i = 0; i < 3; i++)
   {
-    rfs->mm_accel[i] = p->fmcb_imu[i];
-    rfs->mm_mag[i]   = p->fmcb_imu[i+3];
-    rfs->pp_accel[i] = p->pp_imu[i];
-    rfs->pp_mag[i]   = p->pp_imu[i+3];
-    rfs->dp_accel[i] = p->dp_imu[i];
-    rfs->dp_mag[i]   = p->dp_imu[i+3];
+    rps->palm_accel[i] = p->palm_accel[i];
+    rps->palm_mag[i]   = p->palm_mag[i];
+    rps->palm_gyro[i]  = p->palm_gyro[i];
   }
-  for (int i = 0; i < 4; i++)
-  {
-    rfs->pp_temp[i] = p->pp_temp[i];
-    rfs->dp_temp[i] = p->dp_temp[i];
-  }
-  for (int i = 0; i < 3; i++)
-    rfs->fmcb_temp[i] = p->fmcb_temp[i];
-  rfs->fmcb_voltage = p->fmcb_voltage;
-  rfs->fmcb_pb_current = p->fmcb_pb_current;
-  for (int i = 0; i < 3; i++)
-  {
-    // ugh. electronics and firmware has joint indices flipped. fix someday.
-    rfs->hall_tgt[i] = p->fmcb_hall_tgt[2-i];
-    rfs->hall_pos[i] = p->fmcb_hall_pos[2-i];
-    rfs->fmcb_effort[i] = p->fmcb_effort[2-i];
-    g_last_fmcb_hall_pos[i] = p->fmcb_hall_pos[2-i]; // gross
-  }
-  if (g_raw_finger_state_pub)
-    g_raw_finger_state_pub->publish(g_raw_finger_state);
+  for (int i = 0; i < PALM_STATE_NUM_TEMPS; i++)
+    rps->palm_temps[i] = p->palm_temps[i];
+  if (g_raw_palm_state_pub)
+    g_raw_palm_state_pub->publish(g_raw_palm_state);
 }
-#endif
+
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "sandia_hand_loose_palm_node");
   ros::NodeHandle nh, nh_private("~");
-  LooseRightPalm palm;
+  LoosePalm palm;
   std::string serial_device;
   nh_private.param<string>("serial_device", serial_device, "/dev/ttyUSB0");
   if (!palm.init(serial_device.c_str()))
   {
-    ROS_FATAL("couldn't init palm");
+    ROS_FATAL("couldn't init palm serial port");
     return 1;
   }
   if (!palm.blBoot())
@@ -156,77 +128,33 @@ int main(int argc, char **argv)
   ROS_INFO("successfully pinged finger motor module.");
   signal(SIGINT, signal_handler);
   signal(SIGTERM, signal_handler);
-  ros::Publisher raw_palm_state_pub;
-  if (!finger.pp.ping())
-    finger.mm.setPhalangeBusPower(true);
-  listenToFinger(&finger, 2.0);
-  // todo: make proximal/distal phalanges ROS parameters for manufacturing
-  if (use_proximal_phalange)
-    if (!finger.pp.blBoot())
-      ROS_WARN("couldn't boot finger proximal phalange");
-  if (use_distal_phalange)
-    if (!finger.dp.blBoot())
-      ROS_WARN("couldn't boot finger distal phalange");
-  listenToFinger(&finger, 0.5);
-  if (use_proximal_phalange)
-    if (!finger.pp.ping())
-      return perish("couldn't ping proximal phalange", &finger);
-  if (use_distal_phalange)
-    if (!finger.dp.ping())
-      return perish("couldn't ping distal phalange", &finger);
-
-  raw_finger_state_pub = 
-      nh.advertise<sandia_hand_msgs::RawFingerState>("raw_state", 1);
-  g_raw_finger_state_pub = &raw_finger_state_pub;
-  // todo: some sort of auto-home sequence. for now, the fingers assume they 
-  // were powered up in (0,0,0)
-  listenToFinger(&finger, 0.001);
-  finger.mm.registerRxHandler(MotorModule::PKT_FINGER_STATUS, rxFingerState);
-  if (!finger.mm.setPhalangeAutopoll(true))
-    return perish("couldn't start phalange autopoll", &finger);
-  finger.mm.setJointPosHome();
-  ros::Subscriber joint_commands_sub = 
-    nh.subscribe<osrf_msgs::JointCommands>("joint_commands", 1, 
-                             boost::bind(jointCommandsCallback, &finger, _1));
-  ros::Subscriber relative_joint_commands_sub = 
-    nh.subscribe<sandia_hand_msgs::RelativeJointCommands>
-       ("relative_joint_commands", 1, 
-        boost::bind(relativeJointCommandsCallback, &finger, _1));
-  ros::Subscriber motor_commands_sub =
-    nh.subscribe<sandia_hand_msgs::RawFingerCommands>("raw_commands", 1,
-                             boost::bind(rawCommandsCallback, &finger, _1));
-
-  ros::ServiceServer home_srv = 
-    nh.advertiseService<sandia_hand_msgs::SetFingerHome::Request, 
-                        sandia_hand_msgs::SetFingerHome::Response>
-      ("set_finger_home", boost::bind(setHomeSrv, &finger, _1, _2));
-
+  listenToPalm(&palm, 0.5);
+  ros::Publisher raw_palm_state_pub = 
+      nh.advertise<sandia_hand_msgs::RawPalmState>("raw_state", 1);
+  g_raw_palm_state_pub = &raw_palm_state_pub;
+  palm.registerRxHandler(Palm::PKT_PALM_STATE, rxPalmState);
   ros::ServiceServer param_dump_srv =
     nh.advertiseService<sandia_hand_msgs::GetParameters::Request,
                         sandia_hand_msgs::GetParameters::Response>
-      ("get_parameters", boost::bind(getParametersSrv, &finger, _1, _2));
-
+      ("get_parameters", boost::bind(getParametersSrv, &palm, _1, _2));
   ros::ServiceServer param_set_srv =
     nh.advertiseService<sandia_hand_msgs::SetParameters::Request,
                         sandia_hand_msgs::SetParameters::Response>
-      ("set_parameters", boost::bind(setParametersSrv, &finger, _1, _2));
-
-  listenToFinger(&finger, 0.001);
+      ("set_parameters", boost::bind(setParametersSrv, &palm, _1, _2));
   ros::spinOnce();
   ros::Time t_prev_spin = ros::Time::now();
-  for (int i = 0; !g_done; i++)
+  while (!g_done)
   {
-    finger.listen(0.01);
+    palm.listen(0.01);
     if ((ros::Time::now() - t_prev_spin).toSec() > 0.01)
     {
       if (!nh.ok())
         break;
       ros::spinOnce();
       t_prev_spin = ros::Time::now();
-      finger.mm.pollFingerState();
+      palm.pollState();
     }
   }
-  shutdownFinger(&finger);
   return 0;
 }
 

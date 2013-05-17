@@ -309,9 +309,11 @@ class MaintenanceWindow(QWidget):
     # todo: parse which tab is auto exit worthy
     auto_exit_board_name = rospy.get_param("~auto_exit_board_name", "")
     auto_awesome = rospy.get_param("~auto_awesome", False)
-    self.f3_tab = TactileBoardTab("f3", 12, auto_exit_board_name == "f3") 
-    self.f2_tab = TactileBoardTab("f2",  6, auto_exit_board_name == "f2")
-    self.fmcb_tab = MotorBoardTab(auto_exit_board_name == "fmcb")
+    self.f3_tab    = TactileBoardTab("f3",    12, auto_exit_board_name == "f3") 
+    self.f2_tab    = TactileBoardTab("f2",     6, auto_exit_board_name == "f2")
+    self.rpalm_tab = TactileBoardTab("rpalm", 32, \
+                                     auto_exit_board_name == "rpalm")
+    self.fmcb_tab  = MotorBoardTab(auto_exit_board_name == "fmcb")
     self.tab_widget.addTab(self.f3_tab, "F3")
     self.tab_widget.addTab(self.f2_tab, "F2")
     self.tab_widget.addTab(self.fmcb_tab, "FMCB")
@@ -337,6 +339,7 @@ class MaintenanceWindow(QWidget):
     self.connect(self, SIGNAL('updateF3'), self.f3_tab.onUpdateUI)
     self.connect(self, SIGNAL('updateF2'), self.f2_tab.onUpdateUI)
     self.connect(self, SIGNAL('updateFMCB'), self.fmcb_tab.onUpdateUI)
+    self.connect(self, SIGNAL('updateRpalm'), self.rpalm_tab.onUpdateUI)
     # this is gross. figure out a better way sometime
     if auto_awesome:
       if auto_exit_board_name == "f2":
@@ -369,6 +372,9 @@ class MaintenanceWindow(QWidget):
     self.emit(SIGNAL('updateF3'), f3_accel_raw, f3_tactile_raw)
     self.emit(SIGNAL('updateF2'), f2_accel_raw, f2_tactile_raw)
     self.emit(SIGNAL('updateFMCB'), fmcb_accel_raw, f3_accel_raw, hall_tgt, hall_pos, fmcb_effort)
+
+  def palm_status_cb(self, msg):
+    print "palm status cb"
 
 if __name__ == '__main__':
   rospy.init_node('sandia_hand_maintenance')

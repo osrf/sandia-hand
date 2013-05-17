@@ -1,5 +1,5 @@
 #include <cstdio>
-#include "sandia_hand/loose_right_palm.h"
+#include "sandia_hand/loose_palm.h"
 #include "sandia_hand/lightweightserial.h"
 #include <ros/time.h>
 #include <boost/function.hpp>
@@ -9,14 +9,14 @@ using namespace sandia_hand;
 // todo: make most of this a separate class and do multiple inheritance to 
 // produce the loose finger, loose right palm, and loose left palm classes
 
-LooseRightPalm::LooseRightPalm() :
+LoosePalm::LoosePalm() :
   Palm(), serial_(NULL)
 {
-  setRawTx(boost::bind(&LooseRightPalm::tx, this, _1, _2));
-  registerListenHandler(boost::bind(&LooseRightPalm::listen, this, _1));
+  setRawTx(boost::bind(&LoosePalm::tx, this, _1, _2));
+  registerListenHandler(boost::bind(&LoosePalm::listen, this, _1));
 }
 
-LooseRightPalm::~LooseRightPalm()
+LoosePalm::~LoosePalm()
 {
   if (serial_)
   {
@@ -25,7 +25,7 @@ LooseRightPalm::~LooseRightPalm()
   }
 }
 
-bool LooseRightPalm::init(const char *serial_device)
+bool LoosePalm::init(const char *serial_device)
 {
   if (serial_)
   {
@@ -43,7 +43,7 @@ bool LooseRightPalm::init(const char *serial_device)
   return true;
 }
 
-bool LooseRightPalm::tx(const uint8_t *pkt, const uint16_t pkt_len)
+bool LoosePalm::tx(const uint8_t *pkt, const uint16_t pkt_len)
 {
   /*
   printf("tx %d bytes:\n  ", pkt_len);
@@ -59,7 +59,7 @@ bool LooseRightPalm::tx(const uint8_t *pkt, const uint16_t pkt_len)
   return serial_->write_block(pkt, pkt_len);
 }
 
-bool LooseRightPalm::listen(const float max_seconds)
+bool LoosePalm::listen(const float max_seconds)
 {
   if (!serial_)
   {

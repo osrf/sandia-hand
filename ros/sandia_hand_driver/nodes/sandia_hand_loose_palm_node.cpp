@@ -27,7 +27,7 @@ void listenToPalm(LooseRightPalm *palm, const float seconds)
   ros::Time t_start(ros::Time::now());
   while (!g_done)
   {
-    finger->listen(0.01);
+    palm->listen(0.01);
     if ((ros::Time::now() - t_start).toSec() > seconds)
       break;
   }
@@ -44,7 +44,7 @@ bool getParametersSrv(LooseRightPalm *palm,
                       sandia_hand_msgs::GetParameters::Response &res)
 {
   ROS_INFO("get parameters");
-  const vector<sandia_hand::Param> params = palm->mm.getParams();
+  const vector<sandia_hand::Param> params = palm->getParams();
   res.parameters.resize(params.size());
   for (size_t i = 0; i < params.size(); i++)
   {
@@ -63,7 +63,7 @@ bool getParametersSrv(LooseRightPalm *palm,
   return true;
 }
 
-bool setParametersSrv(LooseFinger *palm,
+bool setParametersSrv(LooseRightPalm *palm,
                       sandia_hand_msgs::SetParameters::Request &req,
                       sandia_hand_msgs::SetParameters::Response &res)
 {
@@ -73,9 +73,9 @@ bool setParametersSrv(LooseFinger *palm,
   {
     const sandia_hand_msgs::Parameter *p = &req.parameters[i]; // save typing
     if (p->val_type == sandia_hand_msgs::Parameter::INTEGER) //Param::PARAM_INT)
-      all_ok &= palm->mm.setParamInt(p->name, (int32_t)p->i_val);
+      all_ok &= palm->setParamInt(p->name, (int32_t)p->i_val);
     else
-      all_ok &= palm->mm.setParamFloat(p->name, (float)p->f_val);
+      all_ok &= palm->setParamFloat(p->name, (float)p->f_val);
   }
   return all_ok;
 }

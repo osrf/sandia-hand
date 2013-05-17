@@ -5,8 +5,10 @@ from PyQt4.QtGui import *
 import roslib.packages
 import roslib; roslib.load_manifest('sandia_hand_driver')
 import rospy, math, signal
-from sandia_hand_msgs.msg import RawFingerState
+from sandia_hand_msgs.msg import RawFingerState, RawPalmState
 from sandia_hand_msgs.msg import RawFingerCommands
+
+# all of this is an abomination. but it must get done asap. clean up sometime.
 
 class BoardTab(QWidget):
   def __init__(self, board_name):
@@ -18,8 +20,10 @@ class BoardTab(QWidget):
     self.terminal.setStyleSheet("QTextEdit { background-color: black; color: white;}")
     self.test_grid = QGridLayout()
     self.test_grid.setSpacing(5)
-    self.test_grid.setColumnMinimumWidth(0, 15)
-    self.test_grid.setColumnStretch(2, 1)
+    for i in [0, 3]:
+      self.test_grid.setColumnMinimumWidth(i  , 15)
+      self.test_grid.setColumnMinimumWidth(i+1, 50)
+      self.test_grid.setColumnStretch(i+2, 1)
   def processOnFinished(self, exitCode, exitStatus):
     if exitCode != 0:
       QMessageBox.about(self, "bad", "error detected. see terminal output.")
@@ -194,7 +198,7 @@ class MotorBoardTab(BoardTab):
     self.spawnProcess("cd %s && bin/sandia_hand_loose_finger_node _use_proximal_phalange:=false" % self.shd, self.processOnFinished)
   def autoClicked(self):
     self.spawnProcess("cd %s/../../firmware/build && make fmcb-bl-gpnvm && make fmcb-bl-program && cd %s && bin/loose_finger_cli /dev/ttyUSB0 burn ../../firmware/build/fmcb/std/fmcb-std.bin && echo \"\ntasks complete\"" % (self.shd, self.shd), self.autoOnFinished)
-
+############################################################################
 class TactileBoardTab(BoardTab):
   def __init__(self, board_name, num_taxels, exit_on_success):
     super(TactileBoardTab, self).__init__(board_name)
@@ -208,7 +212,7 @@ class TactileBoardTab(BoardTab):
     self.auto_btn.clicked.connect(self.autoClicked)
     self.test_grid.addWidget(QLabel("Accelerometer magnitude"), 0, 2)
     self.accel_mag_light = QLabel() #"FAIL")
-    self.accel_mag_light.setStyleSheet("QWidget {background-color:red}")
+    self.accel_mag_light.setStyleSheet("QWidget {background-color:yellow}")
     self.accel_mag_label = QLabel("0")
     self.test_grid.addWidget(self.accel_mag_light, 0, 0)
     self.test_grid.addWidget(self.accel_mag_label, 0, 1)
@@ -219,12 +223,15 @@ class TactileBoardTab(BoardTab):
     self.tactile_desc = []
     for i in xrange(0, self.num_taxels):
       self.tactile_lights.append(QLabel())
-      self.tactile_lights[i].setStyleSheet("QWidget {background-color:red}")
-      self.test_grid.addWidget(self.tactile_lights[i], i+1, 0)
+      self.tactile_lights[i].setStyleSheet("QWidget {background-color:yellow}")
+      self.test_grid.addWidget(self.tactile_lights[i], \
+                               self.tactileRow(i), self.tactileCol(i))
       self.tactile_labels.append(QLabel("0"))
-      self.test_grid.addWidget(self.tactile_labels[i], i+1, 1)
+      self.test_grid.addWidget(self.tactile_labels[i], \
+                               self.tactileRow(i), self.tactileCol(i)+1)
       self.tactile_desc.append(QLabel("Tactile %d" % i))
-      self.test_grid.addWidget(self.tactile_desc[i])
+      self.test_grid.addWidget(self.tactile_desc[i], \
+                               self.tactileRow(i), self.tactileCol(i)+2)
     button_hbox = QHBoxLayout()
     button_hbox.addWidget(self.bootloader_btn)
     button_hbox.addWidget(self.application_btn)
@@ -236,6 +243,13 @@ class TactileBoardTab(BoardTab):
     self.vbox.addStretch(1)
     self.vbox.addWidget(self.terminal)
     self.setLayout(self.vbox)
+  def tactileRow(self, tactile_idx): # tactile sensor row
+    return 1 + tactile_idx % 16
+  def tactileCol(self, tactile_idx): # tactile sensor col
+    if tactile_idx < 16:
+      return 0
+    else:
+      return 3
   def onUpdateUI(self, accel_raw, tactile_raw):
     accel_mag = 0
     for i in xrange(0,3):
@@ -273,9 +287,16 @@ class TactileBoardTab(BoardTab):
         print "quitting."
         QApplication.quit()
   def bootloaderClicked(self):
-    self.spawnProcess("cd %s && bin/loose_finger_cli /dev/ttyUSB0 pb on && sleep 1 && cd %s/../../firmware/build && make %s-bl-gpnvm && make %s-bl-program && echo \"\ntasks complete\"" % (self.shd, self.shd, self.board_name, self.board_name), self.processOnFinished)
+    if "palm" in self.board_name:
+      self.spawnProcess("cd %s/../../firmware/build && make %s-bl-gpnvm && make %s-bl-program && echo \"\ntasks complete\"" % (self.shd, self.board_name, self.board_name), self.processOnFinished)
+    else:
+      self.spawnProcess("cd %s && bin/loose_finger_cli /dev/ttyUSB0 pb on && sleep 1 && cd %s/../../firmware/build && make %s-bl-gpnvm && make %s-bl-program && echo \"\ntasks complete\"" % (self.shd, self.shd, self.board_name, self.board_name), self.processOnFinished)
   def applicationClicked(self):
-    self.spawnProcess("cd %s && bin/loose_finger_cli /dev/ttyUSB0 %s ../../firmware/build/%s/std/%s-std.bin && echo \"\ntasks complete\"" % (self.shd, self.applicationCmd(), bn, bn), self.processOnFinished)
+    bn = self.board_name
+    if "palm" in self.board_name:
+      self.spawnProcess("cd %s && bin/loose_palm_cli /dev/ttyUSB0 %s ../../firmware/build/%s/std/%s-std.bin && echo \"\ntasks complete\"" % (self.shd, self.applicationCmd(), bn, bn), self.processOnFinished)
+    else:
+      self.spawnProcess("cd %s && bin/loose_finger_cli /dev/ttyUSB0 %s ../../firmware/build/%s/std/%s-std.bin && echo \"\ntasks complete\"" % (self.shd, self.applicationCmd(), bn, bn), self.processOnFinished)
   def autoOnFinished(self, exitCode, exitStatus):
     if exitCode != 0:
       QMessageBox.about(self, "bad!", "error detected. see terminal output.")
@@ -284,6 +305,8 @@ class TactileBoardTab(BoardTab):
       cmd = "cd %s && bin/sandia_hand_loose_finger_node _use_proximal_phalange:=false" % self.shd
     elif self.board_name == "f2":
       cmd = "cd %s && bin/sandia_hand_loose_finger_node _use_distal_phalange:=false" % self.shd
+    elif "palm" in self.board_name:
+      cmd = "cd %s && bin/sandia_hand_loose_palm_node" % self.shd
     else:
       QMessageBox.about(self, "bad!", "auto button not ready for this board")
       return
@@ -291,13 +314,18 @@ class TactileBoardTab(BoardTab):
   def autoClicked(self):
     bn = self.board_name
     shd = self.shd
-    self.spawnProcess("cd %s && bin/loose_finger_cli /dev/ttyUSB0 pb on && sleep 1 && cd %s/../../firmware/build && make %s-bl-gpnvm && make %s-bl-program && cd %s && bin/loose_finger_cli /dev/ttyUSB0 %s ../../firmware/build/%s/std/%s-std.bin && echo \"\ntasks complete\"" % (shd, shd, bn, bn, shd, self.applicationCmd(), bn, bn), self.autoOnFinished)
+    if "palm" in self.board_name:
+      self.spawnProcess("cd %s/../../firmware/build && make %s-bl-gpnvm && make %s-bl-program && cd %s && bin/loose_palm_cli /dev/ttyUSB0 burn ../../firmware/build/%s/std/%s-std.bin && echo \"\ntasks complete\"" % (shd, bn, bn, shd, bn, bn), self.autoOnFinished)
+    else:
+      self.spawnProcess("cd %s && bin/loose_finger_cli /dev/ttyUSB0 pb on && sleep 1 && cd %s/../../firmware/build && make %s-bl-gpnvm && make %s-bl-program && cd %s && bin/loose_finger_cli /dev/ttyUSB0 %s ../../firmware/build/%s/std/%s-std.bin && echo \"\ntasks complete\"" % (shd, shd, bn, bn, shd, self.applicationCmd(), bn, bn), self.autoOnFinished)
   def applicationCmd(self):
     bn = self.board_name
     if bn == "f3":
       return "dburn"
     elif bn == "f2":
       return "pburn"
+    elif bn == "fmcb" or ("palm" in bn):
+      return "burn"
     else:
       QMessageBox.about(self, "bad!", "application not defined for %s" % bn)
       return 
@@ -314,9 +342,10 @@ class MaintenanceWindow(QWidget):
     self.rpalm_tab = TactileBoardTab("rpalm", 32, \
                                      auto_exit_board_name == "rpalm")
     self.fmcb_tab  = MotorBoardTab(auto_exit_board_name == "fmcb")
-    self.tab_widget.addTab(self.f3_tab, "F3")
-    self.tab_widget.addTab(self.f2_tab, "F2")
-    self.tab_widget.addTab(self.fmcb_tab, "FMCB")
+    self.tab_widget.addTab(self.f3_tab, "f3")
+    self.tab_widget.addTab(self.f2_tab, "f2")
+    self.tab_widget.addTab(self.fmcb_tab, "fmcb")
+    self.tab_widget.addTab(self.rpalm_tab, "rpalm")
 
     # todo: find a cleaner way to do this
     if auto_exit_board_name == "f2":
@@ -326,7 +355,7 @@ class MaintenanceWindow(QWidget):
 
     vbox = QVBoxLayout()
     vbox.addWidget(self.tab_widget)
-    self.setGeometry(850, 100, 600, 600)
+    self.setGeometry(850, 100, 800, 800)
     self.setLayout(vbox)
     self.setWindowTitle('Sandia Hand Maintenance')
     #cp = QDesktopWidget().availableGeometry().center()
@@ -335,7 +364,9 @@ class MaintenanceWindow(QWidget):
     #self.move(qr.topLeft())
     self.show()
     self.finger_sub = rospy.Subscriber('raw_state', RawFingerState, 
-                                       self.finger_status_cb)
+                                       self.finger_state_cb)
+    self.palm_sub = rospy.Subscriber('palm_state', RawPalmState,
+                                     self.palm_state_cb)
     self.connect(self, SIGNAL('updateF3'), self.f3_tab.onUpdateUI)
     self.connect(self, SIGNAL('updateF2'), self.f2_tab.onUpdateUI)
     self.connect(self, SIGNAL('updateFMCB'), self.fmcb_tab.onUpdateUI)
@@ -347,7 +378,7 @@ class MaintenanceWindow(QWidget):
       elif auto_exit_board_name == "fmcb":
         self.fmcb_tab.autoClicked()
 
-  def finger_status_cb(self, msg):
+  def finger_state_cb(self, msg):
     # copy everything out of the ROS thread and into UI threads
     f3_accel_raw = [0] * 3
     f2_accel_raw = [0] * 3
@@ -373,8 +404,8 @@ class MaintenanceWindow(QWidget):
     self.emit(SIGNAL('updateF2'), f2_accel_raw, f2_tactile_raw)
     self.emit(SIGNAL('updateFMCB'), fmcb_accel_raw, f3_accel_raw, hall_tgt, hall_pos, fmcb_effort)
 
-  def palm_status_cb(self, msg):
-    print "palm status cb"
+  def palm_state_cb(self, msg):
+    print "palm state cb"
 
 if __name__ == '__main__':
   rospy.init_node('sandia_hand_maintenance')

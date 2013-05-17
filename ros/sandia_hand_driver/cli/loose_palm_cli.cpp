@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
-#include "sandia_hand/loose_right_palm.h"
+#include "sandia_hand/loose_palm.h"
 #include "sandia_hand/palm_state.h"
 #include "ros/time.h"
 #include "ros/console.h"
@@ -26,7 +26,7 @@ int b2e(bool b) // convert boolean function return values to exit codes
   return b ? 0 : 1;
 }
 
-void listen_palm(const float duration, LooseRightPalm &lrp)
+void listen_palm(const float duration, LoosePalm &lrp)
 {
   ros::Time t_start(ros::Time::now());
   while (!g_done)
@@ -66,28 +66,12 @@ void rxPalmState(const uint8_t *payload, const uint16_t payload_len)
       printf("\n");
   }
   printf("\n\n");
-  /*
-  printf("  motor module imu: ");
-  for (int i = 0; i < 6; i++)
-    printf("%06d ", fst->fmcb_imu[i]);
-  printf("\n  distal imu: ");
-  for (int i = 0; i < 6; i++)
-    printf("%06d ", fst->dp_imu[i]);
-  printf("\n  proximal imu: ");
-  for (int i = 0; i < 6; i++)
-    printf("%06d ", fst->pp_imu[i]);
-  printf("\n  proximal tactile: ");
-  for (int i = 0; i < 6; i++)
-    printf("%06d ", fst->pp_tactile[i]);
-  printf("\n\n");
-  */
 }
-
 
 //////////////////////////////////////////////////////////////////////////////
 // command handlers
 
-int ping(int argc, char **argv, LooseRightPalm &lrp)
+int ping(int argc, char **argv, LoosePalm &lrp)
 {
   if (lrp.ping())
     printf("   palm ping OK\n");
@@ -96,7 +80,7 @@ int ping(int argc, char **argv, LooseRightPalm &lrp)
   return 0;
 }
 
-int stream(int argc, char **argv, LooseRightPalm &lrp)
+int stream(int argc, char **argv, LoosePalm &lrp)
 {
   lrp.registerRxHandler(Palm::PKT_PALM_STATE,
                         boost::bind(rxPalmState, _1, _2));
@@ -109,14 +93,14 @@ int stream(int argc, char **argv, LooseRightPalm &lrp)
   return 0;
 }
 
-int ver(int argc, char **argv, LooseRightPalm &lrp)
+int ver(int argc, char **argv, LoosePalm &lrp)
 {
   const uint32_t hw_ver = (uint32_t)lrp.getHardwareVersion();
   printf("palm hardware version: %08x\n", hw_ver);
   return 0;
 }
 
-bool reset_palm(LooseRightPalm &lrp)
+bool reset_palm(LoosePalm &lrp)
 {
   lrp.reset();
   return true; // return true even if we couldn't ack the reset request
@@ -127,7 +111,7 @@ bool fake_set_power()
   return true;
 }
 
-int burn(int argc, char **argv, LooseRightPalm &lrp)
+int burn(int argc, char **argv, LoosePalm &lrp)
 {
   verify_argc(argc, 3, "usage: burn PALM_BIN_FILE\n");
   const char *fn = argv[3];
@@ -147,61 +131,6 @@ int burn(int argc, char **argv, LooseRightPalm &lrp)
   return 0;
 }
 
-#if 0
-  verify_argc(argc, 4, "usage: burn FILENAME");
-  const char *fn = argv[3];
-  printf("burning binary image %s to motor module...\n", fn);
-  FILE *f = fopen(fn, "rb");
-  if (!f)
-  {
-    printf("couldn't open file %s\n", fn);
-    return 1;
-  }
-  if (fseek(f, 32 * 256, SEEK_SET))
-  {
-    printf("couldn't seek to application image in %s\n", fn);
-    return 1;
-  }
-  printf("resetting motor module...\n");
-  lf.mm.reset();
-  listen_loose_finger(2.0, lf);
-  if (!lf.mm.blHaltAutoboot())
-  {
-    printf("couldn't halt motor module autoboot\n");
-    return 1;
-  }
-  printf("distal autoboot halted\n");
-  for (int page_num = 32; !g_done && !feof(f) && page_num < 256; page_num++)
-  {
-    bool page_written = false;
-    uint8_t page_buf[1024] = {0};
-    size_t nread = 0;
-    nread = fread(page_buf, 1, 256, f);
-    if (nread <= 0)
-    {
-      printf("couldn't read a flash page from %s: returned %d\n", 
-             fn, (int)nread);
-      break;
-    }
-    else if (nread < 256)
-      printf("partial page: %d bytes, hopefully last flash page?\n", 
-             (int)nread);
-    if (lf.mm.blWriteFlashPage(page_num, page_buf, false))
-      page_written = true;
-    if (!page_written)
-    {
-      printf("couldn't write page %d\n", page_num);
-      break;
-    }
-  }
-  if (lf.mm.blBoot())
-    printf("booted motor module\n");
-  else
-    printf("failed to boot motor module\n");
-  return 0;
-}
-#endif
-
 int main(int argc, char **argv)
 {
   if (argc < 3)
@@ -210,7 +139,7 @@ int main(int argc, char **argv)
     return 1;
   }
   ros::Time::init();
-  LooseRightPalm lrp;
+  LoosePalm lrp;
   if (!lrp.init(argv[1]))
   {
     printf("couldn't init hand\n");
@@ -226,28 +155,6 @@ int main(int argc, char **argv)
     return ver(argc, argv, lrp);
   if (!strcmp(cmd, "stream"))
     return stream(argc, argv, lrp);
-  /*
-  if (!strcmp(cmd, "status"))
-    return status(argc, argv, lf);
-  if (!strcmp(cmd, "pb"))
-    return pb(argc, argv, lf);
-  if (!strcmp(cmd, "pping"))
-    return pping(argc, argv, lf);
-  if (!strcmp(cmd, "pdump"))
-    return pdump(argc, argv, lf);
-  if (!strcmp(cmd, "pburn"))
-    return pburn(argc, argv, lf);
-  if (!strcmp(cmd, "dping"))
-    return dping(argc, argv, lf);
-  if (!strcmp(cmd, "ddump"))
-    return ddump(argc, argv, lf);
-  if (!strcmp(cmd, "dburn"))
-    return dburn(argc, argv, lf);
-  if (!strcmp(cmd, "dump"))
-    return dump(argc, argv, lf);
-  if (!strcmp(cmd, "jp"))
-    return jp(argc, argv, lf);
-  */
   printf("unknown command: [%s]\n", cmd);
   return 1;
 }

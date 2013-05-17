@@ -208,6 +208,8 @@ class TactileBoardTab(BoardTab):
     self.bootloader_btn.clicked.connect(self.bootloaderClicked)
     self.application_btn = QPushButton("Install Application")
     self.application_btn.clicked.connect(self.applicationClicked)
+    self.test_btn = QPushButton("Test")
+    self.test_btn.clicked.connect(self.testClicked)
     self.auto_btn = QPushButton("Awesome")
     self.auto_btn.clicked.connect(self.autoClicked)
     self.test_grid.addWidget(QLabel("Accelerometer magnitude"), 0, 2)
@@ -235,6 +237,7 @@ class TactileBoardTab(BoardTab):
     button_hbox = QHBoxLayout()
     button_hbox.addWidget(self.bootloader_btn)
     button_hbox.addWidget(self.application_btn)
+    button_hbox.addWidget(self.test_btn)
     button_hbox.addWidget(self.auto_btn)
     button_hbox.addStretch(1)
     self.vbox = QVBoxLayout()
@@ -250,7 +253,7 @@ class TactileBoardTab(BoardTab):
       return 0
     else:
       return 3
-  def onUpdateUI(self, accel_raw, tactile_raw):
+  def onUpdateCommonUI(self, accel_raw, tactile_raw):
     accel_mag = 0
     for i in xrange(0,3):
       accel_mag += accel_raw[i]**2
@@ -282,10 +285,16 @@ class TactileBoardTab(BoardTab):
       if self.process:
         print "stopping child process"
         os.system("rosnode kill sandia_hand_loose_finger_node")
+        os.system("rosnode kill sandia_hand_loose_palm_node")
         print "sleeping..."
         os.system("sleep 0.25")
         print "quitting."
         QApplication.quit()
+  def onUpdateUI(self, accel_raw, tactile_raw):
+    self.onUpdateCommonUI(self, accel_raw, tactile_raw)
+  def onUpdatePalmUI(self, accel_raw, gyro_raw, mag_raw, tactile_raw):
+    # todo: test gyro and mag
+    self.onUpdateCommonUI(accel_raw, tactile_raw)
   def bootloaderClicked(self):
     if "palm" in self.board_name:
       self.spawnProcess("cd %s/../../firmware/build && make %s-bl-gpnvm && make %s-bl-program && echo \"\ntasks complete\"" % (self.shd, self.board_name, self.board_name), self.processOnFinished)
@@ -311,6 +320,8 @@ class TactileBoardTab(BoardTab):
       QMessageBox.about(self, "bad!", "auto button not ready for this board")
       return
     self.spawnProcess(cmd, self.processOnFinished)
+  def testClicked(self):
+    self.autoOnFinished(0, 0)
   def autoClicked(self):
     bn = self.board_name
     shd = self.shd
@@ -352,6 +363,8 @@ class MaintenanceWindow(QWidget):
       self.tab_widget.setCurrentIndex(1) 
     elif auto_exit_board_name == "fmcb":
       self.tab_widget.setCurrentIndex(2)
+    elif auto_exit_board_name == "rpalm":
+      self.tab_widget.setCurrentIndex(3)
 
     vbox = QVBoxLayout()
     vbox.addWidget(self.tab_widget)
@@ -365,18 +378,20 @@ class MaintenanceWindow(QWidget):
     self.show()
     self.finger_sub = rospy.Subscriber('raw_state', RawFingerState, 
                                        self.finger_state_cb)
-    self.palm_sub = rospy.Subscriber('palm_state', RawPalmState,
+    self.palm_sub = rospy.Subscriber('raw_palm_state', RawPalmState,
                                      self.palm_state_cb)
     self.connect(self, SIGNAL('updateF3'), self.f3_tab.onUpdateUI)
     self.connect(self, SIGNAL('updateF2'), self.f2_tab.onUpdateUI)
     self.connect(self, SIGNAL('updateFMCB'), self.fmcb_tab.onUpdateUI)
-    self.connect(self, SIGNAL('updateRpalm'), self.rpalm_tab.onUpdateUI)
+    self.connect(self, SIGNAL('updatePalm'), self.rpalm_tab.onUpdatePalmUI)
     # this is gross. figure out a better way sometime
     if auto_awesome:
       if auto_exit_board_name == "f2":
         self.f2_tab.autoClicked()
       elif auto_exit_board_name == "fmcb":
         self.fmcb_tab.autoClicked()
+      elif auto_exit_board_name == "rpalm":
+        self.rpalm_tab.autoClicked()
 
   def finger_state_cb(self, msg):
     # copy everything out of the ROS thread and into UI threads
@@ -405,7 +420,18 @@ class MaintenanceWindow(QWidget):
     self.emit(SIGNAL('updateFMCB'), fmcb_accel_raw, f3_accel_raw, hall_tgt, hall_pos, fmcb_effort)
 
   def palm_state_cb(self, msg):
-    print "palm state cb"
+    # copy everything out of the ROS thread and into UI threads
+    palm_accel_raw = [0] * 3
+    palm_gyro_raw  = [0] * 3
+    palm_mag_raw   = [0] * 3
+    palm_tactile_raw = [0] * 32
+    for i in xrange(0, 3):
+      palm_accel_raw[i] = msg.palm_accel[i]
+      palm_gyro_raw[i]  = msg.palm_gyro[i]
+      palm_mag_raw[i]   = msg.palm_mag[i]
+    for i in xrange(0, 32):
+      palm_tactile_raw[i] = msg.palm_tactile[i]
+    self.emit(SIGNAL('updatePalm'), palm_accel_raw, palm_gyro_raw, palm_mag_raw, palm_tactile_raw)
 
 if __name__ == '__main__':
   rospy.init_node('sandia_hand_maintenance')
@@ -414,5 +440,6 @@ if __name__ == '__main__':
   mw = MaintenanceWindow()
   rv = app.exec_()
   os.system("rosnode kill sandia_hand_loose_finger_node") # just in case
+  os.system("rosnode kill sandia_hand_loose_palm_node") # just in case
   sys.exit(rv)
 

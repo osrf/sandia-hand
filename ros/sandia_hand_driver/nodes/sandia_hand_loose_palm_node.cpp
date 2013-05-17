@@ -83,7 +83,7 @@ bool setParametersSrv(LoosePalm *palm,
 
 void rxPalmState(const uint8_t *payload, const uint16_t payload_len)
 {
-  printf("rxPalmState: %d bytes\n", payload_len);
+  //printf("rxPalmState: %d bytes\n", payload_len);
   if (payload_len < sizeof(palm_state_t))
     return; // buh bye
   const palm_state_t *p = (const palm_state_t *)payload;
@@ -119,10 +119,9 @@ int main(int argc, char **argv)
     ROS_WARN("couldn't boot palm. is it already booted?");
   else
     ROS_INFO("booted palm.");
-  // be sure we can ping it
-  if (!palm.ping())
+  if (!palm.ping()) // be sure we can ping it
   {
-    ROS_FATAL("couldn't ping finger motor module");
+    ROS_FATAL("couldn't ping palm");
     return 1;
   }
   ROS_INFO("successfully pinged finger motor module.");
@@ -130,7 +129,7 @@ int main(int argc, char **argv)
   signal(SIGTERM, signal_handler);
   listenToPalm(&palm, 0.5);
   ros::Publisher raw_palm_state_pub = 
-      nh.advertise<sandia_hand_msgs::RawPalmState>("raw_state", 1);
+      nh.advertise<sandia_hand_msgs::RawPalmState>("raw_palm_state", 1);
   g_raw_palm_state_pub = &raw_palm_state_pub;
   palm.registerRxHandler(Palm::PKT_PALM_STATE, rxPalmState);
   ros::ServiceServer param_dump_srv =

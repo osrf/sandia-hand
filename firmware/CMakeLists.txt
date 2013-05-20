@@ -79,7 +79,7 @@ add_subdirectory(bl_sam3s)
 add_subdirectory(fmcb)
 add_subdirectory(f2)
 add_subdirectory(f3)
-add_subdirectory(rpalm)
+add_subdirectory(palm)
 add_subdirectory(psu)
 
 #add_custom_target(load_fpga

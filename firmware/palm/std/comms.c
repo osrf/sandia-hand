@@ -22,35 +22,35 @@ static volatile unsigned g_rx_buf_writepos = 0, g_rx_buf_readpos = 0;
 static volatile unsigned g_comms_rx_pkt_timer = 0;
 static volatile uint32_t last_state_send_time = 0; 
 #define COMMS_RX_PKT_TIMEOUT_MS 10
+static Usart *rs485_usart = USART0;
 
 void comms_init()
 {
-  PMC_EnablePeripheral(ID_USART0);
-  PIO_Configure(&pin_rs485_de, 1);
-  PIO_Configure(&pin_rs485_di, 1);
-  PIO_Configure(&pin_rs485_ro, 1);
-  USART0->US_CR = US_CR_RSTRX | UART_CR_RSTTX | 
-                  US_CR_RXDIS | UART_CR_TXDIS; // reset usart
-  USART0->US_IDR = 0xffffffff; // disable all interrupts
-  USART0->US_MR = US_MR_CHRL_8_BIT | US_MR_PAR_NO; // |
-                  /*US_MR_MAN | US_MR_OVER | US_MR_MODSYNC;*/
-  USART0->US_BRGR = F_CPU / 2000000 / 16; 
-  /*
-  USART0->US_MAN = US_MAN_TX_PL(1) | US_MAN_TX_PP_ALL_ONE |
-                   US_MAN_RX_PL(1) | US_MAN_RX_PP_ALL_ONE |
-                   US_MAN_RX_MPOL | US_MAN_TX_MPOL |
-                   US_MAN_DRIFT | US_MAN_STUCKTO1;
-  */
-  USART0->US_CR = UART_CR_TXEN | UART_CR_RXEN; // eanble TX and RX
-  USART0->US_IER = UART_IER_RXRDY; // enable RX interrupt
-  NVIC_SetPriority(USART0_IRQn, 1);
-  NVIC_EnableIRQ(USART0_IRQn);
   g_comms_rs485_address = *((uint32_t *)0x0401ffc);
   g_bl_hw_version = *((uint32_t *)0x0401ff8); // magic, defined in bootloader
   if (((g_bl_hw_version >> 16) & 0xffff) != 0xbeef) // check for magic bytes
     g_bl_hw_version = 0; // undefined
   else
     g_bl_hw_version &= 0xffff; // keep useful lower 16 bits
+  const char hand = (char)((g_bl_hw_version >> 8) & 0xff);
+  if (hand == 'L')
+    rs485_usart = USART1;
+  else
+    rs485_usart = USART0;
+  PMC_EnablePeripheral(hand == 'L' ? ID_USART1 : ID_USART0);
+  PIO_Configure(&pin_rs485_de, 1);
+  PIO_Configure(&pin_rs485_di, 1);
+  PIO_Configure(&pin_rs485_ro, 1);
+  rs485_usart->US_CR = US_CR_RSTRX | UART_CR_RSTTX | 
+                       US_CR_RXDIS | UART_CR_TXDIS; // reset usart
+  rs485_usart->US_IDR = 0xffffffff; // disable all interrupts
+  rs485_usart->US_MR = US_MR_CHRL_8_BIT | US_MR_PAR_NO; 
+  rs485_usart->US_BRGR = F_CPU / 2000000 / 16; 
+  rs485_usart->US_CR = UART_CR_TXEN | UART_CR_RXEN; // eanble TX and RX
+  rs485_usart->US_IER = UART_IER_RXRDY; // enable RX interrupt
+  const IRQn_Type rs485_irqn = (hand == 'L' ? USART1_IRQn : USART0_IRQn);
+  NVIC_SetPriority(rs485_irqn, 1);
+  NVIC_EnableIRQ(rs485_irqn);
 }
 
 void comms_send_block(uint8_t *block, uint32_t len)
@@ -66,24 +66,24 @@ void comms_send_block(uint8_t *block, uint32_t len)
     printf("%02x ", block[i]);
   printf("\r\n");
   */
-  USART0->US_CR |= US_CR_RXDIS;
+  rs485_usart->US_CR |= US_CR_RXDIS;
   //for (d = 0; d < 1000; d++) { }
-  while ((USART0->US_CSR & US_CSR_TXRDY) == 0) { }
+  while ((rs485_usart->US_CSR & US_CSR_TXRDY) == 0) { }
   PIO_Set(&pin_rs485_de);
   //for (d = 0; d < 2; d++) { }
   for (uint32_t i = 0; i < len; i++)
   {
-    USART0->US_THR = block[i];
-    while ((USART0->US_CSR & US_CSR_TXRDY) == 0) { }
+    rs485_usart->US_THR = block[i];
+    while ((rs485_usart->US_CSR & US_CSR_TXRDY) == 0) { }
   }
-  while ((USART0->US_CSR & US_CSR_TXEMPTY) == 0) { }
+  while ((rs485_usart->US_CSR & US_CSR_TXEMPTY) == 0) { }
   for (d = 0; d < 1; d++) { }
   PIO_Clear(&pin_rs485_de);
   //for (d = 0; d < 1000; d++) { }
-  USART0->US_CR &= ~US_CR_RXDIS;
-  USART0->US_CR |= US_CR_RXEN;
-  if (USART0->US_CSR & US_CSR_RXRDY)
-    USART0->US_RHR; // flush incoming buffer in case tx put stuff there
+  rs485_usart->US_CR &= ~US_CR_RXDIS;
+  rs485_usart->US_CR |= US_CR_RXEN;
+  if (rs485_usart->US_CSR & US_CSR_RXRDY)
+    rs485_usart->US_RHR; // flush incoming buffer in case tx put stuff there
 }
 
 void comms_send_packet(uint8_t pkt_type, uint16_t payload_len)
@@ -197,9 +197,9 @@ void comms_handle_byte(uint8_t b)
 void comms_irq()
 {
   // this has to be a _really_ fast ISR!
-  if (USART0->US_CSR & US_CSR_RXRDY)
+  if (rs485_usart->US_CSR & US_CSR_RXRDY)
   {
-    volatile uint8_t b = USART0->US_RHR;
+    volatile uint8_t b = rs485_usart->US_RHR;
     g_rx_buf[g_rx_buf_writepos++] = b; 
     if (g_rx_buf_writepos >= RX_BUF_LEN)
       g_rx_buf_writepos = 0;

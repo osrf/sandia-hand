@@ -12,6 +12,8 @@
 #include "state.h"
 #include "console.h"
 
+static uint32_t g_bl_hw_version = 0;
+
 void systick_irq()
 {
   comms_systick();
@@ -26,6 +28,15 @@ int main(void)
   PMC_EnablePeripheral(ID_PIOA);
   PMC_EnablePeripheral(ID_PIOB);
   PMC_EnablePeripheral(ID_PIOC);
+
+  // set up all the pin definition structures before we get any further
+  g_bl_hw_version = *((uint32_t *)0x0401ff8); // magic, defined in bootloader
+  if (((g_bl_hw_version >> 16) & 0xffff) != 0xbeef) // check for magic bytes
+    g_bl_hw_version = 0; // undefined
+  else
+    g_bl_hw_version &= 0xffff; // keep useful lower 16 bits
+  pins_assign((g_bl_hw_version >> 8) & 0xff);
+
   PIO_Configure(&pin_led, 1);
   lowlevel_init_clocks();
   console_init();

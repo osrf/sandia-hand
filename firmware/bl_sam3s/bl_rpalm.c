@@ -1,7 +1,7 @@
 #include "bl_stubs.h"
 
 const uint32_t __attribute__((section (".bl_hw_version"))) 
-                             g_bl_hw_version = 0xbeef0041; // lower byte: 'A'
+                             g_bl_hw_version = 0xbeef5241; // lower 16: 'RA'
 const int __attribute__((section (".rs485_addr")))    g_rs485_addr    = 10;
 
 #define BL_LED_PIO           PIOC

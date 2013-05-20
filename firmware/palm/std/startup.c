@@ -51,7 +51,7 @@ IntFunc exception_table[] = {
     unmapped_error, //PIOB_IrqHandler,    /* 12 Parallel IO Controller B */
     unmapped_error, //PIOC_IrqHandler,    /* 13 Parallel IO Controller C */
     comms_irq,      //USART0_IrqHandler,  /* 14 USART 0 */
-    unmapped_error, //USART1_IrqHandler,  /* 15 USART 1 */
+    comms_irq,      //USART1_IrqHandler,  /* 15 USART 1 */
     unmapped_error, //IrqHandlerNotUsed,  /* 16 Reserved */
     unmapped_error, //IrqHandlerNotUsed,  /* 17 Reserved */
     unmapped_error, //MCI_IrqHandler,     /* 18 MCI */

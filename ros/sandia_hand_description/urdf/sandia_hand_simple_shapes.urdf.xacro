@@ -174,7 +174,7 @@
       <visual>
         <origin xyz="0.024 0 0" rpy="0 ${M_pi/2} 0"/>
         <geometry>
-          <cylinder radius="0.009" length="0.057" />
+          <cylinder radius="0.014" length="0.057" />
         </geometry>
         <material name="${side}_sandia_hand_skin_suntan">
           <color rgba="0.8 0.6 0.3 1.0"/>
@@ -183,7 +183,7 @@
       <visual>
         <origin xyz="0.052 0 0" rpy="0 0 0"/>
         <geometry>
-          <sphere radius="0.009" />
+          <sphere radius="0.014" />
         </geometry>
         <material name="${side}_sandia_hand_skin_suntan">
           <color rgba="0.8 0.6 0.3 1.0"/>
@@ -230,20 +230,6 @@
           <sphere radius="0.014" />
         </geometry>
       </collision>
-      <!--
-      <visual>
-        <origin xyz="0.024 0 0" rpy="0 ${M_pi/2} 0"/>
-        <geometry>
-          <cylinder radius="0.014" length="0.057" />
-        </geometry>
-      </visual>
-      <visual>
-        <origin xyz="0.052 0 0" rpy="0 0 0"/>
-        <geometry>
-          <sphere radius="0.014" />
-        </geometry>
-      </visual>
-      -->
     </link>
 
     <joint name="${side}_f${idx}_base" type="fixed">
@@ -362,7 +348,7 @@
       <visual>
         <origin xyz="0.069 ${0.016*reflect} 0.038" rpy="0 ${M_pi/2} ${-0.9*reflect}"/>
         <geometry>
-          <cylinder radius="0.013" length="0.100" />
+          <cylinder radius="0.018" length="0.100" />
         </geometry>
         <material name="${side}_sandia_hand_skin">
           <color rgba="0.835 0.655 0.345 1.0"/>
@@ -389,7 +375,7 @@
       <visual>
         <origin xyz="0.11 ${-0.01*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
         <geometry>
-          <box size="0.09 .03 .06" />
+          <box size="0.09 .03 .07" />
         </geometry>
         <material name="${side}_sandia_hand_skin">
           <color rgba="0.835 0.655 0.345 1.0"/>
@@ -398,7 +384,7 @@
       <visual>
         <origin xyz="0.09 ${0.02*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
         <geometry>
-          <box size="0.09 .03 .06" />
+          <box size="0.09 .03 .07" />
         </geometry>
         <material name="${side}_sandia_hand_skin">
           <color rgba="0.835 0.655 0.345 1.0"/>
@@ -407,7 +393,7 @@
       <visual>
         <origin xyz="0.060 ${0.050*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
         <geometry>
-          <box size="0.09 .03 .06" />
+          <box size="0.09 .03 .07" />
         </geometry>
         <material name="${side}_sandia_hand_skin">
           <color rgba="0.835 0.655 0.345 1.0"/>

@@ -217,6 +217,34 @@
         <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
       </inertial>
     </link>
+    <link name="${side}_f${idx}_2_soft">
+      <collision group="default">
+        <origin xyz="0.024 0 0" rpy="0 ${M_pi/2} 0"/>
+        <geometry>
+          <cylinder radius="0.014" length="0.057" />
+        </geometry>
+      </collision>
+      <collision group="other">
+        <origin xyz="0.052 0 0" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0.014" />
+        </geometry>
+      </collision>
+      <!--
+      <visual>
+        <origin xyz="0.024 0 0" rpy="0 ${M_pi/2} 0"/>
+        <geometry>
+          <cylinder radius="0.014" length="0.057" />
+        </geometry>
+      </visual>
+      <visual>
+        <origin xyz="0.052 0 0" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0.014" />
+        </geometry>
+      </visual>
+      -->
+    </link>
 
     <joint name="${side}_f${idx}_base" type="fixed">
       <parent link="${side}_palm"/>
@@ -265,6 +293,12 @@
       <parent link="${side}_f${idx}_2"/>
       <child link="${side}_f${idx}_2_accel"/>
       <origin xyz="0.04 0 0" rpy="-${M_pi/2} 0 0"/>
+    </joint>
+
+    <joint name="${side}_f${idx}_2_soft" type="fixed">
+      <parent link="${side}_f${idx}_2"/>
+      <child link="${side}_f${idx}_2_soft"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
     </joint>
 
     <xacro:finger_transmission side="${side}" idx="${idx}" x="${x}" y="${y}" z="${z}" r="${r}" p="${p}" yaw="${yaw}"/>
@@ -409,6 +443,37 @@
       </visual>
       <!-   end visual mesh of f2 -->
     </link>
+    <link name="${side}_palm_soft">
+      <collision group="other">
+        <origin xyz="0.069 ${0.016 * reflect} 0.038" rpy="0 ${M_pi/2} ${-0.9 * reflect}"/>
+        <geometry>
+          <cylinder radius="0.018" length="0.100" />
+        </geometry>
+      </collision>
+      <collision group="other">
+        <origin xyz="0.11 ${-0.01*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
+        <geometry>
+          <box size="0.09 .03 .07" />
+        </geometry>
+      </collision>
+      <collision group="other">
+        <origin xyz="0.09 ${0.02*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
+        <geometry>
+          <box size="0.09 .03 .07" />
+        </geometry>
+      </collision>
+      <collision group="other">
+        <origin xyz="0.060 ${0.050*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
+        <geometry>
+          <box size="0.09 .03 .07" />
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${side}_palm_soft_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <parent link="${side}_palm"/>
+      <child link="${side}_palm_soft"/>
+    </joint>
 
     <joint name="${side}_sandia_hand_joint" type="fixed">
       <parent link="${parent}"/>

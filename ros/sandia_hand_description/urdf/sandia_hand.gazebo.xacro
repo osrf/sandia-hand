@@ -43,6 +43,14 @@
       <maxContacts>1</maxContacts>
       <material>Gazebo/FlatBlack</material>
     </gazebo>
+    <gazebo reference="${side}_f${idx}_2_soft">
+      <mu1>11</mu1>
+      <mu2>11</mu2>
+      <material>Gazebo/FlatBlack</material>
+      <maxContacts>1</maxContacts>
+      <kp>1500</kp>
+      <kd>1</kd>
+    </gazebo>
     <gazebo reference="${side}_f${idx}_j0">
       <cfmDamping>1</cfmDamping>
     </gazebo>
@@ -57,7 +65,15 @@
     <gazebo reference="${side}_palm">
       <mu1>0.9</mu1>
       <mu2>0.9</mu2>
+      <minDepth>0.001</minDepth>
       <material>Gazebo/FlatBlack</material>
+    </gazebo>
+    <gazebo reference="${side}_palm_soft">
+      <mu1>11</mu1>
+      <mu2>11</mu2>
+      <material>Gazebo/FlatBlack</material>
+      <kp>1500</kp>
+      <kd>1</kd>
     </gazebo>
   </xacro:macro>
   <!-- begin cameras -->

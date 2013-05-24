@@ -1,6 +1,8 @@
 #include "pins.h"
+#include "sam3s/sam3s.h"
 
 // default values are for the right hand. 
+char g_pins_hand = 'R';
 
 Pin pin_led = { PIO_PC19, PIOC, ID_PIOC, PIO_OUTPUT_0, PIO_DEFAULT };
 
@@ -107,16 +109,23 @@ static void pin_assign(Pin *pin, uint32_t mask, Pio *pio,
   pin->attribute = attribute;
 }
 
-void pins_assign(const char hand)
+void pins_init()
 {
+  uint32_t bl_hw_version = *((uint32_t *)0x0401ff8); // magic, defined in bootloader
+  if (((bl_hw_version >> 16) & 0xffff) != 0xbeef) // check for magic bytes
+    bl_hw_version = 0; // undefined
+  else
+    bl_hw_version &= 0xffff; // keep useful lower 16 bits
+  g_pins_hand = (char)((bl_hw_version >> 8) & 0xff);
+
   // default values are for the right hand. no need for reassignment unless
   // it's for a left hand, or unless future revs of this board tweak the pins
-  if (hand != 'L')
+  if (g_pins_hand != 'L')
     return;
 
   pin_assign(&pin_led,      PIO_PC18, PIOC, ID_PIOC, PIO_OUTPUT_0, PIO_DEFAULT);
 
-  pin_assign(&pin_rs485_de, PIO_PA19, PIOC, ID_PIOC, PIO_OUTPUT_0, PIO_DEFAULT);
+  pin_assign(&pin_rs485_de, PIO_PA19, PIOA, ID_PIOA, PIO_OUTPUT_0, PIO_DEFAULT);
   pin_assign(&pin_rs485_di, PIO_PA22, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT);
   pin_assign(&pin_rs485_ro, PIO_PA21, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT);
 
@@ -124,7 +133,7 @@ void pins_assign(const char hand)
   pin_assign(&pin_spi_miso, PIO_PA12, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT);
   pin_assign(&pin_spi_sck,  PIO_PA14, PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT);
   pin_assign(&pin_cs_adc[0],PIO_PC31, PIOC, ID_PIOC, PIO_OUTPUT_1, PIO_DEFAULT);
-  pin_assign(&pin_cs_adc[1],PIO_PA30, PIOC, ID_PIOC, PIO_OUTPUT_1, PIO_DEFAULT);
+  pin_assign(&pin_cs_adc[1],PIO_PA30, PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT);
 
   pin_assign(&pin_i2c_scl,  PIO_PA4 , PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT);
   pin_assign(&pin_i2c_sda,  PIO_PA3 , PIOA, ID_PIOA, PIO_PERIPH_A, PIO_DEFAULT);
@@ -165,5 +174,8 @@ void pins_assign(const char hand)
   pin_assign(&pin_leds[17], PIO_PA0 , PIOA, ID_PIOA, PIO_OUTPUT_1, PIO_DEFAULT);
   pin_assign(&pin_leds[18], PIO_PB0 , PIOB, ID_PIOB, PIO_OUTPUT_1, PIO_DEFAULT);
   pin_assign(&pin_leds[19], PIO_PC0 , PIOC, ID_PIOC, PIO_OUTPUT_1, PIO_DEFAULT);
+
+  // PB10 is used as GPIO here, need to set that in a magic place
+  MATRIX->CCFG_SYSIO |= CCFG_SYSIO_SYSIO10;
 }
 

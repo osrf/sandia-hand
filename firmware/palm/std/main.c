@@ -35,7 +35,7 @@ int main(void)
     g_bl_hw_version = 0; // undefined
   else
     g_bl_hw_version &= 0xffff; // keep useful lower 16 bits
-  pins_assign((g_bl_hw_version >> 8) & 0xff);
+  pins_init();
 
   PIO_Configure(&pin_led, 1);
   lowlevel_init_clocks();

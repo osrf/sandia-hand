@@ -708,3 +708,21 @@ bool Hand::pingMoboMCU()
   return true;
 }
 
+bool Hand::setMoboCurrentLimit(const float limit)
+{
+  if (limit < 0)
+    return false;
+  if (limit > 10)
+    return false;
+  set_mobo_current_limit_t request, response;
+  request.pkt_state = MOBO_CURRENT_LIMIT_STATE_REQUEST;
+  request.current_limit = limit;
+  if (!txPacket(CMD_ID_MOBO_SET_CURRENT_LIMIT, request))
+    return false;
+  if (!listenForPacketId(CMD_ID_MOBO_SET_CURRENT_LIMIT, 0.25, response))
+    return false;
+  if (response.pkt_state != MOBO_CURRENT_LIMIT_STATE_RESPONSE)
+    return false;
+  return true;
+}
+

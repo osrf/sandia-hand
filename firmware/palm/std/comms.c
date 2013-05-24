@@ -22,7 +22,7 @@ static volatile unsigned g_rx_buf_writepos = 0, g_rx_buf_readpos = 0;
 static volatile unsigned g_comms_rx_pkt_timer = 0;
 static volatile uint32_t last_state_send_time = 0; 
 #define COMMS_RX_PKT_TIMEOUT_MS 10
-static Usart *rs485_usart = USART0;
+static volatile Usart *rs485_usart = USART0;
 
 void comms_init()
 {

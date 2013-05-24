@@ -19,6 +19,8 @@ extern Pin pin_i2c_sda, pin_i2c_scl;
 extern Pin pin_leds[PINS_NUM_LEDS];
 extern Pin pin_mux[PINS_NUM_MUX][PINS_MUX_ADDR_BITS];
 
-void pins_assign(const char hand); // 'L' for left hand, 'R' for right hand
+void pins_assign(); // 'L' for left hand, 'R' for right hand
+void pins_init();
+extern char g_pins_hand;
 
 #endif

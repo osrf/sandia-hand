@@ -15,6 +15,7 @@
 #include <sandia_hand_msgs/SetFingerHome.h>
 #include <sandia_hand_msgs/RelativeJointCommands.h>
 #include <sandia_hand_msgs/GetParameters.h>
+#include <sandia_hand_msgs/SetParameters.h>
 using namespace sandia_hand;
 using std::string;
 using std::vector;
@@ -27,6 +28,7 @@ ros::Publisher *g_raw_finger_state_pubs[Hand::NUM_FINGERS] = {NULL};
 ros::Publisher *g_raw_mobo_state_pub = NULL;
 ros::Publisher *g_raw_palm_state_pub = NULL;
 bool g_done = false;
+bool g_use_finger[4] = { true, true, true, true };
 static int32_t g_last_fmcb_hall_pos[Hand::NUM_FINGERS][3]; // hack
 
 // set the joint limits for each finger
@@ -71,7 +73,8 @@ void listenToHand(Hand *hand, const float seconds)
 void shutdownHand(Hand *hand)
 {
   for (int i = 0; i < Hand::NUM_FINGERS; i++)
-    hand->setFingerControlMode(i, Hand::FCM_IDLE);
+    if (g_use_finger[i])
+      hand->setFingerControlMode(i, Hand::FCM_IDLE);
   listenToHand(hand, 0.001); // todo: something smarter
   hand->setCameraStreaming(false, false);
   listenToHand(hand, 0.001); // todo: something smarter
@@ -94,7 +97,8 @@ bool getParametersSrv(Hand *hand, const int finger_idx,
                       sandia_hand_msgs::GetParameters::Response &res)
 {
   //printf("getParametersSrv, finger %d\n", finger_idx);
-  if (finger_idx < 0 || finger_idx > Hand::NUM_FINGERS)
+  if (finger_idx < 0 || finger_idx > Hand::NUM_FINGERS ||
+      !g_use_finger[finger_idx])
     return false;
   const vector<sandia_hand::Param> params = 
     hand->fingers[finger_idx].mm.getParams();
@@ -112,6 +116,24 @@ bool getParametersSrv(Hand *hand, const int finger_idx,
       res.parameters[i].val_type = sandia_hand_msgs::Parameter::FLOAT;
       res.parameters[i].f_val = params[i].getFloatVal();
     }
+  }
+  return true;
+}
+
+bool setParametersSrv(Hand *hand, const int finger_idx,
+                      sandia_hand_msgs::SetParameters::Request  &req,
+                      sandia_hand_msgs::SetParameters::Response &res)
+{
+  printf("setParametersSrv for finger %d:\n", finger_idx);
+  for (int i = 0; i < (int)req.parameters.size(); i++)
+  {
+    sandia_hand_msgs::Parameter *p = &req.parameters[i];
+    printf("  %s: type=%d, int=%d, float=%f\n",
+           p->name.c_str(), p->val_type, p->i_val, p->f_val);
+    if (p->val_type == sandia_hand_msgs::Parameter::FLOAT)
+      hand->fingers[finger_idx].mm.setParamFloat(p->name, p->f_val);
+    else if (p->val_type == sandia_hand_msgs::Parameter::INTEGER)
+      hand->fingers[finger_idx].mm.setParamInt(p->name, p->i_val);
   }
   return true;
 }
@@ -145,6 +167,8 @@ bool setJointLimitPolicy(Hand *hand, const std::string &policy_name,
   listenToHand(hand, 0.1);
   for (int i = 0; i < Hand::NUM_FINGERS; i++)
   {
+    if (!g_use_finger[i])
+      continue;
     /*
     ROS_INFO("finger %d lower limits: %.3f %.3f %.3f",
              i, lower_limits[i][0], lower_limits[i][1], lower_limits[i][2]);
@@ -170,7 +194,7 @@ bool setHomeSrv(Hand *hand,
                 sandia_hand_msgs::SetFingerHome::Response &res)
 {
   ROS_INFO("set home service call for finger %d", req.finger_idx);
-  if (req.finger_idx > 3)
+  if (req.finger_idx > 3 || !g_use_finger[req.finger_idx])
     return false;
   hand->setFingerAutopollHz(0); // we need a clear channel to the finger
   listenToHand(hand, 0.1); // wait for scheduler to realize we're stopped
@@ -203,6 +227,8 @@ void fingerJointCommandsCallback(Hand *hand, const uint8_t finger_idx,
     ROS_WARN("ignoring joint commands message with insufficient length");
     return; // woah there partner
   }
+  if (!g_use_finger[finger_idx])
+    return;
   hand->setFingerJointPos(finger_idx,
                       msg->position[0], msg->position[1], msg->position[2]);
 }
@@ -396,10 +422,18 @@ int main(int argc, char **argv)
 
   ros::NodeHandle nh, nh_right("right"), nh_left("left"), nh_private("~");
   bool use_fingers, use_cameras; // sometimes we just want fingers/cameras
+  bool use_phalanges; // sometimes we don't need/want phalanges
   nh_private.param<bool>("use_fingers", use_fingers, true);
   nh_private.param<bool>("use_cameras", use_cameras, true);
+  nh_private.param<bool>("use_phalanges", use_phalanges, true);
+  nh_private.param<bool>("use_finger_0", g_use_finger[0], true);
+  nh_private.param<bool>("use_finger_1", g_use_finger[1], true);
+  nh_private.param<bool>("use_finger_2", g_use_finger[2], true);
+  nh_private.param<bool>("use_finger_3", g_use_finger[3], true);
   if (!use_fingers)
     ROS_INFO("not using fingers");
+  if (!use_phalanges)
+    ROS_INFO("not using phalanges");
 
   // be sure we can ping it
   if (!hand.pingMoboMCU())
@@ -431,22 +465,26 @@ int main(int argc, char **argv)
   g_image_pub[0] = &image_pub[0];
   g_image_pub[1] = &image_pub[1];
   hand.setImageCallback(&image_cb); 
-
+  // abomination
   ros::Publisher raw_finger_state_pubs[Hand::NUM_FINGERS];
   if (use_fingers)
     for (int finger_idx = 0; finger_idx < Hand::NUM_FINGERS; finger_idx++)
-      if (!hand.fingers[finger_idx].mm.ping())
-        hand.setFingerPower(finger_idx, Hand::FPS_LOW);
+      if (g_use_finger[finger_idx])
+        if (!hand.fingers[finger_idx].mm.ping())
+          hand.setFingerPower(finger_idx, Hand::FPS_LOW);
   listenToHand(&hand, 1.0);
   if (use_fingers)
     for (int finger_idx = 0; finger_idx < Hand::NUM_FINGERS; finger_idx++)
-      if (!hand.fingers[finger_idx].mm.blBoot())
-        ROS_WARN("couldn't boot finger %d. is it already booted?", finger_idx);
+      if (g_use_finger[finger_idx])
+        if (!hand.fingers[finger_idx].mm.blBoot())
+          ROS_WARN("couldn't boot finger %d. is it already booted?",finger_idx);
   listenToHand(&hand, 0.5);  // let the finger applications start
   if (use_fingers)
   {
     for (int finger_idx = 0; finger_idx < Hand::NUM_FINGERS; finger_idx++)
     {
+      if (!g_use_finger[finger_idx])
+        continue;
       if (!hand.fingers[finger_idx].mm.ping())
       {
         ROS_FATAL("couldn't ping finger %d", finger_idx);
@@ -457,34 +495,48 @@ int main(int argc, char **argv)
       listenToHand(&hand, 0.1); // wait a bit to settle after charging fmcb caps
       ROS_INFO("finger %d motor module up and running.", finger_idx);
     }
-    for (int finger_idx = 0; finger_idx < Hand::NUM_FINGERS; finger_idx++)
-      if (!hand.fingers[finger_idx].pp.ping())
-        hand.fingers[finger_idx].mm.setPhalangeBusPower(true);
-    listenToHand(&hand, 1.0);
-    for (int finger_idx = 0; finger_idx < Hand::NUM_FINGERS; finger_idx++)
+    // abomination
+    if (use_phalanges)
     {
-      if (!hand.fingers[finger_idx].pp.blBoot())
-        ROS_WARN("couldn't boot finger %d proximal phalange", finger_idx);
-      if (!hand.fingers[finger_idx].dp.blBoot())
-        ROS_WARN("couldn't boot finger %d distal phalange", finger_idx);
-    }
-    listenToHand(&hand, 0.5);
-    for (int finger_idx = 0; finger_idx < Hand::NUM_FINGERS; finger_idx++)
-    {
-      if (!hand.fingers[finger_idx].pp.ping())
+      for (int finger_idx = 0; finger_idx < Hand::NUM_FINGERS; finger_idx++)
       {
+        if (!g_use_finger[finger_idx])
+          continue;
         if (!hand.fingers[finger_idx].pp.ping())
-          return perish("couldn't ping proximal phalange", &hand);
-        if (!hand.fingers[finger_idx].dp.ping())
-          return perish("couldn't ping distal phalange", &hand);
+          hand.fingers[finger_idx].mm.setPhalangeBusPower(true);
       }
-      ROS_INFO("finger %d phalanges booted", finger_idx);
+      listenToHand(&hand, 1.0);
+      for (int finger_idx = 0; finger_idx < Hand::NUM_FINGERS; finger_idx++)
+      {
+        if (!g_use_finger[finger_idx])
+          continue;
+        if (!hand.fingers[finger_idx].pp.blBoot())
+          ROS_WARN("couldn't boot finger %d proximal phalange", finger_idx);
+        if (!hand.fingers[finger_idx].dp.blBoot())
+          ROS_WARN("couldn't boot finger %d distal phalange", finger_idx);
+      }
+      listenToHand(&hand, 0.5);
+      for (int finger_idx = 0; finger_idx < Hand::NUM_FINGERS; finger_idx++)
+      {
+        if (!g_use_finger[finger_idx])
+          continue;
+        if (!hand.fingers[finger_idx].pp.ping())
+        {
+          if (!hand.fingers[finger_idx].pp.ping())
+            return perish("couldn't ping proximal phalange", &hand);
+          if (!hand.fingers[finger_idx].dp.ping())
+            return perish("couldn't ping distal phalange", &hand);
+        }
+        ROS_INFO("finger %d phalanges booted", finger_idx);
+      }
     }
     if (!setJointLimitPolicy(&hand, "default", false))
       return perish("couldn't set finger joint limits", &hand);
 
     for (int finger_idx = 0; finger_idx < Hand::NUM_FINGERS; finger_idx++)
     {
+      if (!g_use_finger[finger_idx])
+        continue;
       char topic_name[100];
       snprintf(topic_name, sizeof(topic_name), 
                "finger_%d/raw_state",finger_idx);
@@ -498,9 +550,12 @@ int main(int argc, char **argv)
       hand.fingers[finger_idx].mm.registerRxHandler(
                                 MotorModule::PKT_FINGER_STATUS,
                                 boost::bind(rxFingerState, finger_idx, _1, _2));
-      if (!hand.fingers[finger_idx].mm.setPhalangeAutopoll(true))
-        return perish("couldn't start phalange autopoll", &hand);
-      ROS_INFO("finger %d is autopolling its phalanges", finger_idx);
+      if (use_phalanges)
+      {
+        if (!hand.fingers[finger_idx].mm.setPhalangeAutopoll(true))
+          return perish("couldn't start phalange autopoll", &hand);
+        ROS_INFO("finger %d is autopolling its phalanges", finger_idx);
+      }
     }
   }
   ros::Publisher raw_mobo_state_pub = 
@@ -517,10 +572,11 @@ int main(int argc, char **argv)
   g_raw_palm_state_pub = &raw_palm_state_pub;
   hand.palm.registerRxHandler(Palm::PKT_PALM_STATE,
                               boost::bind(rxPalmState, _1, _2));
-
+  // abomination
   if (use_fingers)
     for (int finger_idx = 0; finger_idx < Hand::NUM_FINGERS; finger_idx++)
-      hand.setFingerControlMode(finger_idx, Hand::FCM_JOINT_POS);
+      if (g_use_finger[finger_idx])
+        hand.setFingerControlMode(finger_idx, Hand::FCM_JOINT_POS);
 
   ros::Subscriber joint_commands_sub = 
     nh.subscribe<osrf_msgs::JointCommands>("joint_commands", 1, 
@@ -533,9 +589,12 @@ int main(int argc, char **argv)
 
   ros::Subscriber finger_joint_commands_subs[Hand::NUM_FINGERS];
   ros::ServiceServer get_param_srvs[Hand::NUM_FINGERS];
+  ros::ServiceServer set_param_srvs[Hand::NUM_FINGERS];
   if (use_fingers)
     for (int i = 0; i < Hand::NUM_FINGERS; i++)
     {
+      if (!g_use_finger[i])
+        continue;
       char topic[100];
       snprintf(topic, sizeof(topic), "finger_%d/joint_commands", i);
       finger_joint_commands_subs[i] = 
@@ -546,6 +605,11 @@ int main(int argc, char **argv)
         nh.advertiseService<sandia_hand_msgs::GetParameters::Request,
                             sandia_hand_msgs::GetParameters::Response>
           (topic, boost::bind(getParametersSrv, &hand, i, _1, _2));
+      snprintf(topic, sizeof(topic), "finger_%d/set_parameters", i);
+      set_param_srvs[i] =
+        nh.advertiseService<sandia_hand_msgs::SetParameters::Request,
+                            sandia_hand_msgs::SetParameters::Response>
+          (topic, boost::bind(setParametersSrv, &hand, i, _1, _2));
     }
 
   ros::ServiceServer joint_limit_srv = 
@@ -566,6 +630,7 @@ int main(int argc, char **argv)
       return perish("couldn't set finger autopoll rate for hand", &hand);
     ROS_INFO("hand is autopolling its fingers");
   }
+  hand.setMoboCurrentLimit(5);
 
   hand.setMoboStateHz(100);
   if (use_cameras)

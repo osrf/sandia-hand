@@ -303,7 +303,7 @@ class TactileBoardTab(BoardTab):
   def applicationClicked(self):
     bn = self.board_name
     if "palm" in self.board_name:
-      self.spawnProcess("cd %s && bin/loose_palm_cli /dev/ttyUSB0 %s ../../firmware/build/%s/std/%s-std.bin && echo \"\ntasks complete\"" % (self.shd, self.applicationCmd(), bn, bn), self.processOnFinished)
+      self.spawnProcess("cd %s && bin/loose_palm_cli /dev/ttyUSB0 %s ../../firmware/build/palm/std/palm-std.bin && echo \"\ntasks complete\"" % (self.shd, self.applicationCmd()), self.processOnFinished)
     else:
       self.spawnProcess("cd %s && bin/loose_finger_cli /dev/ttyUSB0 %s ../../firmware/build/%s/std/%s-std.bin && echo \"\ntasks complete\"" % (self.shd, self.applicationCmd(), bn, bn), self.processOnFinished)
   def autoOnFinished(self, exitCode, exitStatus):
@@ -326,7 +326,7 @@ class TactileBoardTab(BoardTab):
     bn = self.board_name
     shd = self.shd
     if "palm" in self.board_name:
-      self.spawnProcess("cd %s/../../firmware/build && make %s-bl-gpnvm && make %s-bl-program && cd %s && bin/loose_palm_cli /dev/ttyUSB0 burn ../../firmware/build/%s/std/%s-std.bin && echo \"\ntasks complete\"" % (shd, bn, bn, shd, bn, bn), self.autoOnFinished)
+      self.spawnProcess("cd %s/../../firmware/build && make %s-bl-gpnvm && make %s-bl-program && cd %s && bin/loose_palm_cli /dev/ttyUSB0 burn ../../firmware/build/palm/std/palm-std.bin && echo \"\ntasks complete\"" % (shd, bn, bn, shd), self.autoOnFinished)
     else:
       self.spawnProcess("cd %s && bin/loose_finger_cli /dev/ttyUSB0 pb on && sleep 1 && cd %s/../../firmware/build && make %s-bl-gpnvm && make %s-bl-program && cd %s && bin/loose_finger_cli /dev/ttyUSB0 %s ../../firmware/build/%s/std/%s-std.bin && echo \"\ntasks complete\"" % (shd, shd, bn, bn, shd, self.applicationCmd(), bn, bn), self.autoOnFinished)
   def applicationCmd(self):
@@ -350,21 +350,27 @@ class MaintenanceWindow(QWidget):
     auto_awesome = rospy.get_param("~auto_awesome", False)
     self.f3_tab    = TactileBoardTab("f3",    12, auto_exit_board_name == "f3") 
     self.f2_tab    = TactileBoardTab("f2",     6, auto_exit_board_name == "f2")
-    self.palm_tab = TactileBoardTab("palm", 32, \
-                                     auto_exit_board_name == "palm")
+    self.rpalm_tab = TactileBoardTab("rpalm", 32, \
+                                     auto_exit_board_name == "rpalm")
+    self.lpalm_tab = TactileBoardTab("lpalm", 32, \
+                                     auto_exit_board_name == "lpalm")
     self.fmcb_tab  = MotorBoardTab(auto_exit_board_name == "fmcb")
     self.tab_widget.addTab(self.f3_tab, "f3")
     self.tab_widget.addTab(self.f2_tab, "f2")
     self.tab_widget.addTab(self.fmcb_tab, "fmcb")
-    self.tab_widget.addTab(self.palm_tab, "palm")
+    self.tab_widget.addTab(self.rpalm_tab, "rpalm")
+    self.tab_widget.addTab(self.lpalm_tab, "lpalm")
 
     # todo: find a cleaner way to do this
     if auto_exit_board_name == "f2":
       self.tab_widget.setCurrentIndex(1) 
     elif auto_exit_board_name == "fmcb":
       self.tab_widget.setCurrentIndex(2)
-    elif auto_exit_board_name == "palm":
+    elif auto_exit_board_name == "rpalm":
       self.tab_widget.setCurrentIndex(3)
+    elif auto_exit_board_name == "lpalm":
+      self.tab_widget.setCurrentIndex(4)
+
 
     vbox = QVBoxLayout()
     vbox.addWidget(self.tab_widget)
@@ -383,15 +389,18 @@ class MaintenanceWindow(QWidget):
     self.connect(self, SIGNAL('updateF3'), self.f3_tab.onUpdateUI)
     self.connect(self, SIGNAL('updateF2'), self.f2_tab.onUpdateUI)
     self.connect(self, SIGNAL('updateFMCB'), self.fmcb_tab.onUpdateUI)
-    self.connect(self, SIGNAL('updatePalm'), self.palm_tab.onUpdatePalmUI)
+    self.connect(self, SIGNAL('updatePalm'), self.rpalm_tab.onUpdatePalmUI)
+    self.connect(self, SIGNAL('updatePalm'), self.lpalm_tab.onUpdatePalmUI)
     # this is gross. figure out a better way sometime
     if auto_awesome:
       if auto_exit_board_name == "f2":
         self.f2_tab.autoClicked()
       elif auto_exit_board_name == "fmcb":
         self.fmcb_tab.autoClicked()
-      elif auto_exit_board_name == "palm":
-        self.palm_tab.autoClicked()
+      elif auto_exit_board_name == "rpalm":
+        self.rpalm_tab.autoClicked()
+      elif auto_exit_board_name == "lpalm":
+        self.lpalm_tab.autoClicked()
 
   def finger_state_cb(self, msg):
     # copy everything out of the ROS thread and into UI threads

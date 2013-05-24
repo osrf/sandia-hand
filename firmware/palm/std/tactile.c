@@ -10,32 +10,6 @@ uint16_t g_tactile_last_scan[TACTILE_NUM_TAXELS];
 uint32_t g_tactile_last_scan_time = 0;
 uint16_t g_tactile_current_scan[TACTILE_NUM_TAXELS];
 
-void tactile_init()
-{
-  PMC_EnablePeripheral(ID_SPI);
-  PIO_Configure(pin_cs_adc, PINS_NUM_CS_ADC);
-  PIO_Configure(&pin_spi_sck, 1);
-  PIO_Configure(&pin_spi_mosi, 1);
-  PIO_Configure(&pin_spi_miso, 1);
-  PIO_Configure(pin_leds, PINS_NUM_LEDS);
-  for (int i = 0; i < PINS_NUM_MUX; i++)
-    PIO_Configure(pin_mux[i], PINS_MUX_ADDR_BITS);
-  SPI->SPI_CR = SPI_CR_SPIDIS;
-  SPI->SPI_CR = SPI_CR_SWRST;
-  SPI->SPI_CR = SPI_CR_SWRST;
-  SPI->SPI_MR = SPI_MR_MSTR | SPI_MR_MODFDIS;
-  SPI->SPI_IDR = 0xffffffff;
-  // set scbr to F_CPU / F_SPI
-  SPI->SPI_CSR[0] = SPI_CSR_BITS_16_BIT | SPI_CSR_SCBR(5) | 
-                    SPI_CSR_NCPHA; // | SPI_CSR_CPOL;*/
-  SPI->SPI_CR = SPI_CR_SPIEN;
-  volatile uint32_t dummy;
-  for (dummy = 0; dummy < 100000; dummy++) { } // why? atmel does it
-  dummy = REG_SPI_SR;
-  dummy = REG_SPI_RDR;
-  for (int i = 0; i < TACTILE_NUM_TAXELS; i++)
-    g_tactile_last_scan[i] = g_tactile_current_scan[i] = 0;
-}
 
 typedef struct
 {
@@ -43,7 +17,7 @@ typedef struct
   uint8_t adc_chan;
 } mux_t;
 
-const mux_t muxes[TACTILE_NUM_MUXES] =
+mux_t muxes[TACTILE_NUM_MUXES] =
 {
   {0, 5},
   {1, 4},
@@ -60,7 +34,7 @@ typedef struct
 } photosensor_t;
 
 // LED array offsets are defined in pins.c
-const photosensor_t photosensors[TACTILE_NUM_TAXELS] =
+photosensor_t photosensors[TACTILE_NUM_TAXELS] =
 {
   {0, 0, 4}, // emit_0_0 , leds_0, mux 0 ch 4, adc 0 ch 5
   {0, 0, 7}, // emit_0_1 , leds_0, mux 0 ch 7, adc 0 ch 5
@@ -117,6 +91,87 @@ void scan_adcs()
   }
 }
 */
+
+void set_mux(mux_t *mux, uint8_t adc_idx, uint8_t adc_chan)
+{
+  mux->adc_idx  = adc_idx;
+  mux->adc_chan = adc_chan;
+}
+
+void set_photosensor(photosensor_t *p, 
+                     uint8_t led_idx, uint8_t mux_idx, uint8_t mux_chan)
+{
+  p->led_idx  = led_idx;
+  p->mux_idx  = mux_idx;
+  p->mux_chan = mux_chan;
+}
+
+void tactile_init()
+{
+  PMC_EnablePeripheral(ID_SPI);
+  PIO_Configure(pin_cs_adc, PINS_NUM_CS_ADC);
+  PIO_Configure(&pin_spi_sck, 1);
+  PIO_Configure(&pin_spi_mosi, 1);
+  PIO_Configure(&pin_spi_miso, 1);
+  PIO_Configure(pin_leds, PINS_NUM_LEDS);
+  for (int i = 0; i < PINS_NUM_MUX; i++)
+    PIO_Configure(pin_mux[i], PINS_MUX_ADDR_BITS);
+  SPI->SPI_CR = SPI_CR_SPIDIS;
+  SPI->SPI_CR = SPI_CR_SWRST;
+  SPI->SPI_CR = SPI_CR_SWRST;
+  SPI->SPI_MR = SPI_MR_MSTR | SPI_MR_MODFDIS;
+  SPI->SPI_IDR = 0xffffffff;
+  // set scbr to F_CPU / F_SPI
+  SPI->SPI_CSR[0] = SPI_CSR_BITS_16_BIT | SPI_CSR_SCBR(5) | 
+                    SPI_CSR_NCPHA; // | SPI_CSR_CPOL;*/
+  SPI->SPI_CR = SPI_CR_SPIEN;
+  volatile uint32_t dummy;
+  for (dummy = 0; dummy < 100000; dummy++) { } // why? atmel does it
+  dummy = REG_SPI_SR;
+  dummy = REG_SPI_RDR;
+  for (int i = 0; i < TACTILE_NUM_TAXELS; i++)
+    g_tactile_last_scan[i] = g_tactile_current_scan[i] = 0;
+  if (g_pins_hand == 'L')
+  {
+    set_mux(&muxes[0], 0, 4);
+    set_mux(&muxes[1], 1, 3);
+    set_mux(&muxes[2], 0, 5);
+    set_mux(&muxes[3], 1, 2);
+    set_mux(&muxes[4], 0, 7);
+    set_photosensor(&photosensors[0] ,  0, 0, 5);
+    set_photosensor(&photosensors[1] ,  0, 0, 7);
+    set_photosensor(&photosensors[2] ,  1, 0, 6);
+    set_photosensor(&photosensors[3] ,  1, 0, 3);
+    set_photosensor(&photosensors[4] ,  2, 3, 5); // emit_2_0
+    set_photosensor(&photosensors[5] ,  2, 1, 6);
+    set_photosensor(&photosensors[6] ,  3, 1, 5);
+    set_photosensor(&photosensors[7] ,  3, 1, 7);
+    set_photosensor(&photosensors[8] ,  4, 0, 2); // emit_4_0
+    set_photosensor(&photosensors[9] ,  4, 2, 1);
+    set_photosensor(&photosensors[10],  5, 1, 3);
+    set_photosensor(&photosensors[11],  5, 1, 2); 
+    set_photosensor(&photosensors[12],  6, 2, 2); // emit_6_0
+    set_photosensor(&photosensors[13],  6, 0, 1);
+    set_photosensor(&photosensors[14],  7, 2, 4);
+    set_photosensor(&photosensors[15],  7, 2, 7);
+    set_photosensor(&photosensors[16],  8, 2, 6); // emit_8_0
+    set_photosensor(&photosensors[17],  8, 0, 4);
+    set_photosensor(&photosensors[18],  9, 2, 3);
+    set_photosensor(&photosensors[19],  9, 2, 0);
+    set_photosensor(&photosensors[20], 10, 4, 0); // emit_10_0
+    set_photosensor(&photosensors[21], 10, 1, 1);
+    set_photosensor(&photosensors[22], 11, 4, 4); // emit_11_0
+    set_photosensor(&photosensors[23], 12, 4, 1);
+    set_photosensor(&photosensors[24], 13, 1, 0); // emit_12_0
+    set_photosensor(&photosensors[25], 14, 3, 0);
+    set_photosensor(&photosensors[26], 15, 3, 1); // emit_13_0
+    set_photosensor(&photosensors[27], 16, 3, 4);
+    set_photosensor(&photosensors[28], 17, 3, 7);
+    set_photosensor(&photosensors[29], 17, 3, 6);
+    set_photosensor(&photosensors[30], 18, 3, 2); // emit_15_0
+    set_photosensor(&photosensors[31], 19, 4, 6);
+  }
+}
 
 #define ADC_T_EN { }
 #define ADC_T_DIS { }

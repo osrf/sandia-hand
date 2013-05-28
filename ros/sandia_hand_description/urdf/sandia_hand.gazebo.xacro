@@ -5,41 +5,42 @@
 
   <xacro:macro name="finger_gazebo" params="side idx">
     <gazebo reference ="${side}_f${idx}_base">
-      <mu1>0.9</mu1>
-      <mu2>0.9</mu2>
+      <mu1>1.1</mu1>
+      <mu2>1.1</mu2>
       <kp>1000000.0</kp>
-      <kd>1.0</kd>
+      <kd>10.0</kd>
       <maxVel>0.1</maxVel>
-      <minDepth>0.001</minDepth>
+      <minDepth>0.00</minDepth>
+      <maxContacts>1</maxContacts>
       <material>Gazebo/FlatBlack</material>
     </gazebo>
     <gazebo reference="${side}_f${idx}_0">
-      <mu1>0.9</mu1>
-      <mu2>0.9</mu2>
+      <mu1>1.1</mu1>
+      <mu2>1.1</mu2>
       <kp>1000000.0</kp>
-      <kd>1.0</kd>
+      <kd>10.0</kd>
       <maxVel>0.1</maxVel>
-      <minDepth>0.003</minDepth>
+      <minDepth>0.00</minDepth>
       <maxContacts>1</maxContacts>
       <material>Gazebo/FlatBlack</material>
     </gazebo>
     <gazebo reference="${side}_f${idx}_1">
-      <mu1>0.9</mu1>
-      <mu2>0.9</mu2>
+      <mu1>1.1</mu1>
+      <mu2>1.1</mu2>
       <kp>1000000.0</kp>
-      <kd>1.0</kd>
+      <kd>10.0</kd>
       <maxVel>0.1</maxVel>
-      <minDepth>0.003</minDepth>
+      <minDepth>0.00</minDepth>
       <maxContacts>1</maxContacts>
       <material>Gazebo/FlatBlack</material>
     </gazebo>
     <gazebo reference="${side}_f${idx}_2">
-      <mu1>0.9</mu1>
-      <mu2>0.9</mu2>
+      <mu1>1.1</mu1>
+      <mu2>1.1</mu2>
       <kp>1000000.0</kp>
-      <kd>1.0</kd>
+      <kd>10.0</kd>
       <maxVel>0.1</maxVel>
-      <minDepth>0.003</minDepth>
+      <minDepth>0.00</minDepth>
       <maxContacts>1</maxContacts>
       <material>Gazebo/FlatBlack</material>
     </gazebo>
@@ -55,8 +56,13 @@
   </xacro:macro>
   <xacro:macro name="sandia_hand_gazebo" params="side">
     <gazebo reference="${side}_palm">
-      <mu1>0.9</mu1>
-      <mu2>0.9</mu2>
+      <mu1>1.1</mu1>
+      <mu2>1.1</mu2>
+      <kp>1000000.0</kp>
+      <kd>1.0</kd>
+      <maxVel>0.1</maxVel>
+      <minDepth>0.00</minDepth>
+      <maxContacts>6</maxContacts>
       <material>Gazebo/FlatBlack</material>
     </gazebo>
   </xacro:macro>

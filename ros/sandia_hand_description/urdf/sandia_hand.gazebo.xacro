@@ -62,7 +62,7 @@
       <kd>1.0</kd>
       <maxVel>0.1</maxVel>
       <minDepth>0.00</minDepth>
-      <maxContacts>2</maxContacts>
+      <maxContacts>6</maxContacts>
       <material>Gazebo/FlatBlack</material>
     </gazebo>
   </xacro:macro>

@@ -291,7 +291,7 @@ class TactileBoardTab(BoardTab):
         print "quitting."
         QApplication.quit()
   def onUpdateUI(self, accel_raw, tactile_raw):
-    self.onUpdateCommonUI(self, accel_raw, tactile_raw)
+    self.onUpdateCommonUI(accel_raw, tactile_raw)
   def onUpdatePalmUI(self, accel_raw, gyro_raw, mag_raw, tactile_raw):
     # todo: test gyro and mag
     self.onUpdateCommonUI(accel_raw, tactile_raw)

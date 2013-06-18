@@ -54,7 +54,6 @@ SECTIONS
         KEEP (*(EXCLUDE_FILE (*crtend.o) .dtors))
         KEEP (*(SORT(.dtors.*)))
         KEEP (*crtend.o(.dtors))
-
         . = ALIGN(4);
         _efixed = .;            /* End of text section */
     } > rom
@@ -102,4 +101,11 @@ SECTIONS
 
     . = ALIGN(4); 
     _end = . ; 
+
+  /*
+    .bl_hw_version 0x87ffc :
+    { 
+        KEEP(*(.bl_hw_version))
+    } > rom
+  */
 }

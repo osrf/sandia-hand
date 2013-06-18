@@ -29,11 +29,21 @@ Hand::Hand()
   }
   // this is for right hand. todo: load this dynamically one way or another.
   // depending on if we have a right or left hand.
+  
   rx_rs485_map_[0] = 4;
   rx_rs485_map_[1] = 1;
   rx_rs485_map_[2] = 2;
   rx_rs485_map_[3] = 3;
   rx_rs485_map_[4] = 0;
+  
+/*
+  // left hand
+  rx_rs485_map_[0] = 1;
+  rx_rs485_map_[1] = 0;
+  rx_rs485_map_[2] = 3;
+  rx_rs485_map_[3] = 2;
+  rx_rs485_map_[4] = 4;
+*/
 
   for (int i = 0; i < NUM_FINGERS; i++)
   {

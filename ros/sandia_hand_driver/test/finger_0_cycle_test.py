@@ -23,7 +23,7 @@ class FingerCycleTest:
     rate = rospy.Rate(50.0)
     prev_time = rospy.get_time()
     a = 1.4
-    targets = [ [0, 0, 0], [0, -a, -a], [0, a, a] ]
+    targets = [ [0, 0, 0], [0, -a, -a], [0, a, a], [0, 0, 0], [-a, 0, 0], [a, 0, 0] ]
     target_idx = 0
     cycle_count = 0
     while not rospy.is_shutdown():

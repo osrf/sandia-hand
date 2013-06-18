@@ -55,12 +55,29 @@ static const rs485_de_t g_finger_rs485_de[5] =
     { PIOB, PIO_PB14 },
     { PIOD, PIO_PD0  } };
 */
+// todo: read magic byte in bootloader to indicate RH or LH
+// this is for right hand
+// LH map: 0->4   1->1   2->2   3->3   4->0
+
 static const rs485_de_t g_finger_rs485_de[5] =
   { { PIOD, PIO_PD0  },
     { PIOD, PIO_PD6  },
     { PIOA, PIO_PA0  },
     { PIOB, PIO_PB14 },
     { PIOC, PIO_PC28 } };
+
+/*
+// this is for left hand
+// LH map: 0->1   1->0   2->3   3->2   4->4
+static const rs485_de_t g_finger_rs485_de[5] =
+  { 
+    { PIOD, PIO_PD6  }, // mcu_rs485_1_de
+    { PIOC, PIO_PC28 }, // mcu_rs485_0_de
+    { PIOB, PIO_PB14 }, // mcu_rs485_3_de
+    { PIOA, PIO_PA0  }, // mcu_rs485_2_de
+    { PIOD, PIO_PD0  }  // mcu_rs485_4_de
+  };
+*/
 
 void finger_init()
 {

@@ -27,7 +27,7 @@
 #include "led.h"
 #include "boot.h"
 
-uint32_t systick_count = 0;
+volatile uint32_t systick_count = 0;
 
 void systick_vector()
 {
@@ -77,19 +77,31 @@ void main()
   }
 
   printf("waiting until we have ARP to 10.10.1.1 ...\r\n");
-  // spin here until we have ARP
-  while (!enet_arp_valid()) 
-  { 
+  // spin here until we have ARP, or until 20 seconds expire
+  uint32_t start_time = systick_count;
+  uint32_t dance_time = systick_count;
+  for (uint32_t loop_count = 0; !enet_arp_valid(); loop_count++)
+  {
     enet_idle(); 
+    if (systick_count != dance_time && systick_count % 50 == 0)
+    {
+      dance_time = systick_count;
+      led_dance();
+    }
+    if (systick_count - start_time >= 15000)
+      break; // didn't hear back from ARP. sad. time to give up and move on.
   }
 
   printf("entering bootloader wait loop\r\n");
-  uint32_t start_time = systick_count;
+  start_time = systick_count;
   for (uint32_t loop_count = 0; ; loop_count++)
   {
     enet_idle();
-    if (loop_count % 200000 == 0)
+    if (systick_count != dance_time && systick_count % 100 == 0)
+    {
+      dance_time = systick_count;
       led_dance();
+    }
     if ((systick_count - start_time >= 5000 && boot_enabled) ||
         boot_requested)
       break; // hit timeout. boot.

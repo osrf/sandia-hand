@@ -24,7 +24,7 @@
 #include "control.h"
 #include "finger.h"
 
-// hardware connections:
+// hardware connections on mobo schematic:
 //   PA21 = F0_LV
 //   PC19 = F0_HV
 //   PB19 = F1_LV
@@ -39,11 +39,26 @@
 #define POWER_VDD_SENSOR_IDX 4
 
 typedef struct { Pio *pio; uint32_t pin_idx; } power_switch_t;
+// todo: load this map on startup based on magic byte set in bootloader (RH/LH)
+// this is for right hand.
+// RH map: 0->3   1->0   2->1   3->2  
 const power_switch_t power_switches[POWER_NUM_FINGERS][2] =  
   { { { PIOB, PIO_PB19 }, { PIOB, PIO_PB17 } },   // index
     { { PIOA, PIO_PA2  }, { PIOA, PIO_PA4  } },   // middle
     { { PIOA, PIO_PA6  }, { PIOA, PIO_PA16 } },   // pinkie
     { { PIOA, PIO_PA21 }, { PIOC, PIO_PC19 } } }; // thumb
+/*
+// this is for left hand.
+// LH map: 0->2   1->1   2->0   3->3
+const power_switch_t power_switches[POWER_NUM_FINGERS][2] =  
+  { 
+    { { PIOA, PIO_PA2  }, { PIOA, PIO_PA4  } },   // index  (0)
+    { { PIOB, PIO_PB19 }, { PIOB, PIO_PB17 } },   // middle (1)
+    { { PIOA, PIO_PA21 }, { PIOC, PIO_PC19 } },   // pinkie (2)
+    { { PIOA, PIO_PA6  }, { PIOA, PIO_PA16 } }    // thumb  (3)
+  }; 
+*/
+
 static power_state_t g_finger_power_states[4] = { POWER_OFF };
 
 static volatile uint8_t g_power_poll_req = 0, g_power_status_send_req = 0;
@@ -410,6 +425,7 @@ void power_i2c_write_sync(const uint8_t  sensor_idx,
 
 uint8_t power_sensor_idx_to_i2c_addr(const uint8_t sensor_idx)
 {
+  // todo: figure out how to map this cleanly for RH / LH
   switch(sensor_idx)
   {
     case 0:  return 0x44; break; // see schematics & INA226 datasheet

@@ -48,7 +48,7 @@ void main()
   }
   if (attempt >= MAX_CONFIG_ATTEMPTS)
   {
-    printf("fpga will not configure. now i will go into infinite loop...\r\n");
+    //printf("fpga will not configure. now i will go into infinite loop...\r\n");
     while (1) { } // aaahhhhhhhhhhhhhhhhhhhhh
   }
   power_init();

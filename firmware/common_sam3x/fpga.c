@@ -46,7 +46,7 @@ void fpga_init()
   PIOA->PIO_PER = PIOA->PIO_ODR = PORTA_FPGA_DONE_PIN;
   PIOB->PIO_SODR = PORTB_PROGRAM_PIN; // be sure it's high before enabled
   PIOB->PIO_PER = PIOB->PIO_OER = PORTB_PROGRAM_PIN; 
-  const int FPGA_TIMEOUT = 200; // meaningless units
+  const int FPGA_TIMEOUT = 800; // meaningless units
   for (volatile int i = 0; i < FPGA_TIMEOUT; i++)
   {
     for (volatile int j = 0; j < 500000; j++) { } // hack. fix this someday.

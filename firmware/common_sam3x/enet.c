@@ -276,7 +276,7 @@ static void enet_arp_rx(uint8_t *pkt, const uint32_t len)
 
 static void enet_request_master_mac()
 {
-  printf("requesting master MAC...\r\n");
+  printf("arp.\r\n");
   arp_pkt_t request;
   for (int i = 0; i < 6; i++)
   {

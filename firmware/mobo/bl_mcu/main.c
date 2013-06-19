@@ -26,6 +26,7 @@
 #include "flash.h"
 #include "led.h"
 #include "boot.h"
+#include "config.h"
 
 volatile uint32_t systick_count = 0;
 
@@ -37,6 +38,7 @@ void systick_vector()
 
 void main()
 {
+  config_init();
   console_init();
   printf("bootloader main()\r\n");
   const int MAX_CONFIG_ATTEMPTS = 3;

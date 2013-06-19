@@ -1,4 +1,4 @@
-set(CMAKE_C_LINK_FLAGS "-g -mthumb -mcpu=cortex-m3 -T\"${PROJECT_SOURCE_DIR}/common_sam3x/sam3x8e_bl.ld\" -Wl,-Map=memory.map -Wl,--cref --entry=reset_vector -Wl,--no-gc-sections -Wl,--warn-common -Wl,--unresolved-symbols=report-all -Wl,--no-undefined -Wl,--start-group -lc -lgcc -Wl,--end-group -Wl,--section-start=.bl_hw_version=0x87ffc")
+set(CMAKE_C_LINK_FLAGS "-g -mthumb -mcpu=cortex-m3 -T\"${PROJECT_SOURCE_DIR}/common_sam3x/sam3x8e_bl.ld\" -Wl,-Map=memory.map -Wl,--cref --entry=reset_vector -Wl,--no-gc-sections -Wl,--warn-common -Wl,--unresolved-symbols=report-all -Wl,--no-undefined -Wl,--start-group -lc -lgcc -Wl,--end-group -Wl,--section-start=.bl_hw_version=0x87ffc -Wl,--section-start=.bl_hand_ip=0x87ff8 -Wl,--section-start=.bl_master_ip=0x87ff4 -Wl,--section-start=.bl_hand_mac=0x87fec")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../ros/sandia_hand_driver/include)
 include_directories(${PROJECT_SOURCE_DIR}/common_sam3x)
 add_definitions(-DF_CPU=64000000) 

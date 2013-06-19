@@ -22,6 +22,7 @@
 #include <string.h>
 #include "fpga.h"
 #include "flash.h"
+#include "config.h"
 
 // hardware connections:
 //   PB0 = EREFCK
@@ -135,6 +136,7 @@ volatile static uint8_t __attribute__((aligned(8)))
                    g_enet_rx_buf[ENET_RX_BUFFERS * ENET_RX_UNITSIZE];
 static uint8_t __attribute__((aligned(8)))
                    g_enet_rx_full_packet[ENET_MAX_PKT_SIZE];
+static uint16_t g_enet_udp_base_port = 12321; // start here, move as requested
 
 // keep the TX path simple for now. single big buffer.
 #define ENET_TX_BUFFERS 1
@@ -146,15 +148,39 @@ volatile static uint8_t __attribute__((aligned(8)))
 volatile static uint8_t __attribute__((aligned(8)))
                    g_enet_udp_tx_buf[ENET_MAX_PKT_SIZE];
 
-// todo: read these from flash somewhere, probably in bootloader section
-static uint8_t g_enet_hand_mac[6] = {0xa4, 0xf3, 0xc1, 0x00, 0x00, 0x00};
-static uint32_t g_enet_hand_ip = 0x0a0a0102; // 10.10.1.2
-static uint32_t g_enet_master_ip = 0x0a0a0101; // 10.10.1.1
+// these values will get overwritten with whatever is in bootloader flash
+static uint8_t g_enet_hand_mac[6] = {0xa4,0xf3,0xc1,0,0,0};
+static uint32_t g_enet_hand_ip = 0x0a0a0102; 
+static uint32_t g_enet_master_ip = 0x0a0a0101; 
 static uint8_t g_enet_master_mac[6] = {0,0,0,0,0,0}; // to request via ARP
 
 void enet_init()
 {
   printf("enet init\r\n");
+  for (int i = 0; i < 6; i++)
+    g_enet_hand_mac[i] = config_get_hand_mac()[i];
+  g_enet_hand_ip = config_get_hand_ip();
+  g_enet_master_ip = config_get_master_ip();
+  fpga_spi_txrx(FPGA_SPI_REG_ETH_SOURCE_ADDR_0 | FPGA_SPI_WRITE,
+                 (uint16_t)g_enet_hand_mac[5] |
+                ((uint16_t)g_enet_hand_mac[4] << 8));
+  fpga_spi_txrx(FPGA_SPI_REG_ETH_SOURCE_ADDR_1 | FPGA_SPI_WRITE,
+                 (uint16_t)g_enet_hand_mac[3] |
+                ((uint16_t)g_enet_hand_mac[2] << 8));
+  fpga_spi_txrx(FPGA_SPI_REG_ETH_SOURCE_ADDR_2 | FPGA_SPI_WRITE,
+                 (uint16_t)g_enet_hand_mac[1] |
+                ((uint16_t)g_enet_hand_mac[0] << 8));
+
+  fpga_spi_txrx(FPGA_SPI_REG_IP_SOURCE_ADDR_LO | FPGA_SPI_WRITE,
+                 (uint16_t) g_enet_hand_ip);
+  fpga_spi_txrx(FPGA_SPI_REG_IP_SOURCE_ADDR_HI | FPGA_SPI_WRITE,
+                 (uint16_t)(g_enet_hand_ip >> 16));
+
+  fpga_spi_txrx(FPGA_SPI_REG_IP_DEST_ADDR_LO | FPGA_SPI_WRITE,
+                 (uint16_t) g_enet_master_ip);
+  fpga_spi_txrx(FPGA_SPI_REG_IP_DEST_ADDR_HI | FPGA_SPI_WRITE,
+                 (uint16_t)(g_enet_master_ip >> 16));
+
   PMC->PMC_PCER0 |= (1 << ID_PIOB);
   PMC->PMC_PCER1 |= (1 << (ID_EMAC - 32));
   PIOB->PIO_ABSR &= ~(PIO_PB0A_ETXCK | PIO_PB1A_ETXEN | 
@@ -522,8 +548,8 @@ void enet_tx_udp(const uint8_t *payload, const uint16_t payload_len)
   udp->ip.ip_checksum = 0;
   udp->ip.ip_source_addr = htonl(g_enet_hand_ip);
   udp->ip.ip_dest_addr = htonl(g_enet_master_ip);
-  udp->udp_source_port = htons(UDP_HAND_PORT);
-  udp->udp_dest_port = htons(UDP_HAND_PORT);
+  udp->udp_source_port = htons(g_enet_udp_base_port);
+  udp->udp_dest_port = htons(g_enet_udp_base_port);
   udp->udp_len = htons(8 + payload_len);
   udp->udp_checksum = 0; // IPv4 UDP checksum is optional. 
   enet_add_ip_header_checksum(&udp->ip);
@@ -554,8 +580,8 @@ void enet_tx_packet(const uint32_t packet_id,
   udp->ip.ip_checksum = 0;
   udp->ip.ip_source_addr = htonl(g_enet_hand_ip);
   udp->ip.ip_dest_addr = htonl(g_enet_master_ip);
-  udp->udp_source_port = htons(UDP_HAND_PORT);
-  udp->udp_dest_port = htons(UDP_HAND_PORT);
+  udp->udp_source_port = htons(g_enet_udp_base_port);
+  udp->udp_dest_port = htons(g_enet_udp_base_port);
   udp->udp_len = htons(8 + 4 + packet_len);
   udp->udp_checksum = 0; // IPv4 UDP checksum is optional. 
   enet_add_ip_header_checksum(&udp->ip);
@@ -569,27 +595,14 @@ uint8_t enet_arp_valid()
   return g_enet_arp_valid;
 }
 
-////////////////////////////////////////////////////////////////////////
-// graveyard
-#if 0
-  printf("enet_packet_rx %d bytes\r\n", len);
-  printf("dest  addr: %02x %02x %02x %02x %02x %02x\r\n",
-         eth_pkt->dest_addr[0],
-         eth_pkt->dest_addr[1],
-         eth_pkt->dest_addr[2],
-         eth_pkt->dest_addr[3],
-         eth_pkt->dest_addr[4],
-         eth_pkt->dest_addr[5]); printf("source addr: %02x %02x %02x %02x %02x %02x\r\n",
-         eth_pkt->source_addr[0],
-         eth_pkt->source_addr[1],
-         eth_pkt->source_addr[2],
-         eth_pkt->source_addr[3],
-         eth_pkt->source_addr[4],
-         eth_pkt->source_addr[5]);
-  printf("arp ethertype: %x\r\n", ntohs(arp_pkt->ethertype));
-  printf("arp hw type: %x\r\n", ntohs(arp_pkt->hw_type));
-  printf("arp proto type: %x\r\n", ntohs(arp_pkt->proto_type));
-  printf("arp hw addr len: %x\r\n", arp_pkt->hw_addr_len);
-  printf("arp proto addr len: %x\r\n", arp_pkt->proto_addr_len);
-#endif
+uint16_t enet_get_udp_base_port()
+{
+  return g_enet_udp_base_port;
+}
+
+void enet_set_udp_base_port(const uint16_t port)
+{
+  g_enet_udp_base_port = port;
+  fpga_spi_txrx(FPGA_SPI_REG_UDP_DEST_PORT | FPGA_SPI_WRITE, port);
+}
 

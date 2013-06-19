@@ -74,7 +74,11 @@ typedef struct
   uint16_t udp_len;
   uint16_t udp_checksum;
 } __attribute__((packed)) udp_header_t;
-static const uint16_t UDP_HAND_PORT = 12321; // some random number
+
+uint16_t enet_get_udp_base_port();
+void     enet_set_udp_base_port(const uint16_t port);
+#define  UDP_RX_PORT 12321
+
 
 #define htonl(x) (__REV((uint32_t)x))
 #define htons(x) (__REV16((uint16_t)x))

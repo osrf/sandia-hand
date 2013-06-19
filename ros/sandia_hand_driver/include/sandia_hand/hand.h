@@ -22,10 +22,13 @@ public:
   static const int NUM_FINGERS = 4;
   Finger fingers[NUM_FINGERS];
   Palm palm;
+  enum Side { RIGHT, LEFT, UNKNOWN };
   
   Hand();
   ~Hand();
-  bool init(const char *ip = "10.10.1.2");
+  static const uint16_t DEFAULT_HAND_BASE_PORT = 12321; // i love palindromes
+  bool init(const char *ip = "10.66.171.23", 
+            const uint16_t base_port = DEFAULT_HAND_BASE_PORT); // right hand
 
   enum FingerPowerState { FPS_OFF  = FINGER_POWER_STATE_OFF, 
                           FPS_LOW  = FINGER_POWER_STATE_LOW,
@@ -74,9 +77,11 @@ public:
   bool bootMoboMCU();
   bool pingMoboMCU();
   bool setMoboCurrentLimit(const float limit);
+  bool getHwVersion(uint32_t &version);
+  Side getSide(); 
 private:
+  Side side_;
   static const int NUM_SOCKS = 4;
-  static const uint16_t HAND_BASE_PORT = 12321; // i love palindromes
   int control_sock, cam_socks[NUM_CAMS], rs485_sock;
   sockaddr_in control_saddr, cam_saddrs[NUM_CAMS], rs485_saddr;
   int *socks[NUM_SOCKS];

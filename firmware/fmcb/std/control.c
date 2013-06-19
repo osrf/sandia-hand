@@ -115,14 +115,14 @@ void control_set_jointspace(const float *targets)
       g_control_joint_tgt[i] = g_params.upper_joint_limit[i];
   }
   g_control_hall_tgt[2] = ANGLE_TO_HALL * 
-                                   g_params.gear[2] * g_control_joint_tgt[2];
+                            g_params.gear[2] * g_control_joint_tgt[2];
   g_control_hall_tgt[1] = ANGLE_TO_HALL * 
                                 (  g_params.gear[1] * g_control_joint_tgt[1]
-                                 - g_params.gear[2] * g_control_joint_tgt[2]);
+                 - CAPSTAN_RATIO * g_params.gear[2] * g_control_joint_tgt[2]);
   g_control_hall_tgt[0] = ANGLE_TO_HALL * 
                                 (  g_params.gear[0] * g_control_joint_tgt[0]
                                  + g_params.gear[1] * g_control_joint_tgt[1]
-                                 + g_params.gear[2] * g_control_joint_tgt[2]);
+                 + CAPSTAN_RATIO * g_params.gear[2] * g_control_joint_tgt[2]);
   control_systick_enable();
 }
 

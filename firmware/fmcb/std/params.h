@@ -5,6 +5,7 @@
 
 #define HALL_STATES (36.0f)
 #define ANGLE_TO_HALL (HALL_STATES / (3.1415926f * 2.0f))
+#define CAPSTAN_RATIO 0.89f
 
 struct params_t
 {

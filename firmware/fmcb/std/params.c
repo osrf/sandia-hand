@@ -76,7 +76,7 @@ void params_set_all_default()
     g_params.accel_bias[i] = 0;
     g_params.accel_scale[i] = 1023;
   }
-  g_params.gear[0] = 170.0f;
+  g_params.gear[0] = 173.4f;
   g_params.gear[1] = 196.7f;
   g_params.gear[2] = 231.0f;
   g_params.lower_joint_limit[0] = -0.5;

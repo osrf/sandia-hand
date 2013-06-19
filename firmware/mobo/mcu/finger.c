@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include "common_sam3x/sam3x.h"
 #include "fpga.h"
+#include "config.h"
 
 // hardware connections:
 // PA15 = RS485_SEL
@@ -46,8 +47,9 @@ static uint32_t g_finger_systick_count = 0;
 static void finger_flush_tx_queues();
 
 typedef struct { Pio *pio; uint32_t pin_idx; } rs485_de_t;
-// TODO: map finger_idx to rs485 channel indices. have palm be channel 4.
+
 /*
+// this is for alpha rev right hand:
 static const rs485_de_t g_finger_rs485_de[5] =
   { { PIOC, PIO_PC28 },
     { PIOD, PIO_PD6  },
@@ -57,9 +59,10 @@ static const rs485_de_t g_finger_rs485_de[5] =
 */
 // todo: read magic byte in bootloader to indicate RH or LH
 // this is for right hand
-// LH map: 0->4   1->1   2->2   3->3   4->0
+// RH map: 0->4   1->1   2->2   3->3   4->0
 
-static const rs485_de_t g_finger_rs485_de[5] =
+// this gets overwritten during init() depending on if it's RH or LH 
+static rs485_de_t g_finger_rs485_de[5] =
   { { PIOD, PIO_PD0  },
     { PIOD, PIO_PD6  },
     { PIOA, PIO_PA0  },
@@ -81,6 +84,33 @@ static const rs485_de_t g_finger_rs485_de[5] =
 
 void finger_init()
 {
+  if (config_is_left_hand())
+  {
+    g_finger_rs485_de[0].pio = PIOD;
+    g_finger_rs485_de[0].pin_idx = PIO_PD6;
+    g_finger_rs485_de[1].pio = PIOC;
+    g_finger_rs485_de[1].pin_idx = PIO_PC28;
+    g_finger_rs485_de[2].pio = PIOB;
+    g_finger_rs485_de[2].pin_idx = PIO_PB14;
+    g_finger_rs485_de[3].pio = PIOA;
+    g_finger_rs485_de[3].pin_idx = PIO_PA0;
+    g_finger_rs485_de[4].pio = PIOD;
+    g_finger_rs485_de[4].pin_idx = PIO_PD0;
+  }
+  else
+  {
+    g_finger_rs485_de[0].pio = PIOD;
+    g_finger_rs485_de[0].pin_idx = PIO_PD0;
+    g_finger_rs485_de[1].pio = PIOD;
+    g_finger_rs485_de[1].pin_idx = PIO_PD6;
+    g_finger_rs485_de[2].pio = PIOA;
+    g_finger_rs485_de[2].pin_idx = PIO_PA0;
+    g_finger_rs485_de[3].pio = PIOB;
+    g_finger_rs485_de[3].pin_idx = PIO_PB14;
+    g_finger_rs485_de[4].pio = PIOC;
+    g_finger_rs485_de[4].pin_idx = PIO_PC28;
+  }
+
   PMC->PMC_PCER0 |= (1 << ID_PIOA) | (1 << ID_PIOB) | (1 << ID_PIOC) | 
                     (1 << ID_PIOD) | (1 << ID_USART3);
   const uint32_t pioa_pins = PIO_PA15 | PIO_PA19 | PIO_PA0;

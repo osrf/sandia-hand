@@ -24,6 +24,8 @@ static const uint32_t CMD_ID_MOBO_PING                     = 17;
 static const uint32_t CMD_ID_HAND_JOINT_COMMANDS           = 18;
 static const uint32_t CMD_ID_MOBO_SET_CURRENT_LIMIT        = 19;
 static const uint32_t CMD_ID_HAND_RELATIVE_JOINT_COMMANDS  = 20;
+static const uint32_t CMD_ID_MOBO_GET_HW_VERSION           = 21;
+static const uint32_t CMD_ID_MOBO_SET_DEST_PORT            = 22;
 
 typedef struct 
 {
@@ -124,7 +126,6 @@ typedef struct
 {
   uint32_t sector_page_num; 
 } __attribute__((packed)) fpga_flash_erase_sector_ack_t;
-
 #define MOBO_MCU_FLASH_PAGE_SIZE 256
 typedef struct
 {
@@ -175,6 +176,21 @@ typedef struct
   uint8_t max_efforts [12];
 } __attribute__((packed)) relative_joint_commands_t;
 
+typedef struct
+{
+  uint8_t pkt_state;
+  uint32_t version;
+} __attribute__((packed)) get_hw_version_t;
+static const uint8_t MOBO_GET_HW_VERSION_REQUEST  = 0;
+static const uint8_t MOBO_GET_HW_VERSION_RESPONSE = 1;
+
+typedef struct
+{
+  uint8_t pkt_state;
+  uint16_t port;
+} __attribute__((packed)) set_dest_port_t;
+static const uint8_t MOBO_SET_DEST_PORT_REQUEST  = 0;
+static const uint8_t MOBO_SET_DEST_PORT_RESPONSE = 1;
 
 #endif
 

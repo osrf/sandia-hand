@@ -32,23 +32,23 @@ bool g_use_finger[4] = { true, true, true, true };
 static int32_t g_last_fmcb_hall_pos[Hand::NUM_FINGERS][3]; // hack
 
 // set the joint limits for each finger
-static const float upper_limits_default[4][3] = { { 1.5 ,  1.5,  1.7},
-                                                  { 0.05,  1.5,  1.7},
-                                                  { 0.05,  1.5,  1.7},
-                                                  { 0.3 ,  1.1,  1.0} };
-static const float lower_limits_default[4][3] = { {-0.05, -1.2, -1.2},
-                                                  {-0.05, -1.2, -1.2},
-                                                  {-1.5 , -1.2, -1.2},
-                                                  {-1.5 , -1.2, -0.8} };
+static float upper_limits_default[4][3] = { { 1.5 ,  1.5,  1.7},
+                                            { 0.05,  1.5,  1.7},
+                                            { 0.05,  1.5,  1.7},
+                                            { 0.3 ,  1.1,  1.0} };
+static float lower_limits_default[4][3] = { {-0.05, -1.2, -1.2},
+                                            {-0.05, -1.2, -1.2},
+                                            {-1.5 , -1.2, -1.2},
+                                            {-1.5 , -1.2, -0.8} };
 
-static const float upper_limits_none[4][3] = { { 1.57,  1.57,  1.57},
-                                               { 1.57,  1.57,  1.57},
-                                               { 1.57,  1.57,  1.57},
-                                               { 1.57,  1.57,  1.57} };
-static const float lower_limits_none[4][3] = { {-1.57, -1.57, -1.57},
-                                               {-1.57, -1.57, -1.57},
-                                               {-1.57, -1.57, -1.57},
-                                               {-1.57, -1.57, -1.57} };
+static float upper_limits_none[4][3] = { { 1.57,  1.57,  1.57},
+                                         { 1.57,  1.57,  1.57},
+                                         { 1.57,  1.57,  1.57},
+                                         { 1.57,  1.57,  1.57} };
+static float lower_limits_none[4][3] = { {-1.57, -1.57, -1.57},
+                                         {-1.57, -1.57, -1.57},
+                                         {-1.57, -1.57, -1.57},
+                                         {-1.57, -1.57, -1.57} };
 
 
 /////////////////////////////////////////////////////////////////////////
@@ -410,17 +410,36 @@ int main(int argc, char **argv)
   // initialization and either put it in a HandROS class or into a function
   // library or something.
   ros::init(argc, argv, "sandia_hand_node");
+  ros::NodeHandle nh, nh_right("right"), nh_left("left"), nh_private("~");
   Hand hand;
-  if (!hand.init())
+  string hand_ip_str;
+  nh_private.param<string>("ip", hand_ip_str, "10.66.171.23");
+  int base_port;
+  nh_private.param<int>("port", base_port, 12321);
+
+  ROS_INFO("connecting to hand at %s using host ports %d-%d...", 
+           hand_ip_str.c_str(), base_port, base_port+3);
+  if (!hand.init(hand_ip_str.c_str(), base_port))
   {
     ROS_FATAL("couldn't init hand");
     return 1;
   }
+
+  if (hand.getSide() == Hand::LEFT)
+  {
+    // geometry is mirrored, so mirror the allowable configuration space.
+    for (int i = 0; i < Hand::NUM_FINGERS; i++)
+    {
+      float f = upper_limits_default[i][0];
+      upper_limits_default[i][0] = -lower_limits_default[i][0];
+      lower_limits_default[i][0] = -f;
+    }
+  }
+
   for (int i = 0; i < Hand::NUM_FINGERS; i++)
     for (int j = 0; j < 3; j++)
       g_last_fmcb_hall_pos[i][j] = 0; // gross
 
-  ros::NodeHandle nh, nh_right("right"), nh_left("left"), nh_private("~");
   bool use_fingers, use_cameras; // sometimes we just want fingers/cameras
   bool use_phalanges; // sometimes we don't need/want phalanges
   nh_private.param<bool>("use_fingers", use_fingers, true);

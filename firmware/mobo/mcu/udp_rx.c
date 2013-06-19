@@ -27,12 +27,13 @@
 #include "fpga.h"
 #include "flash.h"
 #include "control.h"
+#include "config.h"
 
 void enet_udp_rx(uint8_t *pkt, const uint32_t len)
 {
   udp_header_t *udp = (udp_header_t *)pkt;
   const uint16_t port = ntohs(udp->udp_dest_port);
-  if (port != UDP_HAND_PORT)
+  if (port != UDP_RX_PORT)
   {
     //printf("enet_udp_rx, unknown port %d\r\n", port);
     return;
@@ -167,6 +168,26 @@ void enet_udp_rx(uint8_t *pkt, const uint32_t len)
       power_set_mobo_current_limit(p->current_limit);
       p->pkt_state = MOBO_CURRENT_LIMIT_STATE_RESPONSE;
       enet_tx_packet(CMD_ID_MOBO_SET_CURRENT_LIMIT, (uint8_t *)p, sizeof(*p));
+    }
+  }
+  else if (cmd == CMD_ID_MOBO_GET_HW_VERSION)
+  {
+    get_hw_version_t *p = (get_hw_version_t *)cmd_data;
+    if (p->pkt_state == MOBO_GET_HW_VERSION_REQUEST)
+    {
+      p->version = config_get_hw_version();
+      p->pkt_state = MOBO_GET_HW_VERSION_RESPONSE;
+      enet_tx_packet(CMD_ID_MOBO_GET_HW_VERSION, (uint8_t *)p, sizeof(*p));
+    }
+  }
+  else if (cmd == CMD_ID_MOBO_SET_DEST_PORT)
+  {
+    set_dest_port_t *p = (set_dest_port_t *)cmd_data;
+    if (p->pkt_state == MOBO_SET_DEST_PORT_REQUEST)
+    {
+      enet_set_udp_base_port(p->port);
+      p->pkt_state = MOBO_SET_DEST_PORT_RESPONSE;
+      enet_tx_packet(CMD_ID_MOBO_SET_DEST_PORT, (uint8_t *)p, sizeof(*p));
     }
   }
   else

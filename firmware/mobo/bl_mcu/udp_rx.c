@@ -35,6 +35,8 @@
 //   PB6 = ERX_1
 //   PB7 = ERX_ER
 
+#define MOBO_BL_UDP_HAND_PORT 12321
+
 void udp_rx_write_flash_page(const uint32_t page_num, uint8_t *page_data)
 {
   //printf("writing page %d...\r\n", page_num);
@@ -64,7 +66,7 @@ void enet_udp_rx(uint8_t *pkt, const uint32_t len)
 {
   udp_header_t *udp = (udp_header_t *)pkt;
   const uint16_t port = ntohs(udp->udp_dest_port);
-  if (port != UDP_HAND_PORT)
+  if (port != MOBO_BL_UDP_HAND_PORT)
   {
     //printf("enet_udp_rx, unknown port %d\r\n", port);
     return;

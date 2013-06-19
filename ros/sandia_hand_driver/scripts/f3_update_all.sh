@@ -5,7 +5,7 @@ SANDIA_HAND=`rospack find sandia_hand_driver`/../..
 FIRMWARE=$SANDIA_HAND/firmware
 DRIVER=$SANDIA_HAND/ros/sandia_hand_driver
 CLI=$DRIVER/bin/sandia_hand_cli
-FINGERS="0 1 2 3"
+FINGERS="0" # 1 2 3"
 echo "powering up motor modules..."
 for FINGER_IDX in $FINGERS; do
   $CLI fp $FINGER_IDX low

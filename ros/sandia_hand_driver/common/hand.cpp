@@ -1,4 +1,4 @@
-#include "sandia_hand/hand.h"
+#include "sandia_hand/hand.h" 
 #include <cstdio>
 #include <cstring>
 #include <cmath>
@@ -8,7 +8,7 @@ using namespace sandia_hand;
 using std::vector;
 
 Hand::Hand()
-: last_packet_id_(0)
+: side_(Hand::UNKNOWN), last_packet_id_(0)
 {
   socks[0] = &control_sock;
   socks[1] = &cam_socks[0];
@@ -27,24 +27,6 @@ Hand::Hand()
     for (int j = 0; j < IMG_HEIGHT; j++)
       img_rows_recv[i][j] = false;
   }
-  // this is for right hand. todo: load this dynamically one way or another.
-  // depending on if we have a right or left hand.
-  
-  rx_rs485_map_[0] = 4;
-  rx_rs485_map_[1] = 1;
-  rx_rs485_map_[2] = 2;
-  rx_rs485_map_[3] = 3;
-  rx_rs485_map_[4] = 0;
-  
-/*
-  // left hand
-  rx_rs485_map_[0] = 1;
-  rx_rs485_map_[1] = 0;
-  rx_rs485_map_[2] = 3;
-  rx_rs485_map_[3] = 2;
-  rx_rs485_map_[4] = 4;
-*/
-
   for (int i = 0; i < NUM_FINGERS; i++)
   {
     fingers[i].mm.setRawTx(boost::bind(&Hand::fingerRawTx, this, i, _1, _2));
@@ -61,7 +43,7 @@ Hand::~Hand()
       close(*socks[i]);
 }
 
-bool Hand::init(const char *ip)
+bool Hand::init(const char *ip, const uint16_t base_port)
 {
   for (int i = 0; i < NUM_SOCKS; i++)
   {
@@ -72,7 +54,7 @@ bool Hand::init(const char *ip)
     }
     bzero(saddrs[i], sizeof(saddrs[i]));
     saddrs[i]->sin_family = AF_INET;
-    saddrs[i]->sin_port = htons(HAND_BASE_PORT + i);
+    saddrs[i]->sin_port = htons(base_port + i);
     saddrs[i]->sin_addr.s_addr = INADDR_ANY;
     if (bind(*socks[i], (struct sockaddr *)saddrs[i], sizeof(*saddrs[i])) != 0)
     {
@@ -87,7 +69,37 @@ bool Hand::init(const char *ip)
       perror("inet_aton");
       return false;
     }
-    saddrs[i]->sin_port = htons(HAND_BASE_PORT + i);
+    saddrs[i]->sin_port = htons(DEFAULT_HAND_BASE_PORT + i);
+  }
+  // set the port range we want
+  set_dest_port_t request, response;
+  request.pkt_state = MOBO_SET_DEST_PORT_REQUEST;
+  request.port = base_port;
+  if (!txPacket(CMD_ID_MOBO_SET_DEST_PORT, request))
+    return false;
+  if (!listenForPacketId(CMD_ID_MOBO_SET_DEST_PORT, 0.25, response))
+  {
+    perror("didn't hear back from hand after setting base port.");
+    // don't necessarily bail here; the hand could be in bootloader still.
+  }
+  // now, we can query the hand for its hardware version.
+  side_ = getSide();
+  if (side_ == Hand::LEFT)
+  {
+    rx_rs485_map_[0] = 1;
+    rx_rs485_map_[1] = 0;
+    rx_rs485_map_[2] = 3;
+    rx_rs485_map_[3] = 2;
+    rx_rs485_map_[4] = 4;
+  }
+  else
+  {
+    // otherwise, assume right hand
+    rx_rs485_map_[0] = 4;
+    rx_rs485_map_[1] = 1;
+    rx_rs485_map_[2] = 2;
+    rx_rs485_map_[3] = 3;
+    rx_rs485_map_[4] = 0;
   }
   return true;
 }
@@ -734,5 +746,35 @@ bool Hand::setMoboCurrentLimit(const float limit)
   if (response.pkt_state != MOBO_CURRENT_LIMIT_STATE_RESPONSE)
     return false;
   return true;
+}
+
+bool Hand::getHwVersion(uint32_t &version)
+{
+  get_hw_version_t request, response;
+  request.pkt_state = MOBO_GET_HW_VERSION_REQUEST;
+  request.version = 0;
+  if (!txPacket(CMD_ID_MOBO_GET_HW_VERSION, request))
+    return false;
+  if (!listenForPacketId(CMD_ID_MOBO_GET_HW_VERSION, 0.25, response))
+    return false;
+  if (response.pkt_state != MOBO_GET_HW_VERSION_RESPONSE)
+    return false;
+  version = response.version;
+  return true;
+}
+
+Hand::Side Hand::getSide()
+{
+  uint32_t hw_ver = 0;
+  if (!getHwVersion(hw_ver))
+    return Hand::UNKNOWN;
+  if (((hw_ver >> 16) & 0xffff) != 0xbeef)
+    return Hand::UNKNOWN;
+  char side_ascii = (char)((hw_ver >> 8) & 0xff);
+  if (side_ascii == 'R')
+    return Hand::RIGHT;
+  else if (side_ascii == 'L')
+    return Hand::LEFT;
+  return Hand::UNKNOWN;
 }
 

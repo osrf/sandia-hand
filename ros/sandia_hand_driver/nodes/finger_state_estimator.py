@@ -155,12 +155,13 @@ class FingerStateEstimator:
     R0_INV = 1.0 / 231.0
     R1_INV = 1.0 / 196.7
     R2_INV = 1.0 / 170.0
-    self.cfs.joints_hall[0] = H2R * R0_INV *   msg.hall_pos[0]
-    self.cfs.joints_hall[1] = H2R * R1_INV * ( msg.hall_pos[1] + \
-                                               msg.hall_pos[0] )
-    self.cfs.joints_hall[2] = H2R * R2_INV * ( msg.hall_pos[2] - \
+    CAPSTAN_RATIO = 0.89
+    self.cfs.joints_hall[0] = -H2R * R0_INV *   msg.hall_pos[0]
+    self.cfs.joints_hall[1] =  H2R * R1_INV * ( msg.hall_pos[1] + \
+                                                CAPSTAN_RATIO*msg.hall_pos[0])
+    self.cfs.joints_hall[2] =  H2R * R2_INV * ( msg.hall_pos[2] - \
                                                msg.hall_pos[1] - \
-                                               2*msg.hall_pos[0])
+                                               CAPSTAN_RATIO*2*msg.hall_pos[0])
     self.finger_pub.publish(self.cfs)
     #if finger_idx == 0:
     #  print "  %.3f" % (j2*180./3.1415)

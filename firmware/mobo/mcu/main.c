@@ -28,6 +28,7 @@
 #include <sys/stat.h>
 #include "flash.h"
 #include "control.h"
+#include "config.h"
 
 void systick_vector()
 {
@@ -38,6 +39,7 @@ void systick_vector()
 
 void main()
 {
+  config_init();
   console_init();
   const int MAX_CONFIG_ATTEMPTS = 3;
   int attempt = 0;

@@ -23,6 +23,7 @@
 #include "enet.h"
 #include "control.h"
 #include "finger.h"
+#include "config.h"
 
 // hardware connections on mobo schematic:
 //   PA21 = F0_LV
@@ -39,25 +40,12 @@
 #define POWER_VDD_SENSOR_IDX 4
 
 typedef struct { Pio *pio; uint32_t pin_idx; } power_switch_t;
-// todo: load this map on startup based on magic byte set in bootloader (RH/LH)
-// this is for right hand.
-// RH map: 0->3   1->0   2->1   3->2  
-const power_switch_t power_switches[POWER_NUM_FINGERS][2] =  
+// this is for right hand. it gets overwritten during init(). todo: clean up
+static power_switch_t g_power_switches[POWER_NUM_FINGERS][2] =  
   { { { PIOB, PIO_PB19 }, { PIOB, PIO_PB17 } },   // index
     { { PIOA, PIO_PA2  }, { PIOA, PIO_PA4  } },   // middle
     { { PIOA, PIO_PA6  }, { PIOA, PIO_PA16 } },   // pinkie
     { { PIOA, PIO_PA21 }, { PIOC, PIO_PC19 } } }; // thumb
-/*
-// this is for left hand.
-// LH map: 0->2   1->1   2->0   3->3
-const power_switch_t power_switches[POWER_NUM_FINGERS][2] =  
-  { 
-    { { PIOA, PIO_PA2  }, { PIOA, PIO_PA4  } },   // index  (0)
-    { { PIOB, PIO_PB19 }, { PIOB, PIO_PB17 } },   // middle (1)
-    { { PIOA, PIO_PA21 }, { PIOC, PIO_PC19 } },   // pinkie (2)
-    { { PIOA, PIO_PA6  }, { PIOA, PIO_PA16 } }    // thumb  (3)
-  }; 
-*/
 
 static power_state_t g_finger_power_states[4] = { POWER_OFF };
 
@@ -92,9 +80,36 @@ static volatile uint32_t g_power_systick_value = 0;
 static float g_power_mobo_current_limit = 0.8f; // be conservative at boot-up
 static uint8_t g_power_mobo_max_effort  = 10;   // be conservative at boot-up
 
+void set_power_switch(const uint8_t idx, 
+                      Pio *low_pio,  const uint32_t low_pin,
+                      Pio *high_pio, const uint32_t high_pin)
+{
+  g_power_switches[idx][0].pio     = low_pio;
+  g_power_switches[idx][0].pin_idx = low_pin;
+  g_power_switches[idx][1].pio     = high_pio;
+  g_power_switches[idx][1].pin_idx = high_pin;
+}
+
 void power_init()
 {
   printf("power init\r\n");
+  if (config_is_left_hand())
+  {
+    // LH map: 0->2   1->1   2->0   3->3
+    set_power_switch(0, PIOA, PIO_PA2 , PIOA, PIO_PA4 );
+    set_power_switch(1, PIOB, PIO_PB19, PIOB, PIO_PB17);
+    set_power_switch(2, PIOA, PIO_PA21, PIOC, PIO_PC19);
+    set_power_switch(3, PIOA, PIO_PA6 , PIOA, PIO_PA16);
+  }
+  else
+  {
+    // RH map: 0->3   1->0   2->1   3->2  
+    set_power_switch(0, PIOB, PIO_PB19, PIOB, PIO_PB17);
+    set_power_switch(1, PIOA, PIO_PA2 , PIOA, PIO_PA4 );
+    set_power_switch(2, PIOA, PIO_PA6 , PIOA, PIO_PA16);
+    set_power_switch(3, PIOA, PIO_PA21, PIOC, PIO_PC19);
+  }
+
   PMC->PMC_PCER0 |= (1 << ID_PIOA) | (1 << ID_PIOB) | (1 << ID_PIOC) | 
                     (1 << ID_TWI1);
   const uint32_t pioa_pins = PIO_PA2 | PIO_PA4 | PIO_PA6 | 
@@ -172,7 +187,7 @@ void power_init()
 void power_set(const uint8_t finger_idx, const power_state_t power_state)
 {
   if (finger_idx >= POWER_NUM_FINGERS) return; // get that out
-  const power_switch_t *sw = power_switches[finger_idx];
+  const power_switch_t *sw = g_power_switches[finger_idx];
   /*
   printf("setting finger %d to power state %d\r\n", 
          finger_idx, (uint8_t)power_state);

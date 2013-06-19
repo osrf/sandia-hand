@@ -745,23 +745,55 @@ int mm_param_dump(int argc, char **argv, Hand &hand)
   return 0;
 }
 
+int mobo_version(int argc, char **argv, Hand &hand)
+{
+  uint32_t version = 0;
+  if (!hand.getHwVersion(version))
+  {
+    printf("couldn't get hardware version\n");
+    return 1;
+  }
+  printf("mobo hardware version: 0x%08x\n", version);
+  printf("  hardware rev: %c\n", (char)(version & 0xff));
+  printf("  side: %c\n", (char)((version >> 8) & 0xff));
+  printf("  enum: %d\n", (int)hand.getSide());
+  return 0;
+}
+
 ///////////////////////
 
 #define CLI_FUNC(x) do { cmds[string(#x)] = x; } while (0)
+
+void usage()
+{
+  printf("usage: sandia_hand_cli SIDE CMD [OPTS}\n");
+  printf("   where SIDE = {left, right}\n");
+  exit(1);
+}
 
 int main(int argc, char **argv)
 {
   ros::Time::init();
   Hand hand;
-  if (!hand.init())
+  if (argc < 2)
+    usage();
+  string ip("10.10.1.2");
+  if (!strcmp(argv[1], "left"))
+    ip = string("10.66.171.22");
+  else if (!strcmp(argv[1], "right"))
+    ip = string("10.66.171.23");
+  else
+    usage();
+
+  if (!hand.init(ip.c_str()))
   {
-    printf("couldn't init hand\n");
+    printf("bogus. couldn't init hand.\n");
     return false;
   }
   signal(SIGINT, signal_handler);
   typedef boost::function<int(int, char **, Hand &) > cli_cmd_t;
   map<string, cli_cmd_t> cmds;
-  // todo: fun challenge to make function declaration macro to automatically
+  // todo: fun challenge: make the function declaration macro automatically
   // do this, instead of having to instantiate macros here
   CLI_FUNC(p);
   CLI_FUNC(fp);
@@ -790,7 +822,8 @@ int main(int argc, char **argv)
   CLI_FUNC(mmcu_ping);
   CLI_FUNC(mm_param_dump);
   CLI_FUNC(palm_stream);
-  if (argc == 1)
+  CLI_FUNC(mobo_version);
+  if (argc <= 2)
   {
     printf("available commands:\n");
     std::pair<string, cli_cmd_t> cmd;
@@ -798,12 +831,12 @@ int main(int argc, char **argv)
       printf("  %s\n", cmd.first.c_str());
     return 0;
   }
-  string cli_cmd = string(argv[1]);
+  string cli_cmd = string(argv[2]);
   if (cmds.find(cli_cmd) == cmds.end())
   {
     printf("unknown command: %s\n", cli_cmd.c_str());
     return 1;
   }
-  return cmds[cli_cmd](argc, argv, hand);
+  return cmds[cli_cmd](argc-1, argv+1, hand);
 }
 

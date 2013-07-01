@@ -46,6 +46,9 @@ static volatile uint32_t g_pb_tc0_ovf_count = 0;
 #define PB_PP_ADDR 1
 #define PB_DP_ADDR 2
 
+typedef enum { PB_CB_IDLE, PB_CB_OVER_LIMIT, PB_CB_TRIPPED } pb_cb_state_t;
+static pb_cb_state_t g_pb_cb_state = PB_CB_IDLE;
+
 inline void pb_systick_disable()
 {
   SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
@@ -300,6 +303,42 @@ void pb_wait_for_traffic(uint16_t max_ms,
   g_pb_auto_drain = true; // empty PB buffer in this module's idle task
 }
 
+void pb_circuit_breaker(const uint16_t current_raw_adc)
+{
+  const float pb_amps = current_raw_adc * 3.3f / 1024.0f / 2.7f;
+  const float PB_CB_CURRENT_LIMIT_AMPS = 0.1f;
+  const uint32_t PB_CB_MAX_OVER_MS = 5;
+  static uint32_t s_pb_over_limit_ms = 0;
+  switch (g_pb_cb_state)
+  {
+    case PB_CB_IDLE:
+      if (pb_amps > PB_CB_CURRENT_LIMIT_AMPS)
+      {
+        g_pb_cb_state = PB_CB_OVER_LIMIT;
+        s_pb_over_limit_ms = 0;
+      }
+      break;
+    case PB_CB_OVER_LIMIT:
+      if (pb_amps > PB_CB_CURRENT_LIMIT_AMPS)
+      {
+        s_pb_over_limit_ms++;
+        if (s_pb_over_limit_ms > PB_CB_MAX_OVER_MS)
+        {
+          // it's been over the limit for too long; need to shut it down
+          pb_set_power(false);
+          g_pb_cb_state = PB_CB_TRIPPED;
+        }
+      }
+      else
+        g_pb_cb_state = PB_CB_IDLE;
+      break;
+    case PB_CB_TRIPPED:
+      break;
+    default:  
+      break; // shouldn't ever get here.
+  }
+}
+
 void pb_systick()
 {
   g_pb_txrx_ms++;
@@ -307,6 +346,7 @@ void pb_systick()
   if (g_pb_systick_count >= 1000)
     g_pb_systick_count = 0;
   const int pb_subclock = g_pb_systick_count % 10;
+  pb_circuit_breaker(g_adc_data[2]);
   if (pb_subclock % 5 == 0)
   {
     // snapshot encoder targets and values
@@ -327,7 +367,8 @@ void pb_systick()
     g_status.fmcb_temp[0] = g_i2c_sensors_data[0];
     g_status.fmcb_temp[1] = g_i2c_sensors_data[7];
     g_status.fmcb_temp[2] = g_adc_data[1];
-    g_status.fmcb_pb_current = g_adc_data[2]; 
+    g_status.fmcb_pb_current = (g_pb_cb_state == PB_CB_TRIPPED ? 
+                                0xffff : g_adc_data[2]); 
     g_status.fmcb_voltage = g_adc_data[0];
   }
   if (!g_pb_auto_polling)
@@ -421,9 +462,15 @@ void pb_idle()
 void pb_set_power(bool on)
 {
   if (on)
+  {
+    g_pb_cb_state = PB_CB_IDLE;
     PIO_Set(&pin_phal_pwr);
+  }
   else
+  {
+    g_pb_cb_state = PB_CB_IDLE;
     PIO_Clear(&pin_phal_pwr);
+  }
 }
 
 void pb_send_packet(const uint8_t addr, 

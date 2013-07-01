@@ -104,8 +104,8 @@ typedef struct
 
 void rxFingerState(const uint8_t *payload, const uint16_t payload_len)
 {
-  printf("rxFingerState\n");
   finger_state_t *fst = (finger_state_t *)payload;
+  printf("rxFingerState\n");
   printf("  motor module imu: ");
   for (int i = 0; i < 6; i++)
     printf("%06d ", fst->fmcb_imu[i]);
@@ -121,6 +121,7 @@ void rxFingerState(const uint8_t *payload, const uint16_t payload_len)
   printf("\n  proximal tactile: ");
   for (int i = 0; i < 6; i++)
     printf("%06d ", fst->pp_tactile[i]);
+  printf("\npb current: %d\n", fst->fmcb_pb_current);
   printf("\n\n");
 }
 

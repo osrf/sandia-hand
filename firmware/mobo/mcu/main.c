@@ -104,6 +104,7 @@ void main()
   };
   */
   SysTick_Config(F_CPU/1000); // set up 1 khz systick
+  cam_init(); // try it again. no idea why camera isn't initializing reliably.
 
   while (1)
   {

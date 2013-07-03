@@ -30,13 +30,11 @@ void cam_init()
 {
   // must be run AFTER fpga_init()
   printf("cam_init()\r\n");
-  PMC->PMC_PCER0 |= (1 << ID_PIOA) | (1 << ID_TWI0);
-  PIOA->PIO_PER = PIOA->PIO_OER = PIOA->PIO_SODR = PIO_PA24;
   PIOA->PIO_ABSR &= ~(PIO_PA17A_TWD0 | PIO_PA18A_TWCK0);
   PIOA->PIO_PDR = PIO_PA17A_TWD0 | PIO_PA18A_TWCK0;
   // whoops, forgot to put pull-up resistors on this bus. use internal pullups
   PIOA->PIO_PUER = PIO_PA17A_TWD0 | PIO_PA18A_TWCK0;
-
+  PMC->PMC_PCER0 |= (1 << ID_PIOA) | (1 << ID_TWI0);
   TWI0->TWI_CR = TWI_CR_MSDIS | TWI_CR_SVDIS; // disable twi for the moment
   TWI0->TWI_IDR = 0xffffffff; // no interrupts plz
   TWI0->TWI_SR; // read status register (why? atmel library does it...)
@@ -44,26 +42,34 @@ void cam_init()
   TWI0->TWI_RHR; // empty receive register
   TWI0->TWI_CR = TWI_CR_MSEN; // enable master mode
   TWI0->TWI_CWGR = TWI_CWGR_CLDIV(77) | TWI_CWGR_CHDIV(77) |  // 50% duty cycle
-                   TWI_CWGR_CKDIV(3); // 400 khz i2c / 2^3 = 50 (weak pullups)
-
-  for (volatile int j = 0; j < 400000; j++) { } // let 3v8 rail come up
+                   TWI_CWGR_CKDIV(5); // 400 khz i2c / 2^5 = 12.5 (weak pullups)
+  PIOA->PIO_PER = PIOA->PIO_OER = PIO_PA24;
+  PIOA->PIO_SODR = PIO_PA24; // enable 3v8
+  //PIOA->PIO_CODR = PIO_PA24; // make sure 3v8 line is disabled
+  //for (volatile int j = 0; j < 20000000; j++) { } // let 3v8 drain fully
+  for (volatile int j = 0; j < 10000000; j++) { } // let 3v8 stabilize
   fpga_spi_txrx(0x83, 0x0003); // enable the camera voltage regulators
-  for (volatile int j = 0; j < 400000; j++) { } // let 3v8 rail come up
+  for (volatile int j = 0; j < 2000000; j++) { }
   fpga_spi_txrx(0x83, 0x000f); // enable the camera sysclk's
-  for (volatile int j = 0; j < 400000; j++) { } // let 3v8 rail come up
+  for (volatile int j = 0; j < 2000000; j++) { } 
   fpga_spi_txrx(0x83, 0x003f); // raise (de-assert) the camera reset lines
-  for (volatile int j = 0; j < 2000000; j++) { } // wait for camera to wake up
+  for (volatile int j = 0; j < 10000000; j++) { } // wait for camera to wake up
   fpga_spi_txrx(FPGA_SPI_REG_CAM_MAX_ROWS | FPGA_SPI_WRITE, 0x01e0); // 480 
-  // imagers are mounted upside down. doh. have the HW rotate array 180 deg 
-  for (int i = 0; i < 2; i++)
+  for (volatile int attempt = 0; attempt < 2; attempt++)
   {
-    const uint16_t read_mode_val = cam_read_register(i, 0x0d);
-    printf("cam %d initial read mode: 0x%04x\r\n", i, read_mode_val);
-    cam_write_register(i, 0x0d, read_mode_val | 0x30);
+    // send it a few times to make sure they get this register setting...
+    // imagers are mounted upside down. doh. have the HW rotate array 180 deg 
+    for (int i = 0; i < 2; i++)
+    {
+      for (volatile int j = 0; j < 1000000; j++) { } // wait... 
+      const uint16_t read_mode_val = cam_read_register(i, 0x0d);
+      printf("cam %d initial read mode: 0x%04x\r\n", i, read_mode_val);
+      cam_write_register(i, 0x0d, read_mode_val | 0x30);
 
-    //const uint16_t vblank = cam_read_register(i, 0x06);
-    //printf("cam %d initial read vblank: 0x%04x\r\n", i, vblank);
-    cam_write_register(i, 0x06, 505); // reduce frame rate to ~30 hz
+      //const uint16_t vblank = cam_read_register(i, 0x06);
+      //printf("cam %d initial read vblank: 0x%04x\r\n", i, vblank);
+      cam_write_register(i, 0x06, 505); // reduce frame rate to ~30 hz
+    }
   }
   /*
   for (int i = 0; i < 256; i++)

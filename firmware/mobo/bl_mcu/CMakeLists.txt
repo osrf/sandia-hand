@@ -32,8 +32,16 @@ foreach(bl ${mobo_bootloaders})
                     COMMAND ${OPENOCD_INIT} -c "flash banks" -c "flash list" -c "flash write_image ${CMAKE_CURRENT_BINARY_DIR}/${elf_name}" -c reset -c shutdown
                     DEPENDS ${elf_name})
 
+  # evidently openocd sam3x driver doesn't seem to let this happen 
+  # since it wants to auto-erase when programming?
+  #add_custom_target(${bl}-erase
+  #                  COMMAND ${OPENOCD_INIT} -c "flash banks" -c "flash list" -c "flash erase_address 0x80000 0x20000" -c shutdown)
+
   add_custom_target(${bl}-reset
                     COMMAND ${OPENOCD_INIT} -c reset -c shutdown)
+
+  add_custom_target(${bl}-bork_boot_vector
+                    COMMAND ${OPENOCD_INIT} -c "at91sam3 gpnvm clear 1" -c shutdown)
 
   add_custom_target(${bl}-set_boot_vector
                     COMMAND ${OPENOCD_INIT} -c "at91sam3 gpnvm set 1" -c shutdown)

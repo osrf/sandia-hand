@@ -444,7 +444,7 @@ int main(int argc, char **argv)
   bool use_phalanges; // sometimes we don't need/want phalanges
   nh_private.param<bool>("use_fingers", use_fingers, true);
   nh_private.param<bool>("use_cameras", use_cameras, true);
-  nh_private.param<bool>("use_phalanges", use_phalanges, true);
+  nh_private.param<bool>("use_phalanges", use_phalanges, false);
   nh_private.param<bool>("use_finger_0", g_use_finger[0], true);
   nh_private.param<bool>("use_finger_1", g_use_finger[1], true);
   nh_private.param<bool>("use_finger_2", g_use_finger[2], true);

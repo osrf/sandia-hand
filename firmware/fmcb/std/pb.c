@@ -306,8 +306,8 @@ void pb_wait_for_traffic(uint16_t max_ms,
 void pb_circuit_breaker(const uint16_t current_raw_adc)
 {
   const float pb_amps = current_raw_adc * 3.3f / 1024.0f / 2.7f;
-  const float PB_CB_CURRENT_LIMIT_AMPS = 0.1f;
-  const uint32_t PB_CB_MAX_OVER_MS = 5;
+  const float PB_CB_CURRENT_LIMIT_AMPS = 0.2f;
+  const uint32_t PB_CB_MAX_OVER_MS = 10;
   static uint32_t s_pb_over_limit_ms = 0;
   switch (g_pb_cb_state)
   {

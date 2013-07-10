@@ -18,12 +18,58 @@
 # limitations under the License.
 
 import roslib; roslib.load_manifest('sandia_hand_teleop')
-import rospy, sys
+import rospy, sys, os
+import pygame
+from pygame.locals import *
 from sandia_hand_msgs.msg import SimpleGrasp
 
-g_grasp_pub = None
-key_map = { '1': [ 'cylindrical', 0.00],
-            '2': [ 'cylindrical', 0.25] }
+#os.environ["SDL_VIDEODRIVER"] = "dummy"
+g_right_grasp_pub = None
+g_left_grasp_pub = None
+g_key_map = { '1': [ 'L', 'cylindrical', 0.00],
+              '2': [ 'L', 'cylindrical', 0.25],
+              '3': [ 'L', 'cylindrical', 0.50],
+              '4': [ 'L', 'cylindrical', 0.75],
+              '5': [ 'L', 'cylindrical', 0.95],
+              '6': [ 'R', 'cylindrical', 0.00],
+              '7': [ 'R', 'cylindrical', 0.25],
+              '8': [ 'R', 'cylindrical', 0.50],
+              '9': [ 'R', 'cylindrical', 0.75],
+              '0': [ 'R', 'cylindrical', 0.95],
+              'q': [ 'L', 'spherical'  , 0.00],
+              'w': [ 'L', 'spherical'  , 0.25],
+              'e': [ 'L', 'spherical'  , 0.50],
+              'r': [ 'L', 'spherical'  , 0.75],
+              't': [ 'L', 'spherical'  , 0.95],
+              'y': [ 'R', 'spherical'  , 0.00],
+              'u': [ 'R', 'spherical'  , 0.25],
+              'i': [ 'R', 'spherical'  , 0.50],
+              'o': [ 'R', 'spherical'  , 0.75],
+              'p': [ 'R', 'spherical'  , 0.95],
+              'a': [ 'L', 'prismatic'  , 0.00],
+              's': [ 'L', 'prismatic'  , 0.25],
+              'd': [ 'L', 'prismatic'  , 0.50],
+              'f': [ 'L', 'prismatic'  , 0.75],
+              'g': [ 'L', 'prismatic'  , 0.95],
+              'h': [ 'R', 'prismatic'  , 0.00],
+              'j': [ 'R', 'prismatic'  , 0.25],
+              'k': [ 'R', 'prismatic'  , 0.50],
+              'l': [ 'R', 'prismatic'  , 0.75],
+              ';': [ 'R', 'prismatic'  , 0.95],
+            }
+
+def keypress(c):
+  print "handling keypress: %s" % c
+  if c in g_key_map:
+    pub = None
+    if g_key_map[c][0] == 'L':
+      pub = g_left_grasp_pub
+    elif g_key_map[c][0] == 'R':
+      pub = g_right_grasp_pub
+    else:
+      return # wtf
+    sg = SimpleGrasp(g_key_map[c][1], g_key_map[c][2])
+    pub.publish(sg)
 
 def print_usage():
   print "Each row corresponds to a canonical grasp:"
@@ -46,33 +92,32 @@ def print_usage():
   print ""
   print "Example 2: fully closed spherical grasp for the left/only hand "
   print "is commanded by pressing 'g'. For the right hand, press ';'."
+  print ""
+  print "Press [escape] to quit."
 
-def keypress(c):
-  if c in 
-  
-
+def draw_string(screen, font, x, y, string):
+  text = font.render(string, 1, (255,255,255))
+  screen.blit(text, (x, y))
 
 if __name__ == '__main__':
-  if len(rospy.myargv()) != 2:
-    print "usage: simple_grasp_keyboard_teleop.py SIDE"
-    print "  where side = {left, right, only}"
-    sys.exit(1)
-  side = rospy.myargv()[1]
-  if side == "left":
-    side = "left_hand"
-  elif side == "right":
-    side = "right_hand"
-  elif side == "only":
-    pass
-  else:
-    print "side must be in {left, right, only}"
-    sys.exit(1)
-  if (side == 'only'):
-    topic_name = "simple_grasp"
-  else:
-    topic_name = "%s/simple_grasp" % side 
-  rospy.init_node("simple_grasp_keyboard_teleop_%s" % side)
-  g_grasp_pub = rospy.Publisher(topic_name, SimpleGrasp)
-  rate = rospy.Rate(1.0) # todo: something better
-  while not rospy.is_shutdown():
+  pygame.init()
+  screen = pygame.display.set_mode((640, 480))
+  pygame.display.set_caption('Minimalist Dual-Hand Keyboard Teleop')
+  font = pygame.font.Font(None, 18)
+  draw_string(screen, font, 10, 10, "This window must have focus")
+  draw_string(screen, font, 10, 30, "Press [escape] to quit.")
+  pygame.display.flip()
+  print_usage()
+  rospy.init_node("simple_grasp_keyboard_teleop")
+  g_left_grasp_pub = rospy.Publisher("left_hand/simple_grasp", SimpleGrasp)
+  g_right_grasp_pub = rospy.Publisher("right_hand/simple_grasp", SimpleGrasp)
+  rate = rospy.Rate(100.0) # todo: something smarter
+  done = False
+  while not done and not rospy.is_shutdown():
+    for event in pygame.event.get():
+      if (event.type == KEYDOWN):
+        if event.key == K_ESCAPE:
+          done = True
+        elif event.key < 128:
+          keypress(chr(event.key))
     rate.sleep()

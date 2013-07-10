@@ -771,8 +771,21 @@ void usage()
   exit(1);
 }
 
+const char *magic_env_name  = "I_KNOW_WHAT_I_AM_DOING";
+const char *magic_env_value = "YES";
+
 int main(int argc, char **argv)
 {
+  if (!getenv(magic_env_name) ||
+      strcasecmp(getenv(magic_env_name), magic_env_value))
+  {
+    printf("\nWoah there partner. This program can do a lot of things to the\n"
+           "hand, including brick it, which would require recovery via a \n"
+           "JTAG dongle. If you know what you are doing in here, please \n"
+           "set I_KNOW_WHAT_I_AM_DOING to \"YES\" in the environment and \n"
+           "try again.\n\n");
+    exit(1);
+  }
   ros::Time::init();
   Hand hand;
   if (argc < 2)

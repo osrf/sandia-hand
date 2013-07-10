@@ -31,9 +31,9 @@ if __name__ == '__main__':
   grasp = sys.argv[2]
   amount = float(sys.argv[3])
   if side == "left":
-    side = "l_hand"
+    side = "left_hand"
   elif side == "right":
-    side = "r_hand"
+    side = "right_hand"
   elif side == "only":
     pass
   else:
@@ -42,7 +42,7 @@ if __name__ == '__main__':
   if (side == 'only'):
     srv_name = "simple_grasp"
   else:
-    srv_name = "/sandia_hand/%s/simple_grasp" % side 
+    srv_name = "%s/simple_grasp" % side 
   rospy.wait_for_service(srv_name)
   try:
     sgs = rospy.ServiceProxy(srv_name, SimpleGraspSrv)

@@ -22,9 +22,7 @@ set(ROS_PKG_INSTALL_SHARE_PATH ${CMAKE_INSTALL_PREFIX}/share/sandia-hand-${SANDI
 
 install(FILES manifest.xml 
         DESTINATION ${ROS_PKG_INSTALL_SHARE_PATH})
-install(PROGRAMS simple_grasp.py 
-                 simple_grasp_client.py
-        DESTINATION ${ROS_PKG_INSTALL_SHARE_PATH})
 
 add_subdirectory(launch)
 add_subdirectory(nanokontrol)
+add_subdirectory(simple_grasp)

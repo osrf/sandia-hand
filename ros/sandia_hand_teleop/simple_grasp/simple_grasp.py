@@ -52,6 +52,10 @@ def grasp_cb(msg):
     g0 = [0,0,1.4, 0,0,1.4, 0,0,1.4, 0,0,1.4]
   elif (gn == "finger_0_test"):
     g0 = [0,1.5,1.7, 0,0,0, 0,0,0, 0,0,0]
+  elif (gn == "number_one"):
+    origin = [0,0,0,  0,1.5,1.5, 0,1.5,1.5, 0.4,0.8,1 ]
+  elif (gn == "peace"):
+    origin = [-0.2,0,0,  0.05,0,0, 0,1.5,1.5, 0.4,0.8,1 ]
   else:
     return None # bogus
   g_jc.position = [0] * 12

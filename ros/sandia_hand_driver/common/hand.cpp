@@ -169,7 +169,7 @@ bool Hand::setFingerJointPos(const uint8_t finger_idx,
   // permute joints as needed... numbering scheme in schematics is different.
   p->joint_0_radians =  joint_2;
   p->joint_1_radians =  joint_1;
-  p->joint_2_radians = -joint_0;
+  p->joint_2_radians = (side_ == RIGHT ? -joint_0 : joint_0);
   if (!tx_udp(pkt, 4 + sizeof(set_finger_joint_pos_t)))
     return false;
   return true;
@@ -185,7 +185,8 @@ bool Hand::setAllFingerJointPos(const float   *joint_pos,
   {
     p->joint_angles[finger_idx*3  ] =  joint_pos[finger_idx*3+2];
     p->joint_angles[finger_idx*3+1] =  joint_pos[finger_idx*3+1];
-    p->joint_angles[finger_idx*3+2] = -joint_pos[finger_idx*3  ];
+    p->joint_angles[finger_idx*3+2] = 
+       (side_ == RIGHT ? -joint_pos[finger_idx*3] : joint_pos[finger_idx*3]);
     p->max_efforts[finger_idx*3  ] =   joint_max_effort[finger_idx*3+2];
     p->max_efforts[finger_idx*3+1] =   joint_max_effort[finger_idx*3+1];
     p->max_efforts[finger_idx*3+2] =   joint_max_effort[finger_idx*3  ];
@@ -206,7 +207,8 @@ bool Hand::setAllRelativeFingerJointPos(const float   *relative_joint_pos,
   {
     p->relative_joint_angles[i*3  ] =  relative_joint_pos[i*3+2];
     p->relative_joint_angles[i*3+1] =  relative_joint_pos[i*3+1];
-    p->relative_joint_angles[i*3+2] = -relative_joint_pos[i*3  ];
+    p->relative_joint_angles[i*3+2] = 
+      (side_ == RIGHT ? -relative_joint_pos[i*3] : relative_joint_pos[i*3]);
     p->max_efforts[i*3  ] =   joint_max_effort[i*3+2];
     p->max_efforts[i*3+1] =   joint_max_effort[i*3+1];
     p->max_efforts[i*3+2] =   joint_max_effort[i*3  ];

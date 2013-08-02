@@ -1,28 +1,30 @@
-cmake_minimum_required(VERSION 2.8.0)
-find_program(ROSPACK_PATH rospack)
-if(NOT ROSPACK_PATH)
-  message(FATAL_ERROR "Can't find path to rospack executable, which is needed to verify your ROS_PACKAGE_PATH.  Did you source a ROS setup file (e.g., /opt/ros/fuerte/setup.sh)?")
-endif()
-get_filename_component(CurrentFolder ${CMAKE_CURRENT_LIST_DIR} NAME)
-execute_process(COMMAND ${ROSPACK_PATH} deps ${CurrentFolder}
-                OUTPUT_VARIABLE rospack_output
-                RESULT_VARIABLE rospack_error
-                ERROR_VARIABLE rospack_stderr
-                OUTPUT_STRIP_TRAILING_WHITESPACE)
-if(rospack_stderr)
-  message(FATAL_ERROR "You have a ROS package dependency problem: ${rospack_stderr}")
-endif()
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
-set(ENV{ROS_PACKAGE_PATH} ${PROJECT_SOURCE_DIR}:$ENV{ROS_PACKAGE_PATH})
-rosbuild_init()
-message("sandia_hand_teleop install prefix: ${CMAKE_INSTALL_PREFIX}")
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
-set(ROS_PKG_INSTALL_SHARE_PATH ${CMAKE_INSTALL_PREFIX}/share/sandia-hand-${SANDIA_HAND_VERSION}/ros/${PROJECT_NAME})
+cmake_minimum_required(VERSION 2.8.3)
+project(sandia_hand_teleop)
 
-install(FILES manifest.xml 
-        DESTINATION ${ROS_PKG_INSTALL_SHARE_PATH})
+find_package(catkin REQUIRED COMPONENTS osrf_msgs sandia_hand_msgs)
 
-add_subdirectory(launch)
-add_subdirectory(nanokontrol)
-add_subdirectory(simple_grasp)
+catkin_python_setup()
+
+catkin_package(
+  CATKIN_DEPENDS osrf_msgs sandia_hand_msgs
+)
+
+# all install targets should use catkin DESTINATION variables
+# See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
+
+## Mark executable scripts (Python etc.) for installation
+## in contrast to setup.py, you can choose the destination
+install(PROGRAMS
+  nanokontrol/nanokontrol.py
+  nanokontrol/nanokontrol_to_jointspace.py
+  simple_grasp/simple_grasp.py 
+  simple_grasp/simple_grasp_client.py
+  data_collection/pull_controller_data.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+## Mark other files for installation (e.g. launch and bag files, etc.)
+install(FILES
+  launch/nanokontrol_simple_grasp.launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)

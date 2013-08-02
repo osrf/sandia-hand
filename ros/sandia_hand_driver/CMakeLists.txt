@@ -3,22 +3,25 @@ project(sandia_hand_driver)
 
 find_package(catkin REQUIRED COMPONENTS camera_info_manager image_transport osrf_msgs roscpp sandia_hand_msgs)
 
-catkin_python_setup()
+# for globally visible python scripts
+# catkin_python_setup()
+
 find_package(Boost REQUIRED COMPONENTS system)
 
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES sandia_hand_driver
-#  CATKIN_DEPENDS camera_info_manager image_transport osrf_msgs roscpp sandia_hand_msgs
+  CATKIN_DEPENDS camera_info_manager image_transport osrf_msgs roscpp sandia_hand_msgs
 #  DEPENDS system_lib
 )
 
 
 include_directories(
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
-#common, cli
+#common
 add_library(sandia_hand
   common/hand.cpp
   common/finger.cpp
@@ -31,18 +34,20 @@ add_library(sandia_hand
   common/distal_phalange.cpp
   common/param.cpp
   common/loose_palm.cpp)
+target_link_libraries(sandia_hand ${catkin_LIBRARIES})
 
+#cli
 add_executable(sandia_hand_cli cli/sandia_hand_cli.cpp)
-target_link_libraries(sandia_hand_cli sandia_hand)
+target_link_libraries(sandia_hand_cli sandia_hand ${catkin_LIBRARIES})
 
 add_executable(loose_finger_cli cli/loose_finger_cli.cpp)
-target_link_libraries(loose_finger_cli sandia_hand)
+target_link_libraries(loose_finger_cli sandia_hand ${catkin_LIBRARIES})
 
 add_executable(loose_palm_cli cli/loose_palm_cli.cpp)
-target_link_libraries(loose_palm_cli sandia_hand)
+target_link_libraries(loose_palm_cli sandia_hand ${catkin_LIBRARIES})
 
 add_executable(sandia_hand_firmware_updater cli/firmware_updater.cpp)
-target_link_libraries(sandia_hand_firmware_updater sandia_hand)
+target_link_libraries(sandia_hand_firmware_updater sandia_hand ${catkin_LIBRARIES})
 
 install(TARGETS sandia_hand sandia_hand_cli sandia_hand_firmware_updater
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -67,7 +72,7 @@ install(TARGETS loose_palm_cli
 
 #nodes
 add_executable(sandia_hand_node nodes/sandia_hand_node.cpp)
-target_link_libraries(sandia_hand_node sandia_hand)
+target_link_libraries(sandia_hand_node sandia_hand ${catkin_LIBRARIES})
 set_target_properties(sandia_hand_node PROPERTIES INSTALL_RPATH "${sandia_hand_driver_LIBRARY_DIRS}")
 install(TARGETS sandia_hand_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -76,7 +81,7 @@ install(TARGETS sandia_hand_node
 )
 
 add_executable(sandia_hand_loose_finger_node nodes/sandia_hand_loose_finger_node.cpp)
-target_link_libraries(sandia_hand_loose_finger_node sandia_hand)
+target_link_libraries(sandia_hand_loose_finger_node sandia_hand ${catkin_LIBRARIES})
 set_target_properties(sandia_hand_loose_finger_node PROPERTIES INSTALL_RPATH "${${PKG_NAME}_LIBRARY_DIRS}")
 install(TARGETS sandia_hand_loose_finger_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -85,7 +90,7 @@ install(TARGETS sandia_hand_loose_finger_node
 )
 
 add_executable(sandia_hand_loose_palm_node nodes/sandia_hand_loose_palm_node.cpp)
-target_link_libraries(sandia_hand_loose_palm_node sandia_hand)
+target_link_libraries(sandia_hand_loose_palm_node sandia_hand ${catkin_LIBRARIES})
 set_target_properties(sandia_hand_loose_palm_node PROPERTIES INSTALL_RPATH "${${PKG_NAME}_LIBRARY_DIRS}")
 install(TARGETS sandia_hand_loose_palm_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -102,7 +107,7 @@ include(${QT_USE_FILE})
 QT4_WRAP_CPP(sandia_hand_homing_HEADERS_MOC ${sandia_hand_homing_HEADERS})
 add_definitions(${QT_DEFINITIONS})
 add_executable(sandia_hand_homing ${sandia_hand_homing_SOURCES} ${sandia_hand_homing_HEADERS_MOC})
-target_link_libraries(sandia_hand_homing ${QT_LIBRARIES})
+target_link_libraries(sandia_hand_homing ${QT_LIBRARIES} ${catkin_LIBRARIES})
 install(TARGETS sandia_hand_homing
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -117,7 +122,7 @@ QT4_WRAP_CPP(sandia_hand_maintenance_HEADERS_MOC ${sandia_hand_maintenance_HEADE
 include(${QT_USE_FILE})
 add_definitions(${QT_DEFINITIONS})
 add_executable(sandia_hand_maintenance ${sandia_hand_maintenance_SOURCES} ${sandia_hand_maintenance_HEADERS_MOC})
-target_link_libraries(sandia_hand_maintenance ${QT_LIBRARIES})
+target_link_libraries(sandia_hand_maintenance ${QT_LIBRARIES} ${catkin_LIBRARIES})
 install(TARGETS sandia_hand_maintenance
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -137,7 +142,7 @@ install(DIRECTORY include/sandia_hand/
 )
 
 #dynamic reconfigure
-generate_dynamic_reconfigure_options(cfg/Finger.cfg)
+# generate_dynamic_reconfigure_options(cfg/Finger.cfg)
 # make sure configure headers are built before any node using them
 # add_dependencies(example_node ${${PROJECT_NAME}_EXPORTED_TARGETS})
 

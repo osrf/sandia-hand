@@ -3,7 +3,7 @@ project(sandia_hand_teleop)
 
 find_package(catkin REQUIRED COMPONENTS osrf_msgs sandia_hand_msgs)
 
-catkin_python_setup()
+# catkin_python_setup()
 
 catkin_package(
   CATKIN_DEPENDS osrf_msgs sandia_hand_msgs

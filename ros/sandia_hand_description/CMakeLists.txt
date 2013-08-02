@@ -1,13 +1,28 @@
-set (ROS_PACKAGE_NAME sandia_hand_description)
-set (ROS_PKG_INSTALL_PATH ${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}-${SANDIA_HAND_VERSION}/ros/${ROS_PACKAGE_NAME})
+cmake_minimum_required(VERSION 2.8.3)
+project(sandia_hand_description)
 
-set (files
-  manifest.xml
+find_package(catkin REQUIRED COMPONENTS xacro)
+
+# catkin_python_setup()
+
+catkin_package(
+  CATKIN_DEPENDS xacro
 )
-install(FILES ${files} DESTINATION ${ROS_PKG_INSTALL_PATH})
-add_subdirectory(launch)
-add_subdirectory(meshes)
-add_subdirectory(robots)
-add_subdirectory(urdf)
-add_subdirectory(gazebo)
-add_subdirectory(config)
+
+install(DIRECTORY
+  config launch meshes urdf gazebo robots
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+
+#what to do about isntalling robots?
+#add_subdirectory(robots)
+
+
+
+
+
+
+
+
+
+

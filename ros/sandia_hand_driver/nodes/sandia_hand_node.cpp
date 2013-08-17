@@ -200,8 +200,30 @@ bool setHomeSrv(Hand *hand,
   listenToHand(hand, 0.1); // wait for scheduler to realize we're stopped
   hand->setFingerControlMode(req.finger_idx, Hand::FCM_IDLE); // no controller
   listenToHand(hand, 0.1);
-  if (!hand->fingers[req.finger_idx].mm.setHallOffsets(
-                                     g_last_fmcb_hall_pos[req.finger_idx]))
+  int32_t cur_hall_offsets[3] = {0, 0, 0};
+  Finger *finger = &hand->fingers[req.finger_idx];
+  for (int i = 0; i < 3; i++)
+  {
+    char param_name[50];
+    snprintf(param_name, sizeof(param_name), "m%d_offset", i);
+    uint32_t param_val;
+    if (!finger->mm.getParamInt(string(param_name), param_val, false))
+    {
+      ROS_ERROR("unable to query motor %d hall offset", i);
+      return false; // buh bye
+    }
+    cur_hall_offsets[2-i] = (int32_t)param_val; // uint->int wrap is expected.
+  }
+  ROS_INFO("homing to %d, %d, %d, from previous offset of %d, %d, %d\n",
+           g_last_fmcb_hall_pos[req.finger_idx][0], 
+           g_last_fmcb_hall_pos[req.finger_idx][1], 
+           g_last_fmcb_hall_pos[req.finger_idx][2],
+           cur_hall_offsets[0], cur_hall_offsets[1], cur_hall_offsets[2]);
+  int32_t new_hall_offsets[3];
+  for (int i = 0; i < 3; i++)
+    new_hall_offsets[i] = g_last_fmcb_hall_pos[req.finger_idx][i] +
+                          cur_hall_offsets[i]; 
+  if (!finger->mm.setHallOffsets(new_hall_offsets))
     ROS_ERROR("unable to set finger %d hall offsets", req.finger_idx);
   hand->setFingerJointPos(req.finger_idx, 0, 0, 0);
   hand->setFingerControlMode(req.finger_idx, Hand::FCM_JOINT_POS); // resume

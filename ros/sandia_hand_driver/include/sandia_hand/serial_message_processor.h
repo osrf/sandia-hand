@@ -39,6 +39,8 @@ public:
   bool setParamInt(const std::string &name, const int32_t val);
   bool getParamNames(std::vector<std::string> &names);
   const std::vector<sandia_hand::Param> &getParams();
+  bool getParamInt(const std::string &name, uint32_t &val, 
+                   bool cached = false); 
 
 protected:
   static const uint32_t MAX_PACKET_LENGTH = 512;
@@ -60,6 +62,9 @@ protected:
   void serializeFloat32(const float x, uint8_t *p);
   void resetParser();
   bool retrieveParams();
+  bool pollParamValInt(const uint16_t param_idx, uint32_t &val);
+  bool pollParamValInt(const std::string &name, uint32_t &val);
+  bool pollParamValFloat(const uint16_t param_idx, float &val);
 
 private:
   uint8_t addr_;

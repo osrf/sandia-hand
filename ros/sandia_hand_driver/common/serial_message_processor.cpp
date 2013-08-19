@@ -511,7 +511,7 @@ bool SerialMessageProcessor::setParamInt(const std::string &name,
                                          const int32_t val)
 {
   //printf("setParamInt(%s, %d)\n", name.c_str(), val);
-  if (params_.size() == 0)
+  if (params_.empty())
     if (!retrieveParams())
     {
       printf("unable to retrieve param names\n");
@@ -542,6 +542,62 @@ bool SerialMessageProcessor::setParamInt(const std::string &name,
     printf("no response to param write packet\n");
     return false;
   }
+  return true;
+}
+
+bool SerialMessageProcessor::getParamInt(const std::string &name, 
+                                         uint32_t &val, 
+                                         bool cached)
+{
+  // someday, implement the cached function if it ever matters. for now, 
+  // just poll the device again.
+  return pollParamValInt(name, val);
+}
+
+bool SerialMessageProcessor::pollParamValInt(const std::string &name, 
+                                             uint32_t &val)
+{
+  // first, if we haven't done so already, grab everything so we get the names
+  if (params_.empty())
+    if (!retrieveParams())
+      return false;
+  int found_idx = -1;
+  for (int i = 0; found_idx < 0 && i < (int)params_.size(); i++)
+    if (name == params_[i].getName())
+      found_idx = i;
+  if (found_idx < 0)
+  {
+    printf("couldn't find parameter [%s]\n", name.c_str());
+    return false;
+  }
+  return pollParamValInt(found_idx, val);
+}
+
+bool SerialMessageProcessor::pollParamValInt(const uint16_t param_idx, 
+                                             uint32_t &val)
+{
+  serializeUint16(param_idx, getTxBuffer());
+  if (!sendTxBuffer(PKT_READ_PARAM_VALUE, 2))
+    return false;
+  if (!listenFor(PKT_READ_PARAM_VALUE, 0.25))
+    return false;
+  if (rx_pkt_data_.size() != 4)
+    return false;
+  val = *((uint32_t *)(&rx_pkt_data_[0]));
+  return true;
+}
+
+bool SerialMessageProcessor::pollParamValFloat(const uint16_t param_idx, 
+                                               float &val)
+{
+  serializeUint16(param_idx, getTxBuffer());
+  if (!sendTxBuffer(PKT_READ_PARAM_VALUE, 2))
+    return false;
+  if (!listenFor(PKT_READ_PARAM_VALUE, 0.25))
+    return false;
+  if (rx_pkt_data_.size() != 4)
+    return false;
+  val = *((float *)(&rx_pkt_data_[0]));
   return true;
 }
 
@@ -589,19 +645,20 @@ bool SerialMessageProcessor::retrieveParams()
     name_cstr[len - 1] = 0; // null terminate plz
     const char param_name_prefix = rx_pkt_data_[1];
     // retrieve param value
-    serializeUint16(param_idx, getTxBuffer());
-    if (!sendTxBuffer(PKT_READ_PARAM_VALUE, 2))
-      return false;
-    if (!listenFor(PKT_READ_PARAM_VALUE, 0.25))
-      return false;
-    if (rx_pkt_data_.size() != 4)
-      return false;
+    // todo: factor this better sometime. looks lame.
     if (param_name_prefix == 'f')
-      param_buf.push_back(Param(name_cstr, *((float *)(&rx_pkt_data_[0]))));
+    {
+      float val = 0;
+      if (!pollParamValFloat(param_idx, val))
+        return false;
+      param_buf.push_back(Param(name_cstr, val));
+    }
     else
     {
-      uint32_t ui = *((uint32_t *)(&rx_pkt_data_[0]));
-      param_buf.push_back(Param(name_cstr, (int)ui));
+      uint32_t val = 0;
+      if (!pollParamValInt(param_idx, val))
+        return false;
+      param_buf.push_back(Param(name_cstr, (int)val));
     }
   }
   params_ = param_buf; // we got em all. bag em.
@@ -640,4 +697,5 @@ uint32_t SerialMessageProcessor::getHardwareVersion()
   }
   return *((const uint32_t *)(&rx_pkt_data_[0]));
 }
+
 

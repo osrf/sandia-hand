@@ -12,3 +12,9 @@ install(DIRECTORY
   config launch meshes urdf robots
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
+
+install(FILES
+  model.config
+  dummy.urdf
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)

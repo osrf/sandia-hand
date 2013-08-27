@@ -108,6 +108,7 @@ QT4_WRAP_CPP(sandia_hand_homing_HEADERS_MOC ${sandia_hand_homing_HEADERS})
 add_definitions(${QT_DEFINITIONS})
 add_executable(sandia_hand_homing ${sandia_hand_homing_SOURCES} ${sandia_hand_homing_HEADERS_MOC})
 target_link_libraries(sandia_hand_homing ${QT_LIBRARIES} ${catkin_LIBRARIES})
+add_dependencies(sandia_hand_homing sandia_hand_msgs_gencpp)
 install(TARGETS sandia_hand_homing
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

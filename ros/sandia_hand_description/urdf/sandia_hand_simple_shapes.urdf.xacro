@@ -3,8 +3,8 @@
 <robot name="sandia_hand"
        xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-  <include filename="$(find sandia_hand_description)/urdf/sandia_hand.gazebo.xacro" />
-  <include filename="$(find sandia_hand_description)/urdf/sandia_hand.transmission.xacro" />
+  <xacro:include filename="$(find sandia_hand_description)/urdf/sandia_hand.gazebo.xacro" />
+  <xacro:include filename="$(find sandia_hand_description)/urdf/sandia_hand.transmission.xacro" />
 
   <xacro:property name="M_pi" value="3.1415926535897931" />
   <xacro:property name="damping_coefficient_j0" value="1.0" />

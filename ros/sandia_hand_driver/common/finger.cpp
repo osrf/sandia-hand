@@ -1,5 +1,5 @@
 #include <cstdio>
-#include "sandia_hand/finger.h"
+#include <sandia_hand_driver/finger.h>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 using namespace sandia_hand;

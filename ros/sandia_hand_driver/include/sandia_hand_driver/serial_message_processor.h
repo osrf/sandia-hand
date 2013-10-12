@@ -5,7 +5,7 @@
 #include <boost/function.hpp>
 #include <vector>
 #include <map>
-#include "sandia_hand/param.h"
+#include <sandia_hand_driver/param.h>
 
 namespace sandia_hand
 {

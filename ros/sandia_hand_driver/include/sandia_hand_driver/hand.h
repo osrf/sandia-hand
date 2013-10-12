@@ -7,10 +7,10 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include "hand_packets.h"
 #include <boost/function.hpp>
-#include <sandia_hand/finger.h>
-#include <sandia_hand/palm.h>
+#include <sandia_hand_driver/finger.h>
+#include <sandia_hand_driver/palm.h>
+#include <sandia_hand_driver/hand_packets.h>
 #include <ros/time.h>
 
 namespace sandia_hand

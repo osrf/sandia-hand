@@ -1,7 +1,7 @@
 #ifndef SANDIA_HAND_PALM_H
 #define SANDIA_HAND_PALM_H
 
-#include "sandia_hand/serial_message_processor.h"
+#include <sandia_hand_driver/serial_message_processor.h>
 
 namespace sandia_hand
 {

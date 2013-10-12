@@ -5,8 +5,8 @@
 #include <unistd.h>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
-#include "sandia_hand/loose_palm.h"
-#include "sandia_hand/palm_state.h"
+#include <sandia_hand_driver/loose_palm.h>
+#include <sandia_hand_driver/palm_state.h>
 #include "ros/time.h"
 #include "ros/console.h"
 using namespace sandia_hand;

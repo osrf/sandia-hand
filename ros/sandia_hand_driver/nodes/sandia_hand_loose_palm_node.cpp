@@ -3,10 +3,10 @@
 #include <vector>
 #include <ros/ros.h>
 #include <sandia_hand_msgs/RawPalmState.h>
-#include "sandia_hand/loose_palm.h"
+#include <sandia_hand_driver/loose_palm.h>
 #include <sandia_hand_msgs/GetParameters.h>
 #include <sandia_hand_msgs/SetParameters.h>
-#include "sandia_hand/palm_state.h"
+#include <sandia_hand_driver/palm_state.h>
 using namespace sandia_hand;
 using std::string;
 using std::vector;

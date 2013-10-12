@@ -6,7 +6,7 @@
 #include <sandia_hand_msgs/SetFingerHome.h>
 #include <osrf_msgs/JointCommands.h>
 #include <sandia_hand_msgs/RelativeJointCommands.h>
-#include "sandia_hand/loose_finger.h"
+#include <sandia_hand_driver/loose_finger.h>
 #include <sandia_hand_msgs/GetParameters.h>
 #include <sandia_hand_msgs/SetParameters.h>
 #include <sandia_hand_msgs/RawFingerCommands.h>

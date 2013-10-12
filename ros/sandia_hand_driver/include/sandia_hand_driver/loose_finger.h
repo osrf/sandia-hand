@@ -1,23 +1,23 @@
-#ifndef SANDIA_HAND_LOOSE_PALM_H
-#define SANDIA_HAND_LOOSE_PALM_H
+#ifndef SANDIA_HAND_LOOSE_FINGER_H
+#define SANDIA_HAND_LOOSE_FINGER_H
 
-#include <sandia_hand/palm.h>
+#include <sandia_hand_driver/finger.h>
 class LightweightSerial;
 
 namespace sandia_hand
 {
 
-class LoosePalm : public Palm
+class LooseFinger : public Finger
 {
 public:
-  LoosePalm();
-  virtual ~LoosePalm();
+  LooseFinger();
+  virtual ~LooseFinger();
   bool init(const char *serial_device);
   bool listen(const float max_seconds);
   bool tx(const uint8_t *pkt, const uint16_t pkt_len);
 private:
   LightweightSerial *serial_; // I know, this should be boost::asio... someday
-                              // I will switch it.
+                             // I will switch it.
 };
 
 }

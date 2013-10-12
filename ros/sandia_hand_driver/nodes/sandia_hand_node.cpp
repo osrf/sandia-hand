@@ -1,8 +1,8 @@
 #include <signal.h>
 #include <cstdio>
 #include <ros/ros.h>
-#include "sandia_hand/hand.h"
-#include "sandia_hand/palm_state.h"
+#include <sandia_hand_driver/hand.h>
+#include <sandia_hand_driver/palm_state.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/fill_image.h>
 #include <image_transport/image_transport.h>

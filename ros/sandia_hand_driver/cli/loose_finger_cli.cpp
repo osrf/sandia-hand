@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
-#include "sandia_hand/loose_finger.h"
+#include <sandia_hand_driver/loose_finger.h>
 #include "ros/time.h"
 using namespace sandia_hand;
 

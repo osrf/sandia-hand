@@ -1,5 +1,5 @@
 #include <cstdio>
-#include "sandia_hand/proximal_phalange.h"
+#include <sandia_hand_driver/proximal_phalange.h>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 using namespace sandia_hand;

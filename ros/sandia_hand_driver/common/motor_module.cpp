@@ -1,5 +1,5 @@
 #include <cstdio>
-#include "sandia_hand/motor_module.h"
+#include <sandia_hand_driver/motor_module.h>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 #include <ros/console.h>

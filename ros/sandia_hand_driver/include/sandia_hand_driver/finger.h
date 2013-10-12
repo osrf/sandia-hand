@@ -1,9 +1,9 @@
 #ifndef SANDIA_HAND_FINGER_H
 #define SANDIA_HAND_FINGER_H
 
-#include "sandia_hand/motor_module.h"
-#include "sandia_hand/proximal_phalange.h"
-#include "sandia_hand/distal_phalange.h"
+#include "sandia_hand_driver/motor_module.h"
+#include "sandia_hand_driver/proximal_phalange.h"
+#include "sandia_hand_driver/distal_phalange.h"
 
 namespace sandia_hand
 {

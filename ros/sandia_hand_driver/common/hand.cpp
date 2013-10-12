@@ -1,9 +1,9 @@
-#include "sandia_hand/hand.h" 
+#include <sandia_hand_driver/hand.h>
 #include <cstdio>
 #include <cstring>
 #include <cmath>
 #include <boost/bind.hpp>
-#include "sandia_hand/hand_packets.h"
+#include <sandia_hand_driver/hand_packets.h>
 using namespace sandia_hand;
 using std::vector;
 

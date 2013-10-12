@@ -1,4 +1,4 @@
-#include "sandia_hand/palm.h"
+#include <sandia_hand_driver/palm.h>
 using namespace sandia_hand;
 
 Palm::Palm(const uint8_t addr)

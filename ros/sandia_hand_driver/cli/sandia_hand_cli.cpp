@@ -6,10 +6,10 @@
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
-#include "sandia_hand/hand.h"
+#include <sandia_hand_driver/hand.h>
 #include "ros/time.h"
 #include <string>
-#include "sandia_hand/palm_state.h"
+#include <sandia_hand_driver/palm_state.h>
 using namespace sandia_hand;
 using std::vector;
 using std::string;

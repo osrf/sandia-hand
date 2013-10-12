@@ -1,6 +1,6 @@
 #include <cstdio>
-#include "sandia_hand/loose_finger.h"
-#include "sandia_hand/lightweightserial.h"
+#include <sandia_hand_driver/loose_finger.h>
+#include <sandia_hand_driver/lightweightserial.h>
 #include <ros/time.h>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>

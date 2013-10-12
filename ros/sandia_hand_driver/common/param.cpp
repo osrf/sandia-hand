@@ -1,4 +1,4 @@
-#include "sandia_hand/param.h"
+#include <sandia_hand_driver/param.h>
 using namespace sandia_hand;
 
 Param::Param(const char *name, int val)

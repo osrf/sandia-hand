@@ -1,5 +1,5 @@
 #include <cstdio>
-#include "sandia_hand/serial_message_processor.h"
+#include <sandia_hand_driver/serial_message_processor.h>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 #include <ros/time.h>

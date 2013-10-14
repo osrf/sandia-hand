@@ -475,6 +475,8 @@ int main(int argc, char **argv)
     ROS_INFO("not using fingers");
   if (!use_phalanges)
     ROS_INFO("not using phalanges");
+  double keepalive_interval;
+  nh_private.param<double>("keepalive_interval", keepalive_interval, 1.0);
 
   // be sure we can ping it
   if (!hand.pingMoboMCU())
@@ -678,6 +680,7 @@ int main(int argc, char **argv)
     hand.setCameraStreaming(true, true);
   ros::spinOnce();
   ros::Time t_prev_spin = ros::Time::now();
+  ros::Time t_prev_keepalive = ros::Time::now();
   for (int i = 0; !g_done; i++)
   {
     hand.listen(0.01);
@@ -687,6 +690,11 @@ int main(int argc, char **argv)
         break;
       ros::spinOnce();
       t_prev_spin = ros::Time::now();
+    }
+    if ((ros::Time::now() - t_prev_keepalive).toSec() > keepalive_interval)
+    {
+      hand.sendKeepAlivePacket();
+      t_prev_keepalive = ros::Time::now();
     }
   }
   shutdownHand(&hand);

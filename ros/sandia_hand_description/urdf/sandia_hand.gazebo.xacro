@@ -162,7 +162,7 @@
         <plugin filename="libgazebo_ros_multicamera.so" name="stereo_camera_controller">
           <alwaysOn>true</alwaysOn>
           <updateRate>0.0</updateRate>
-          <cameraName>sandia_hands/${parent}/camera</cameraName>
+          <cameraName>sandia_hands/${parent}</cameraName>
           <imageTopicName>image_raw</imageTopicName>
           <cameraInfoTopicName>camera_info</cameraInfoTopicName>
           <frameName>${side}_palm_left_camera_optical_frame</frameName>

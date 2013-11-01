@@ -16,6 +16,7 @@
 #include <sandia_hand_msgs/RelativeJointCommands.h>
 #include <sandia_hand_msgs/GetParameters.h>
 #include <sandia_hand_msgs/SetParameters.h>
+#include <std_srvs/Empty.h>
 using namespace sandia_hand;
 using std::string;
 using std::vector;
@@ -29,6 +30,7 @@ ros::Publisher *g_raw_mobo_state_pub = NULL;
 ros::Publisher *g_raw_palm_state_pub = NULL;
 bool g_done = false;
 bool g_use_finger[4] = { true, true, true, true };
+bool g_snapshot_mode = false, g_snapshot_received[2] = { false, false };
 static int32_t g_last_fmcb_hall_pos[Hand::NUM_FINGERS][3]; // hack
 
 // set the joint limits for each finger
@@ -90,6 +92,15 @@ int perish(const char *msg, Hand *hand)
   ROS_FATAL("%s", msg);
   shutdownHand(hand);
   return 1;
+}
+
+bool snapshotSrv(Hand *hand, 
+                 std_srvs::Empty::Request &req,
+                 std_srvs::Empty::Response &res)
+{
+  g_snapshot_mode = true;
+  g_snapshot_received[0] = g_snapshot_received[1] = false;
+  hand->setCameraStreaming(true, true);
 }
 
 bool getParametersSrv(Hand *hand, const int finger_idx, 
@@ -406,7 +417,8 @@ boost::shared_ptr<camera_info_manager::CameraInfoManager> g_cinfo[NUM_CAMS];
 image_transport::CameraPublisher *g_image_pub[NUM_CAMS] = {0};
 sensor_msgs::Image g_img_msg[NUM_CAMS];
 
-void image_cb(const uint8_t cam_idx, const uint32_t frame_count, 
+void image_cb(Hand *hand, 
+              const uint8_t cam_idx, const uint32_t frame_count, 
               const uint8_t *img_data)
 {
   if (cam_idx > 1)
@@ -424,6 +436,15 @@ void image_cb(const uint8_t cam_idx, const uint32_t frame_count,
   ci->header.frame_id = "stereo_cam";
   if (g_image_pub[cam_idx])
     g_image_pub[cam_idx]->publish(g_img_msg[cam_idx], *ci);
+  if (g_snapshot_mode)
+  {
+    g_snapshot_received[cam_idx] = true;
+    if (g_snapshot_received[0] && g_snapshot_received[1])
+    {
+      hand->setCameraStreaming(false, false);
+      g_snapshot_mode = false;
+    }
+  }
 }
 
 int main(int argc, char **argv)
@@ -507,7 +528,7 @@ int main(int argc, char **argv)
   image_pub[1] = it.advertiseCamera("right/image_raw", 1);
   g_image_pub[0] = &image_pub[0];
   g_image_pub[1] = &image_pub[1];
-  hand.setImageCallback(&image_cb); 
+  hand.setImageCallback(boost::bind(image_cb, &hand, _1, _2, _3)); 
   // abomination
   ros::Publisher raw_finger_state_pubs[Hand::NUM_FINGERS];
   if (use_fingers)
@@ -665,6 +686,11 @@ int main(int argc, char **argv)
     nh.advertiseService<sandia_hand_msgs::SetFingerHome::Request, 
                         sandia_hand_msgs::SetFingerHome::Response>
       ("set_finger_home", boost::bind(setHomeSrv, &hand, _1, _2));
+
+  ros::ServiceServer snapshot_srv =
+    nh.advertiseService<std_srvs::Empty::Request,
+                        std_srvs::Empty::Response>
+      ("snapshot", boost::bind(snapshotSrv, &hand, _1, _2));
 
   listenToHand(&hand, 0.001);
   if (use_fingers)

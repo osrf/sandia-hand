@@ -430,6 +430,8 @@ void image_cb(Hand *hand,
   else
     g_img_msg[cam_idx].header.stamp = g_img_msg[0].header.stamp;
   g_img_msg[cam_idx].encoding = "mono8";
+  g_img_msg[cam_idx].header.frame_id = "stereo_cam";
+
   sensor_msgs::CameraInfoPtr ci(new sensor_msgs::CameraInfo(
                                         g_cinfo[cam_idx]->getCameraInfo()));
   ci->header.stamp = g_img_msg[0].header.stamp;

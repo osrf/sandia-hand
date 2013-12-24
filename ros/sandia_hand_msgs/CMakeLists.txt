@@ -23,6 +23,7 @@ add_message_files(
 
 add_service_files(DIRECTORY srv FILES
   SimpleGraspSrv.srv
+  SimpleGraspWithSlew.srv
   SetParameters.srv
   SetJointLimitPolicy.srv
   SetFingerHome.srv

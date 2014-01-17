@@ -501,7 +501,39 @@ int main(int argc, char **argv)
   double keepalive_interval;
   nh_private.param<double>("keepalive_interval", keepalive_interval, 1.0);
 
-  // be sure we can ping it
+  ////////////////////////////////////////////////////////////////////////////
+  // load the camera calibration files.
+  g_cinfo[0] = boost::shared_ptr<camera_info_manager::CameraInfoManager>
+                        (new camera_info_manager::CameraInfoManager(nh_left));
+  g_cinfo[1] = boost::shared_ptr<camera_info_manager::CameraInfoManager>
+                        (new camera_info_manager::CameraInfoManager(nh_right));
+  g_cinfo[0]->setCameraName("left");
+  g_cinfo[1]->setCameraName("right");
+  string left_cam_cal, right_cam_cal;
+  nh_private.param<string>("left/cal_file", left_cam_cal,
+           "package://sandia_hand_driver/camera_calibration/stereo/left.ini");
+  nh_private.param<string>("right/cal_file", right_cam_cal,
+           "package://sandia_hand_driver/camera_calibration/stereo/right.ini");
+  if (!g_cinfo[0]->loadCameraInfo(left_cam_cal))
+  {
+    ROS_FATAL("couldn't load left camera calibration file: %s", 
+              left_cam_cal.c_str());
+    return 1;
+  }
+  else
+    ROS_INFO("loaded left camera calibration file: %s", left_cam_cal.c_str());
+
+  if (!g_cinfo[1]->loadCameraInfo(right_cam_cal))
+  {
+    ROS_FATAL("couldn't load right camera calibration file: %s", 
+              right_cam_cal.c_str());
+    return 1;
+  }
+  else
+    ROS_INFO("loaded right camera calibration file: %s", right_cam_cal.c_str());
+
+  ///////////////////////////////////////////////////////////////////////////
+  // be sure we can ping the hand frame
   if (!hand.pingMoboMCU())
   {
     ROS_FATAL("couldn't ping hand motherboard.");
@@ -516,14 +548,6 @@ int main(int argc, char **argv)
   hand.setMoboStateHz(0);
 
   signal(SIGINT, signal_handler);
-  g_cinfo[0] = boost::shared_ptr<camera_info_manager::CameraInfoManager>
-                        (new camera_info_manager::CameraInfoManager(nh_left));
-  g_cinfo[1] = boost::shared_ptr<camera_info_manager::CameraInfoManager>
-                        (new camera_info_manager::CameraInfoManager(nh_right));
-  g_cinfo[0]->setCameraName("left");
-  g_cinfo[1]->setCameraName("right");
-  g_cinfo[0]->loadCameraInfo("package://sandia_hand_driver/camera_calibration/stereo/left.ini");
-  g_cinfo[1]->loadCameraInfo("package://sandia_hand_driver/camera_calibration/stereo/right.ini");
   image_transport::ImageTransport it(nh);
   image_transport::CameraPublisher image_pub[2];
   image_pub[0] = it.advertiseCamera("left/image_raw", 1);

@@ -416,13 +416,14 @@ static const unsigned NUM_CAMS = 2;
 boost::shared_ptr<camera_info_manager::CameraInfoManager> g_cinfo[NUM_CAMS];
 image_transport::CameraPublisher *g_image_pub[NUM_CAMS] = {0};
 sensor_msgs::Image g_img_msg[NUM_CAMS];
+string g_camera_frame_ids[NUM_CAMS];
 
 void image_cb(Hand *hand, 
               const uint8_t cam_idx, const uint32_t frame_count, 
               const uint8_t *img_data)
 {
-  if (cam_idx > 1)
-    return; // woah
+  if (cam_idx >= NUM_CAMS)
+    return; // woah. let's not overrun our buffers.
   fillImage(g_img_msg[cam_idx], "mono8",
             Hand::IMG_HEIGHT, Hand::IMG_WIDTH, Hand::IMG_WIDTH, img_data);
   if (cam_idx == 0)
@@ -430,12 +431,12 @@ void image_cb(Hand *hand,
   else
     g_img_msg[cam_idx].header.stamp = g_img_msg[0].header.stamp;
   g_img_msg[cam_idx].encoding = "mono8";
-  g_img_msg[cam_idx].header.frame_id = "stereo_cam";
+  g_img_msg[cam_idx].header.frame_id = g_camera_frame_ids[cam_idx];
 
   sensor_msgs::CameraInfoPtr ci(new sensor_msgs::CameraInfo(
                                         g_cinfo[cam_idx]->getCameraInfo()));
   ci->header.stamp = g_img_msg[0].header.stamp;
-  ci->header.frame_id = "stereo_cam";
+  ci->header.frame_id = g_camera_frame_ids[cam_idx];
   if (g_image_pub[cam_idx])
     g_image_pub[cam_idx]->publish(g_img_msg[cam_idx], *ci);
   if (g_snapshot_mode)
@@ -503,6 +504,13 @@ int main(int argc, char **argv)
 
   ////////////////////////////////////////////////////////////////////////////
   // load the camera calibration files.
+  nh_private.param<string>("left/frame_id", g_camera_frame_ids[0], 
+                           "stereo_cam");
+  nh_private.param<string>("right/frame_id", g_camera_frame_ids[1], 
+                           "stereo_cam");
+  ROS_INFO("using camera frame IDs: %s  %s", 
+           g_camera_frame_ids[0].c_str(),
+           g_camera_frame_ids[1].c_str());
   g_cinfo[0] = boost::shared_ptr<camera_info_manager::CameraInfoManager>
                         (new camera_info_manager::CameraInfoManager(nh_left));
   g_cinfo[1] = boost::shared_ptr<camera_info_manager::CameraInfoManager>

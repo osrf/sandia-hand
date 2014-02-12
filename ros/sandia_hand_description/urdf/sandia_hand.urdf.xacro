@@ -6,29 +6,38 @@
   <xacro:include filename="$(find sandia_hand_description)/urdf/sandia_hand.gazebo.xacro" />
   <xacro:include filename="$(find sandia_hand_description)/urdf/sandia_hand.transmission.xacro" />
 
-  <xacro:macro name="finger" params="idx x y z r p yaw side">
+  <xacro:property name="M_pi" value="3.1415926535897931" />
+  <xacro:property name="damping_coefficient_j0" value="1.0" />
+  <xacro:property name="damping_coefficient_j1" value="1.0" />
+  <xacro:property name="damping_coefficient_j2" value="1.0" />
+  <xacro:property name="velocity_limit" value="-1" />
+
+  <xacro:macro name="finger" params="idx x y z r p yaw side reflect joint_type">
     <link name="${side}_f${idx}_base">
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <inertial>
-        <mass value="0.1"/>
+        <!-- total mass is 2.303 kg, palm is about 1.303 kg, distribute the rest into _base -->
+        <mass value="0.250"/> <!-- (2.303 - 1.303) / 4 -->
         <origin xyz="0 0 0"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        <!-- model as sphere with radius of 1cm -->
+        <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
       </inertial>
     </link>
     <link name="${side}_f${idx}_fixed_accel">
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <inertial>
-        <mass value="0.1"/>
+        <mass value="0.01"/>
         <origin xyz="0 0 0"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
       </inertial>
     </link>
     <link name="${side}_f${idx}_0">
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <inertial>
-        <mass value="0.1"/>
+        <mass value="0.106"/> <!-- F1 -->
         <origin xyz="0 0 0"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        <!-- solid cylinder -->
+        <inertia ixx="0.000011925" ixy="0" ixz="0" iyy="0.00011505" iyz="0" izz="0.00011505"/>
       </inertial>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -49,9 +58,10 @@
     <link name="${side}_f${idx}_1">
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <inertial>
-        <mass value="0.1"/>
+        <mass value="0.033"/> <!-- F2 -->
         <origin xyz="0 0 0"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        <!-- solid cylinder -->
+        <inertia ixx="0.00000165" ixy="0" ixz="0" iyy="0.00001316975" iyz="0" izz="0.00001316975"/>
       </inertial>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -72,17 +82,18 @@
     <link name="${side}_f${idx}_1_accel">
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <inertial>
-        <mass value="0.1"/>
+        <mass value="0.01"/>
         <origin xyz="0 0 0"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
       </inertial>
     </link>
     <link name="${side}_f${idx}_2">
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <inertial>
-        <mass value="0.1"/>
+        <mass value="0.033"/>  <!-- F3 -->
         <origin xyz="0 0 0"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        <!-- solid cylinder -->
+        <inertia ixx="0.0000013365" ixy="0" ixz="0" iyy="0.000009603" iyz="0" izz="0.000009603"/>
       </inertial>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -103,9 +114,9 @@
     <link name="${side}_f${idx}_2_accel">
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <inertial>
-        <mass value="0.1"/>
+        <mass value="0.01"/>
         <origin xyz="0 0 0"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
       </inertial>
     </link>
 
@@ -114,32 +125,32 @@
       <child link="${side}_f${idx}_base"/>
       <origin xyz="${x} ${y} ${z}" rpy="${r} ${p} ${yaw}"/>
     </joint>
-    <joint name="${side}_f${idx}_j0" type="revolute">
-      <axis xyz="0 0 1"/>
+    <joint name="${side}_f${idx}_j0" type="${joint_type}">
+      <axis xyz="0 0 ${reflect}"/>
       <parent link="${side}_f${idx}_base"/>
       <child link="${side}_f${idx}_0"/>
-      <limit lower="-1.57079" upper="1.57079" effort="1" velocity="1"/>
+      <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="11" velocity="${velocity_limit}"/>
       <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
-      <dynamics damping="0.1"/>
+      <dynamics damping="${damping_coefficient_j0}"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
     </joint>
-    <joint name="${side}_f${idx}_j1" type="revolute">
+    <joint name="${side}_f${idx}_j1" type="${joint_type}">
       <axis xyz="0 0 1"/>
       <parent link="${side}_f${idx}_0"/>
       <child link="${side}_f${idx}_1"/>
-      <limit lower="-1.57079" upper="1.57079" effort="1" velocity="1"/>
+      <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="28" velocity="${velocity_limit}"/>
       <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
-      <dynamics damping="0.1"/>
-      <origin xyz="0.028 0 0" rpy="1.57079 0 0"/>
+      <dynamics damping="${damping_coefficient_j1}"/>
+      <origin xyz="0.028 0 0" rpy="${M_pi/2} 0 0"/>
     </joint>
-    <joint name="${side}_f${idx}_j2" type="revolute">
+    <joint name="${side}_f${idx}_j2" type="${joint_type}">
       <axis xyz="0 0 1"/>
       <parent link="${side}_f${idx}_1"/>
       <child link="${side}_f${idx}_2"/>
       <origin xyz="0.05 0 0" rpy="0 0 0"/>
       <safety_controller soft_lower_limit="${-1.57079-10.0}" soft_upper_limit="${1.57079+10.0}" k_position="1000.0" k_velocity="1000.0"/>
-      <dynamics damping="0.1"/>
-      <limit lower="-1.57079" upper="1.57079" effort="1" velocity="1"/>
+      <dynamics damping="${damping_coefficient_j2}"/>
+      <limit lower="-${M_pi/2}" upper="${M_pi/2}" effort="28" velocity="${velocity_limit}"/>
     </joint>
 
     <joint name="${side}_f${idx}_fixed_accel" type="fixed">
@@ -150,25 +161,26 @@
     <joint name="${side}_f${idx}_1_accel" type="fixed">
       <parent link="${side}_f${idx}_1"/>
       <child link="${side}_f${idx}_1_accel"/>
-      <origin xyz="0.03 0 0" rpy="-1.5709 0 0"/>
+      <origin xyz="0.03 0 0" rpy="-${M_pi/2} 0 0"/>
     </joint>
     <joint name="${side}_f${idx}_2_accel" type="fixed">
       <parent link="${side}_f${idx}_2"/>
       <child link="${side}_f${idx}_2_accel"/>
-      <origin xyz="0.04 0 0" rpy="-1.5709 0 0"/>
+      <origin xyz="0.04 0 0" rpy="-${M_pi/2} 0 0"/>
     </joint>
 
     <xacro:finger_transmission side="${side}" idx="${idx}" x="${x}" y="${y}" z="${z}" r="${r}" p="${p}" yaw="${yaw}"/>
     <xacro:finger_gazebo side="${side}" idx="${idx}"/>
   </xacro:macro>
 
-  <xacro:macro name="sandia_hand" params="side parent *origin">
+  <xacro:macro name="sandia_hand" params="side parent reflect joint_type thumb_angle *origin">
     <link name="${side}_palm">
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <inertial>
-        <mass value="0.1"/>
+        <mass value="1.303"/>
         <origin xyz="0 0 0"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        <!-- solid sphere with 5cm radius -->
+        <inertia ixx="0.001303" ixy="0" ixz="0" iyy="0.001303" iyz="0" izz="0.001303"/>
       </inertial>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -193,15 +205,17 @@
       <insert_block name="origin" />
     </joint>
 
-    <xacro:finger side="${side}" idx="0" x="0.140" y="0.00000" z="0" r="0" p="0" yaw="0.3"/>
-    <xacro:finger side="${side}" idx="1" x="0.115" y="0.03122" z="0" r="0" p="0" yaw="0.3"/>
-    <xacro:finger side="${side}" idx="2" x="0.090" y="0.06245" z="0" r="0" p="0" yaw="0.3"/>
-    <xacro:finger side="${side}" idx="3" x="0.03995" y="-0.04383" z="0.014" r="0" p="-1.57079" yaw="-2.3562"/>
+    <xacro:finger side="${side}" idx="0" x="0.140" y="0.00000" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" joint_type="${joint_type}"/>
+    <xacro:finger side="${side}" idx="1" x="0.115" y="${0.03122*reflect}" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" joint_type="${joint_type}"/>
+    <xacro:finger side="${side}" idx="2" x="0.090" y="${0.06245*reflect}" z="0" r="0" p="0" yaw="${0.3*reflect}" reflect="${reflect}" joint_type="${joint_type}"/>
+    <xacro:finger side="${side}" idx="3" x="0.03995" y="${-0.04383*reflect}" z="0.014" r="0" p="-${M_pi/2 + thumb_angle}" yaw="${-(2.3562+thumb_angle)*reflect}" reflect="${reflect}" joint_type="${joint_type}"/>
 
     <!-- not needed unless simulating the hand by itself
     <xacro:sandia_hand_gazebo_controller side="${side}" />
     -->
     <xacro:sandia_hand_gazebo side="${side}" />
+    <xacro:sandia_hand_cameras_gazebo side="${side}" reflect="${reflect}" parent="${parent}" />
+    <xacro:sandia_hand_tactile_sensors_gazebo side="${side}" parent="${parent}" />
+    <xacro:sandia_hand_imu_sensor_gazebo parent="${parent}" />
   </xacro:macro>
 </robot>
-

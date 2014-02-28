@@ -73,7 +73,7 @@ def grasp_spline(grasp_name, closed_amount, spline_amount):
   elif (gn == "peace"):
     origin = [-0.2,0,0,  0.05,0,0, 0,1.5,1.5, 0.4,0.8,1 ]
   elif (gn == "asl_a"):
-    origin = [0,1.5,1.5,  0,1.5,1.5, 0,1.5,1.5, 1.5,1.0,0.2 ]
+    origin = [0,1.5,1.5,  0,1.5,1.5, 0,1.5,1.5, 1.5,0.9,0.2 ]
   elif (gn == "asl_b"):
     origin = [0.1,0,0,  0,0,0, -0.1,0,0, 1,0.8,0.9 ]
   elif (gn == "asl_c"):

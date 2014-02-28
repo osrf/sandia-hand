@@ -116,6 +116,9 @@ def main():
    grasp = None
    amount = 0
 
+   print "remember to first push a grasp button to select the grasp mode"
+   print "otherwise nothing will happen. which is not awesome."
+
    while not rospy.is_shutdown():
       m.header.stamp = rospy.Time.now()
       # count the number of events that are coalesced together

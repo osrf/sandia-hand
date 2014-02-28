@@ -9,7 +9,7 @@ class Signer(QtCore.QThread):
     QtCore.QThread.__init__(self)
     self.text = text
   def run(self):
-    cmd = "cd /home/mquigley/sandia-hand-ws/src/sandia-hand/ros/sandia_hand_teleop/simple_grasp && bash -c \". /home/mquigley/sandia-hand-ws/devel/setup.bash && ./simple_grasp_asl.py only \\\"%s\\\" 2 1\"" % self.text
+    cmd = "cd /home/mquigley/sandia-hand-ws/src/sandia-hand/ros/sandia_hand_teleop/simple_grasp && bash -c \". /home/mquigley/sandia-hand-ws/devel/setup.bash && ./simple_grasp_asl.py only \\\"%s\\\" 4 1\"" % self.text
     print cmd
     os.system(cmd)
     self.signing_done.emit()

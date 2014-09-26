@@ -160,7 +160,7 @@ if __name__ == '__main__':
                "f3_j0", "f3_j1", "f3_j2"]
   g_jc.position = [0] * 12
   g_prev_jc_target.position = [0] * 12
-  g_jc_pub = rospy.Publisher('joint_commands', JointCommands) # same namespace
+  g_jc_pub = rospy.Publisher('joint_commands', JointCommands, queue_size=1) # same namespace
   g_jc_srv = rospy.Service('simple_grasp', SimpleGraspSrv, grasp_srv)
   g_sgws_srv = rospy.Service('simple_grasp_with_slew', SimpleGraspWithSlew, grasp_slew_srv)
   g_jc_sub = rospy.Subscriber('simple_grasp', SimpleGrasp, grasp_cb)

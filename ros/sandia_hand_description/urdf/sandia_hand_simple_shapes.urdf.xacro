@@ -40,13 +40,13 @@
         <inertia ixx="0.000011925" ixy="0" ixz="0" iyy="0.00011505" iyz="0" izz="0.00011505"/>
       </inertial>
       <!-- begin simple shape approximation of f0 -->
-      <collision group="default">
+      <collision>
         <origin xyz="0 0 0.003" rpy="0 0 0"/>
         <geometry>
           <cylinder radius="0.015" length="0.023" />
         </geometry>
       </collision>
-      <collision group="other">
+      <collision>
         <origin xyz="0.011 0 0.003" rpy="${M_pi/2} 0 0"/>
         <geometry>
           <cylinder radius="0.01" length="0.023" />
@@ -74,7 +74,7 @@
       </visual>
       <!--   end visual shape approximation of f0 -->
       <!-- begin collision mesh of f0 ->
-      <collision group="default">
+      <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
           <mesh filename="package://sandia_hand_description/meshes/f0.stl"/>
@@ -102,7 +102,7 @@
         <inertia ixx="0.00000165" ixy="0" ixz="0" iyy="0.00001316975" iyz="0" izz="0.00001316975"/>
       </inertial>
       <!-- begin simple shape approximation of f1 -->
-      <collision group="default">
+      <collision>
         <origin xyz="0.024 0 0" rpy="0 ${M_pi/2} 0"/>
         <geometry>
           <cylinder radius="0.01" length="0.067" />
@@ -121,7 +121,7 @@
       </visual>
       <!--   end visual shape approximation of f1 -->
       <!-- begin collision mesh of f1 ->
-      <collision group="default">
+      <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
           <mesh filename="package://sandia_hand_description/meshes/f1.stl"/>
@@ -157,13 +157,13 @@
         <inertia ixx="0.0000013365" ixy="0" ixz="0" iyy="0.000009603" iyz="0" izz="0.000009603"/>
       </inertial>
       <!-- begin simple shape approximation of f2 -->
-      <collision group="default">
+      <collision>
         <origin xyz="0.024 0 0" rpy="0 ${M_pi/2} 0"/>
         <geometry>
           <cylinder radius="0.009" length="0.057" />
         </geometry>
       </collision>
-      <collision group="other">
+      <collision>
         <origin xyz="0.052 0 0" rpy="0 0 0"/>
         <geometry>
           <sphere radius="0.009" />
@@ -190,7 +190,7 @@
         </material>
       </visual>
       <!-- begin collision mesh of f2    ->
-      <collision group="default">
+      <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
           <mesh filename="package://sandia_hand_description/meshes/f2.stl"/>
@@ -281,43 +281,43 @@
         <inertia ixx="0.001303" ixy="0" ixz="0" iyy="0.001303" iyz="0" izz="0.001303"/>
       </inertial>
       <!-- begin simple shape approximation of palm -->
-      <collision group="default">
+      <collision>
         <origin xyz="0.069 ${0.016 * reflect} 0.038" rpy="0 ${M_pi/2} ${-0.9 * reflect}"/>
         <geometry>
           <cylinder radius="0.013" length="0.100" />
         </geometry>
       </collision>
-      <collision group="other">
+      <collision>
         <origin xyz="0.064 ${0.008 * reflect} 0.021" rpy="${0.41 * reflect} 0 ${-0.9 * reflect}"/>
         <geometry>
           <box size="0.09 .035 .05" />
         </geometry>
       </collision>
-      <collision group="other">
+      <collision>
         <origin xyz="0.02 0 -0.005" rpy="0 ${M_pi/2} 0"/>
         <geometry>
           <cylinder radius="0.038" length="0.05" />
         </geometry>
       </collision>
-      <collision group="other">
+      <collision>
         <origin xyz="0.11 ${-0.01*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
         <geometry>
           <box size="0.09 .03 .06" />
         </geometry>
       </collision>
-      <collision group="other">
+      <collision>
         <origin xyz="0.09 ${0.02*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
         <geometry>
           <box size="0.09 .03 .06" />
         </geometry>
       </collision>
-      <collision group="other">
+      <collision>
         <origin xyz="0.060 ${0.050*reflect} -0.005" rpy="0 0 ${0.37*reflect}"/>
         <geometry>
           <box size="0.09 .03 .06" />
         </geometry>
       </collision>
-      <collision group="other">
+      <collision>
         <origin xyz="0.044 ${-0.04*reflect} -0.005" rpy="0 0 ${0.79*reflect}"/>
         <geometry>
           <box size="0.09 .03 .06" />
@@ -390,7 +390,7 @@
       </visual>
       <!--   end visual shape approximation of palm -->
       <!-- begin collision mesh of f2 ->
-      <collision group="default">
+      <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
           <mesh filename="package://sandia_hand_description/meshes/palm.stl"/>

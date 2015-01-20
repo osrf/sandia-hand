@@ -108,7 +108,7 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
       </inertial>
-      <visual group="default">
+      <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
           <box size="0.003 0.010 0.007" />
@@ -187,7 +187,7 @@
         <origin xyz="0 0 0"/>
         <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
       </inertial>
-      <visual group="default">
+      <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
           <box size="0.003 0.010 0.007" />

@@ -28,7 +28,7 @@ endif()
 set(OPENOCD ${OPENOCD_PATH}/bin/openocd)
 if (NOT EXISTS ${OPENOCD})  # this is so terrible
   message("building openocd...")
-  execute_process(COMMAND bash -c "cd ${OPENOCD_PATH}_source && ./bootstrap && ./configure --enable-maintainer-mode --enable-ft2232_libftdi --prefix=${OPENOCD_PATH} && make install" RESULT_VARIABLE rv)
+  execute_process(COMMAND bash -c "cd ${OPENOCD_PATH}_source && ./bootstrap && ./configure --enable-maintainer-mode --enable-ftdi --prefix=${OPENOCD_PATH} && make install" RESULT_VARIABLE rv)
   message("build result: ${rv}")
 endif()
 

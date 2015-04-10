@@ -4,7 +4,13 @@ Build Instructions (only tested on Ubuntu 12.04, YMMV)
 First, install a few prerequisites, which hopefully have already been installed
 by apt and friends:
 
+on Ubuntu 12.04 LTS:
+
 sudo apt-get install build-essential cmake ia32-libs git libftdi-dev
+
+on Ubuntu 14.04 LTS, ia32-libs no longer exists. Use gcc-multilib instead:
+
+sudo apt-get install build-essential cmake gcc-multilib git libftdi-dev
 
 ===================================================================
 Next, do an out-of-source build, since this package is typically installed into

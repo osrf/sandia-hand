@@ -20,7 +20,7 @@
 #include "common_sam3x/sam3x.h"
 #include <stdio.h>
 #include <string.h>
-#include "sandia_hand/hand_packets.h"
+#include "sandia_hand_driver/hand_packets.h"
 #include "fpga.h"
 #include "flash.h"
 #include "boot.h"

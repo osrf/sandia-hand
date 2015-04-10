@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-#include "sandia_hand/hand_packets.h"
+#include "sandia_hand_driver/hand_packets.h"
 #include "finger.h"
 #include <stdio.h>
 #include "common_sam3x/sam3x.h"

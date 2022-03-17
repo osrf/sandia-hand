@@ -1,0 +1,54 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<title>SandiaHand/Overview/Mechanical</title>
+<link rel="stylesheet" type="text/css" media="all" charset="utf-8" href="modernized/css/common.css">
+<link rel="stylesheet" type="text/css" media="screen" charset="utf-8" href="modernized/css/screen.css">
+<link rel="stylesheet" type="text/css" media="print" charset="utf-8" href="modernized/css/print.css">
+<style type="text/css">
+ul.pagetitle{
+  display: inline;
+  margin: 0;
+  padding: 0;
+  font-size: 1.5em;
+}
+li.pagetitle{
+  display: inline;
+  margin: 0;
+}
+td.noborder {
+  border: 0;
+}
+</style>
+</head>
+<body>
+<table>
+<tr>
+<td class="noborder">
+<img src="logo.png">
+</td>
+<td class="noborder">
+<ul class="pagetitle">
+<li class="pagetitle"><a class="backlink">SandiaHand/Overview/Mechanical</a>
+</ul>
+<br><br>
+[<a href="LanguageSetup.html">LanguageSetup</a>]&nbsp;[<a href="TitleIndex.html">TitleIndex</a>]&nbsp;[<a href="WordIndex.html">WordIndex</a>]&nbsp;
+</td>
+</tr>
+</table>
+<hr>
+<div id="page">
+<div dir="ltr" id="content" lang="en"><span class="anchor" id="top"></span>
+<span class="anchor" id="line-1"></span><p class="line867">
+<h1 id="Conceptual_Overview">Conceptual Overview</h1>
+<span class="anchor" id="line-2"></span><span class="anchor" id="line-3"></span><p class="line862">The Sandia Hand is comprised of a <em>Hand Frame</em> and a collection of identical <em>Fingers.</em> The fingers connect to the hand frame by two bolts and a pogo pin electrical interface; swapping fingers is intended to be quick and easy. Because the fingers are identical, any finger can operate in any finger socket, including the thumb socket. The fingers all run the same firmware, and receive their soft-stop joint limits after power-up based on which socket they are plugged into. <span class="anchor" id="line-4"></span><span class="anchor" id="line-5"></span><p class="line867">
+<h2 id="Fingers">Fingers</h2>
+<span class="anchor" id="line-6"></span><p class="line874">The fingers are self-contained 3-dof manipulator arms; they include three brushless motors, three planetary gear reductions, their associated mechanical cable circuits, and a motor controller, motor drivers, hall sensors, RS485 transceiver to communicate with the palm, and other necessary electronics. The finger motor controller runs a hard-realtime 1 kHz position-control loop, which compensates for the mechanical cable coupling and uses software-selectable joint limits to reduce the likelihood of self-collisions. <span class="anchor" id="line-7"></span><span class="anchor" id="line-8"></span><p class="line867">
+<h2 id="Hand_Frame">Hand Frame</h2>
+<span class="anchor" id="line-9"></span><p class="line874">The hand frame contains a Xilinx FPGA, a gigabit ethernet PHY, an ARM microcontroller, and power-switching circuitry so that each finger socket can be powered by either a current-limited 9V supply, or a pass-through of the hand frame's 24 VDC supply. The hand frame also contains a pair of monochrome CMOS imagers with a 40mm baseline, and a 32-element tactile array. <span class="anchor" id="line-10"></span><span class="anchor" id="bottom"></span></div>
+</div>
+<hr>
+2022-03-17 10:26
+</body>
+</html>

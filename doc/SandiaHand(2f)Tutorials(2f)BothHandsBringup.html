@@ -1,0 +1,57 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<title>SandiaHand/Tutorials/BothHandsBringup</title>
+<link rel="stylesheet" type="text/css" media="all" charset="utf-8" href="modernized/css/common.css">
+<link rel="stylesheet" type="text/css" media="screen" charset="utf-8" href="modernized/css/screen.css">
+<link rel="stylesheet" type="text/css" media="print" charset="utf-8" href="modernized/css/print.css">
+<style type="text/css">
+ul.pagetitle{
+  display: inline;
+  margin: 0;
+  padding: 0;
+  font-size: 1.5em;
+}
+li.pagetitle{
+  display: inline;
+  margin: 0;
+}
+td.noborder {
+  border: 0;
+}
+</style>
+</head>
+<body>
+<table>
+<tr>
+<td class="noborder">
+<img src="logo.png">
+</td>
+<td class="noborder">
+<ul class="pagetitle">
+<li class="pagetitle"><a class="backlink">SandiaHand/Tutorials/BothHandsBringup</a>
+</ul>
+<br><br>
+[<a href="LanguageSetup.html">LanguageSetup</a>]&nbsp;[<a href="TitleIndex.html">TitleIndex</a>]&nbsp;[<a href="WordIndex.html">WordIndex</a>]&nbsp;
+</td>
+</tr>
+</table>
+<hr>
+<div id="page">
+<div dir="ltr" id="content" lang="en"><span class="anchor" id="top"></span>
+<span class="anchor" id="line-1-8"></span><p class="line867">
+<h1 id="Running_Both_Hands">Running Both Hands</h1>
+<span class="anchor" id="line-2-3"></span><p class="line862">This tutorial assumes you have worked through the <a href="./SandiaHand(2f)Tutorials(2f)SingleHandDriverBringup.html">single-hand driver bringup tutorial</a>. <span class="anchor" id="line-3-1"></span><span class="anchor" id="line-4-1"></span><p class="line874">With both hands, we can't simply launch the driver twice (with different IP's), since the topic/parameter/service names would collide. Instead, we will launch two driver instances in their own namespaces, allocating host ports so they don't overlap: <span class="anchor" id="line-5-1"></span><span class="anchor" id="line-6-1"></span><p class="line862">In one terminal we will launch the right hand in its own namespace, naming it <tt>right_hand_node</tt> : <span class="anchor" id="line-7"></span><span class="anchor" id="line-8"></span><p class="line867"><span class="anchor" id="line-9"></span><span class="anchor" id="line-10"></span><pre><span class="anchor" id="line-1"></span>rosrun sandia_hand_driver sandia_hand_node __ns:=right_hand _ip:=10.66.171.23 _port:=12321</pre><span class="anchor" id="line-11"></span><span class="anchor" id="line-12"></span><p class="line862">Note the use of double-underscores for the system-level <tt>ns</tt> (namespace) parameter, and the single underscore for the private node parameters <tt>ip</tt> and <tt>port</tt>. <span class="anchor" id="line-13"></span><span class="anchor" id="line-14"></span><p class="line874">In another terminal, we can now launch the left hand in its own namespace. The port number will be offset by 4, since the driver actually requires four UDP ports: <span class="anchor" id="line-15"></span><span class="anchor" id="line-16"></span><p class="line867"><span class="anchor" id="line-17"></span><span class="anchor" id="line-18"></span><pre><span class="anchor" id="line-1-1"></span>rosrun sandia_hand_driver sandia_hand_node __ns:=left_hand _ip:=10.66.171.22 _port:=12325</pre><span class="anchor" id="line-19"></span><span class="anchor" id="line-20"></span><p class="line862">Now, we have two instances of the driver up and running, one in namespace <tt>right_hand</tt> and one in namespace <tt>left_hand</tt>. The topic list then includes things like: <span class="anchor" id="line-21"></span><span class="anchor" id="line-22"></span><p class="line867"><span class="anchor" id="line-23"></span><span class="anchor" id="line-24"></span><span class="anchor" id="line-25"></span><span class="anchor" id="line-26"></span><span class="anchor" id="line-27"></span><span class="anchor" id="line-28"></span><span class="anchor" id="line-29"></span><pre><span class="anchor" id="line-1-2"></span>/left_hand/mobo/raw_state
+<span class="anchor" id="line-2"></span>/left_hand/palm/raw_state
+<span class="anchor" id="line-3"></span>/left_hand/joint_commands
+<span class="anchor" id="line-4"></span>/right_hand/mobo/raw_state
+<span class="anchor" id="line-5"></span>/right_hand/palm/raw_state
+<span class="anchor" id="line-6"></span>/right_hand/joint_commands</pre><span class="anchor" id="line-30"></span><span class="anchor" id="line-31"></span><p class="line862">To run the simple grasp controllers as in the single-hand tutorial, we need to launch a pair of <tt>simple_grasp.py</tt> nodes in the namespaces of the left and right hands. In one terminal: <span class="anchor" id="line-32"></span><span class="anchor" id="line-33"></span><p class="line867"><span class="anchor" id="line-34"></span><span class="anchor" id="line-35"></span><pre><span class="anchor" id="line-1-3"></span>rosrun sandia_hand_teleop simple_grasp.py __ns:=left_hand</pre><span class="anchor" id="line-36"></span><span class="anchor" id="line-37"></span><p class="line874">In another terminal: <span class="anchor" id="line-38"></span><span class="anchor" id="line-39"></span><p class="line867"><span class="anchor" id="line-40"></span><span class="anchor" id="line-41"></span><pre><span class="anchor" id="line-1-4"></span>rosrun sandia_hand_teleop simple_grasp.py __ns:=right_hand</pre><span class="anchor" id="line-42"></span><span class="anchor" id="line-43"></span><p class="line874">Note that those invocations require specifying the namespace for each grasp controller (right_hand vs. left_hand). <span class="anchor" id="line-44"></span><span class="anchor" id="line-45"></span><p class="line874">Finally, we can now send commands to the grasp controllers. In a new terminal, we can try the following commands to move the right and left hands independently: <span class="anchor" id="line-46"></span><span class="anchor" id="line-47"></span><p class="line867"><span class="anchor" id="line-48"></span><span class="anchor" id="line-49"></span><span class="anchor" id="line-50"></span><pre><span class="anchor" id="line-1-5"></span>rosrun sandia_hand_teleop simple_grasp_client.py left cylindrical 0.5
+<span class="anchor" id="line-2-1"></span>rosrun sandia_hand_teleop simple_grasp_client.py right spherical 0.2</pre><span class="anchor" id="line-51"></span><span class="anchor" id="line-52"></span><p class="line874">When finished exercising the hands, don't forget to send them both back home (so that you don't have to do it manually later): <span class="anchor" id="line-53"></span><span class="anchor" id="line-54"></span><span class="anchor" id="line-55"></span><span class="anchor" id="line-56"></span><pre><span class="anchor" id="line-1-6"></span>rosrun sandia_hand_teleop simple_grasp_client.py left cylindrical 0
+<span class="anchor" id="line-2-2"></span>rosrun sandia_hand_teleop simple_grasp_client.py right cylindrical 0</pre><span class="anchor" id="line-57"></span><span class="anchor" id="line-58"></span><p class="line874">Then you can ctrl-C everything to power down the fingers. <span class="anchor" id="line-59"></span><span class="anchor" id="line-60"></span><p class="line862">Of course, it was somewhat cumbersome to type the long incantations of <tt>sandia_hand_node</tt> at the beginning, in their own terminals. To make this easier next time, you can do this: <span class="anchor" id="line-61"></span><span class="anchor" id="line-62"></span><p class="line867"><span class="anchor" id="line-63"></span><span class="anchor" id="line-64"></span><pre><span class="anchor" id="line-1-7"></span>roslaunch sandia_hand_driver both_hands.launch</pre><span class="anchor" id="line-65"></span><span class="anchor" id="bottom"></span></div>
+</div>
+<hr>
+2022-03-17 10:26
+</body>
+</html>

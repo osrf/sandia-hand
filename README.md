@@ -1,1 +1,1 @@
-[Sandia Hand Documentation and User's Manual](http://wiki.osrfoundation.org/SandiaHand)
+[Sandia Hand Documentation and User's Manual](doc/SandiaHand.html)

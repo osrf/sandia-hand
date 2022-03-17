@@ -1,0 +1,62 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<title>SandiaHand/Overview/Electrical</title>
+<link rel="stylesheet" type="text/css" media="all" charset="utf-8" href="modernized/css/common.css">
+<link rel="stylesheet" type="text/css" media="screen" charset="utf-8" href="modernized/css/screen.css">
+<link rel="stylesheet" type="text/css" media="print" charset="utf-8" href="modernized/css/print.css">
+<style type="text/css">
+ul.pagetitle{
+  display: inline;
+  margin: 0;
+  padding: 0;
+  font-size: 1.5em;
+}
+li.pagetitle{
+  display: inline;
+  margin: 0;
+}
+td.noborder {
+  border: 0;
+}
+</style>
+</head>
+<body>
+<table>
+<tr>
+<td class="noborder">
+<img src="logo.png">
+</td>
+<td class="noborder">
+<ul class="pagetitle">
+<li class="pagetitle"><a class="backlink">SandiaHand/Overview/Electrical</a>
+</ul>
+<br><br>
+[<a href="LanguageSetup.html">LanguageSetup</a>]&nbsp;[<a href="TitleIndex.html">TitleIndex</a>]&nbsp;[<a href="WordIndex.html">WordIndex</a>]&nbsp;
+</td>
+</tr>
+</table>
+<hr>
+<div id="page">
+<div dir="ltr" id="content" lang="en"><span class="anchor" id="top"></span>
+<span class="anchor" id="line-1"></span><p class="line867">
+<h1 id="Electrical">Electrical</h1>
+<span class="anchor" id="line-2"></span><span class="anchor" id="line-3"></span><p class="line867">
+<h2 id="Power">Power</h2>
+<span class="anchor" id="line-4"></span><span class="anchor" id="line-5"></span><p class="line874">The hand requires 24 VDC for full functionality. It will work at lower voltages (down to about 12 volts), but with reduced finger speeds. <span class="anchor" id="line-6"></span><span class="anchor" id="line-7"></span><p class="line874">It draws about 0.4 to 0.5 amps with all fingers powered and idling. When all fingers are driving, it will draw about 2.5 amps. <span class="anchor" id="line-8"></span><span class="anchor" id="line-9"></span><p class="line867">
+<h2 id="Connectors">Connectors</h2>
+<span class="anchor" id="line-10"></span><span class="anchor" id="line-11"></span><p class="line862">The external interface to the hand is just power and gigabit Ethernet. The power connector is a 2-pin Molex Micro-Fit inline header. The mating connector housing is Molex #0436450200, <a class="http" href="http://www.digikey.com/product-search/en/connectors-interconnects/rectangular-connectors-housings/1442556?k=WM1845">Digikey #WM1845</a>. There are many options for the terminals, but I have had success with Molex #0430300008, <a class="http" href="http://www.digikey.com/product-detail/en/0430300008/WM2773-ND/1132448">Digikey #WM2773</a>. The official crimper is Molex #0638190000, <a class="http" href="http://www.digikey.com/product-detail/en/0638190000/WM9022-ND/1873800">Digikey #WM9022</a>, and it is awesome, but expensive. <a class="http" href="http://www.jameco.com/webapp/wcs/stores/servlet/ProductDisplay?search_type=jamecoall&amp;catalogId=10001&amp;freeText=99443&amp;langId=-1&amp;productId=99443&amp;storeId=10001&amp;ddkey=http:StoreCatalogDrillDownView">Jameco #99443</a> is much much cheaper, and I've used it with varying degrees of success for just doing one or two crimps. If you're a klutz like me, you'll also want to buy a connector extractor tool like <a class="https" href="https://www.jameco.com/webapp/wcs/stores/servlet/ProductDisplay?langId=-1&amp;storeId=10001&amp;catalogId=10001&amp;productId=338669&amp;">Jameco #338669</a> for when you gank up a terminal inside a housing. <span class="anchor" id="line-12"></span><span class="anchor" id="line-13"></span><p class="line867">
+<h2 id="Schematics">Schematics</h2>
+<span class="anchor" id="line-14"></span><p class="line862">The Sandia Hand electronics are an open source hardware project as described by the <a class="http" href="http://freedomdefined.org/OSHW">Open Source Hardware Statement of Principles and Definition v1.0</a>. The electrical designs are released under the <a class="http" href="http://www.freebsd.org/copyright/freebsd-doc-license.html">FreeBSD Documentation License</a>. These links are PDF exports of the schematic files. <span class="anchor" id="line-15"></span><ul><li><p class="line891"><a class="attachment" href="attachments/SandiaHand(2f)Overview(2f)Electrical/mobo.pdf" title="Hand frame motherboard (mobo)">Hand frame motherboard (mobo)</a> <span class="anchor" id="line-16"></span></li><li><p class="line891"><a class="attachment" href="attachments/SandiaHand(2f)Overview(2f)Electrical/rpalm.pdf" title="Right palm tactile array (rpalm)">Right palm tactile array (rpalm)</a> <span class="anchor" id="line-17"></span></li><li><p class="line891"><a class="attachment" href="attachments/SandiaHand(2f)Overview(2f)Electrical/lpalm.pdf" title="Left palm tactile array (lpalm)">Left palm tactile array (lpalm)</a> <span class="anchor" id="line-18"></span></li><li><p class="line891"><a class="attachment" href="attachments/SandiaHand(2f)Overview(2f)Electrical/fmcb.pdf" title="Finger motor control board (fmcb)">Finger motor control board (fmcb)</a>  (these were done with an older CAD program, and thus aren't as nice-looking) <span class="anchor" id="line-19"></span></li><li><p class="line891"><a class="attachment" href="attachments/SandiaHand(2f)Overview(2f)Electrical/f2.pdf" title="Proximal phalange tactile array (f2)">Proximal phalange tactile array (f2)</a> <span class="anchor" id="line-20"></span></li><li><p class="line891"><a class="attachment" href="attachments/SandiaHand(2f)Overview(2f)Electrical/f3.pdf" title="Distal phalange tactile array (f3)">Distal phalange tactile array (f3)</a> <span class="anchor" id="line-21"></span></li><li><p class="line891"><a class="attachment" href="attachments/SandiaHand(2f)Overview(2f)Electrical/cam.pdf" title="Palm camera (cam)">Palm camera (cam)</a> <span class="anchor" id="line-22"></span></li><li><p class="line891"><a class="attachment" href="attachments/SandiaHand(2f)Overview(2f)Electrical/right_conn.pdf" title="Right hand frame connector-board (right_conn)">Right hand frame connector-board (right_conn)</a> <span class="anchor" id="line-23"></span></li><li><p class="line891"><a class="attachment" href="attachments/SandiaHand(2f)Overview(2f)Electrical/left_conn.pdf" title="Left hand frame connector-board (left_conn)">Left hand frame connector-board (left_conn)</a> <span class="anchor" id="line-24"></span><span class="anchor" id="line-25"></span></li></ul><p class="line867">
+<h2 id="PCB_Layouts_and_native_Schematic_files">PCB Layouts and native Schematic files</h2>
+<span class="anchor" id="line-26"></span><p class="line874">These layouts are provided in Altium Designer, with the exception of fmcb, which was done in GNU PCB. These archives include the Altium schematic files as well as the layouts. <span class="anchor" id="line-27"></span><ul><li><p class="line891"><a class="attachment" href="attachments/SandiaHand(2f)Overview(2f)Electrical/mobo.zip" title="Palm motherboard (mobo)">Palm motherboard (mobo)</a> <span class="anchor" id="line-28"></span></li><li><p class="line891"><a class="attachment" href="attachments/SandiaHand(2f)Overview(2f)Electrical/cam_export.zip" title="Palm stereo camera (cam)">Palm stereo camera (cam)</a> <span class="anchor" id="line-29"></span></li><li><p class="line891"><a class="attachment" href="attachments/SandiaHand(2f)Overview(2f)Electrical/rpalm_export.zip" title="Right palm (rpalm)">Right palm (rpalm)</a> <span class="anchor" id="line-30"></span></li><li><p class="line891"><a class="attachment" href="attachments/SandiaHand(2f)Overview(2f)Electrical/lpalm_export.zip" title="Left palm (lpalm)">Left palm (lpalm)</a> <span class="anchor" id="line-31"></span></li><li><p class="line891"><a class="attachment" href="attachments/SandiaHand(2f)Overview(2f)Electrical/right_conn.PcbDoc" title="Right palm connector-board (conn)">Right palm connector-board (conn)</a> <span class="anchor" id="line-32"></span></li><li><p class="line891"><a class="attachment" href="attachments/SandiaHand(2f)Overview(2f)Electrical/left_conn.PcbDoc" title="Left palm connector-board (conn)">Left palm connector-board (conn)</a> <span class="anchor" id="line-33"></span></li><li><p class="line891"><a class="attachment" href="attachments/SandiaHand(2f)Overview(2f)Electrical/f3.PcbDoc" title="Distal phalange (F3)">Distal phalange (F3)</a> <span class="anchor" id="line-34"></span></li><li><p class="line891"><a class="attachment" href="attachments/SandiaHand(2f)Overview(2f)Electrical/f2.PcbDoc" title="Proximal phalange (F2)">Proximal phalange (F2)</a> <span class="anchor" id="line-35"></span></li><li><p class="line891"><a class="attachment" href="attachments/SandiaHand(2f)Overview(2f)Electrical/fmcb.zip" title="Finger motor controller board (fmcb)">Finger motor controller board (fmcb)</a> <span class="anchor" id="line-36"></span></li><li><p class="line891"><a class="attachment" href="attachments/SandiaHand(2f)Overview(2f)Electrical/finger_pogo.PcbDoc" title="Finger pogo connector board (finger_pogo)">Finger pogo connector board (finger_pogo)</a> <span class="anchor" id="line-37"></span><span class="anchor" id="line-38"></span></li></ul><p class="line867">
+<h2 id="Tactile_Sensor_Locations">Tactile Sensor Locations</h2>
+<span class="anchor" id="line-39"></span><ul><li><p class="line891"><a class="attachment" href="attachments/SandiaHand(2f)Overview(2f)Electrical/rpalm_tactile_array.png" title="Right Palm tactile array">Right Palm tactile array</a> <span class="anchor" id="line-40"></span></li><li><p class="line891"><a class="attachment nonexistent" href="" title="Upload new attachment &quot;lpalm_tactile_array.png&quot;">Left Palm tactile array</a> <span class="anchor" id="line-41"></span><span class="anchor" id="line-42"></span></li></ul><p class="line867">
+<h2 id="Random_notes">Random notes</h2>
+<span class="anchor" id="line-43"></span><ul><li><p class="line862">finger temperature sensors: first element of the finger_N/raw_state/fmcb_temp is a <a class="http" href="http://ww1.microchip.com/downloads/en/DeviceDoc/22203b.pdf">Microchip MCP9804</a> <span class="anchor" id="line-44"></span></li><li><p class="line862">motor driver chips: ST L6229Q <a class="http" href="http://www.st.com/web/en/resource/technical/document/datasheet/CD00218185.pdf">datasheet</a> <span class="anchor" id="line-45"></span></li></ul><span class="anchor" id="bottom"></span></div>
+</div>
+<hr>
+2022-03-17 10:26
+</body>
+</html>

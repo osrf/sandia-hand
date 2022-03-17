@@ -1,0 +1,50 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<title>SandiaHand/Tutorials/ViewStreams</title>
+<link rel="stylesheet" type="text/css" media="all" charset="utf-8" href="modernized/css/common.css">
+<link rel="stylesheet" type="text/css" media="screen" charset="utf-8" href="modernized/css/screen.css">
+<link rel="stylesheet" type="text/css" media="print" charset="utf-8" href="modernized/css/print.css">
+<style type="text/css">
+ul.pagetitle{
+  display: inline;
+  margin: 0;
+  padding: 0;
+  font-size: 1.5em;
+}
+li.pagetitle{
+  display: inline;
+  margin: 0;
+}
+td.noborder {
+  border: 0;
+}
+</style>
+</head>
+<body>
+<table>
+<tr>
+<td class="noborder">
+<img src="logo.png">
+</td>
+<td class="noborder">
+<ul class="pagetitle">
+<li class="pagetitle"><a class="backlink">SandiaHand/Tutorials/ViewStreams</a>
+</ul>
+<br><br>
+[<a href="LanguageSetup.html">LanguageSetup</a>]&nbsp;[<a href="TitleIndex.html">TitleIndex</a>]&nbsp;[<a href="WordIndex.html">WordIndex</a>]&nbsp;
+</td>
+</tr>
+</table>
+<hr>
+<div id="page">
+<div dir="ltr" id="content" lang="en"><span class="anchor" id="top"></span>
+<span class="anchor" id="line-1-4"></span><p class="line867">
+<h1 id="View_sensor_streams">View sensor streams</h1>
+<span class="anchor" id="line-2"></span><span class="anchor" id="line-3"></span><p class="line862">This tutorial assumes that you have completed the <a href="./SandiaHand(2f)Tutorials(2f)GetSoftware.html">software installation tutorial</a>, and have a compiled <tt>sandia_hand_driver</tt> package accessible in your ROS_PACKAGE_PATH. Furthermore, it assumes you can start the ROS driver for a single hand, as described in the <a href="./SandiaHand(2f)Tutorials(2f)SingleHandDriverBringup.html">single-hand driver bringup</a> tutorial. <span class="anchor" id="line-4"></span><span class="anchor" id="line-5"></span><p class="line874">Once the hand driver is up, a variety of ROS topics are now available. For example, you can stream the palm tactile array to the console: <span class="anchor" id="line-6"></span><span class="anchor" id="line-7"></span><p class="line867"><span class="anchor" id="line-8"></span><span class="anchor" id="line-9"></span><pre><span class="anchor" id="line-1"></span>rostopic echo palm/raw_state</pre><span class="anchor" id="line-10"></span><span class="anchor" id="line-11"></span><p class="line874">Or stream the state of the "motherboard" in the bottom of the hand, which performs power switching and i/o multiplexing to/from the finger sockets, palm tactile array, and cameras: <span class="anchor" id="line-12"></span><span class="anchor" id="line-13"></span><p class="line867"><span class="anchor" id="line-14"></span><span class="anchor" id="line-15"></span><pre><span class="anchor" id="line-1-1"></span>rostopic echo mobo/raw_state</pre><span class="anchor" id="line-16"></span><span class="anchor" id="line-17"></span><p class="line874">You can use the ROS image viewer to look at the image stream from one of the cameras: <span class="anchor" id="line-18"></span><span class="anchor" id="line-19"></span><p class="line867"><span class="anchor" id="line-20"></span><span class="anchor" id="line-21"></span><pre><span class="anchor" id="line-1-2"></span>rosrun image_view image_view image:=left/image_raw _autosize:=true</pre><span class="anchor" id="line-22"></span><span class="anchor" id="line-23"></span><p class="line874">Alternatively, a roslaunch file is provided to start a viewer for each camera: <span class="anchor" id="line-24"></span><span class="anchor" id="line-25"></span><p class="line867"><span class="anchor" id="line-26"></span><span class="anchor" id="line-27"></span><pre><span class="anchor" id="line-1-3"></span>roslaunch sandia_hand_driver view_both_cams.launch</pre><span class="anchor" id="line-28"></span><span class="anchor" id="line-29"></span><p class="line874">(note that in many things in ROS, copious use of the [tab] key on the keyboard can do lots of auto-complete for you when typing shell commands) <span class="anchor" id="line-30"></span><span class="anchor" id="bottom"></span></div>
+</div>
+<hr>
+2022-03-17 10:26
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<title>SandiaHand/FAQ/ForceControl</title>
+<link rel="stylesheet" type="text/css" media="all" charset="utf-8" href="modernized/css/common.css">
+<link rel="stylesheet" type="text/css" media="screen" charset="utf-8" href="modernized/css/screen.css">
+<link rel="stylesheet" type="text/css" media="print" charset="utf-8" href="modernized/css/print.css">
+<style type="text/css">
+ul.pagetitle{
+  display: inline;
+  margin: 0;
+  padding: 0;
+  font-size: 1.5em;
+}
+li.pagetitle{
+  display: inline;
+  margin: 0;
+}
+td.noborder {
+  border: 0;
+}
+</style>
+</head>
+<body>
+<table>
+<tr>
+<td class="noborder">
+<img src="logo.png">
+</td>
+<td class="noborder">
+<ul class="pagetitle">
+<li class="pagetitle"><a class="backlink">SandiaHand/FAQ/ForceControl</a>
+</ul>
+<br><br>
+[<a href="LanguageSetup.html">LanguageSetup</a>]&nbsp;[<a href="TitleIndex.html">TitleIndex</a>]&nbsp;[<a href="WordIndex.html">WordIndex</a>]&nbsp;
+</td>
+</tr>
+</table>
+<hr>
+<div id="page">
+<div dir="ltr" id="content" lang="en"><span class="anchor" id="top"></span>
+<span class="anchor" id="line-1"></span><p class="line867">
+<h1 id="Why_doesn.27t_the_ROS_driver_provide_force_control.3F">Why doesn't the ROS driver provide force control?</h1>
+<span class="anchor" id="line-2"></span><span class="anchor" id="line-3"></span><p class="line874">True force control is not really possible with this hand, since the backlash from the low-cost gearheads is fairly severe, there is a fair amount of stiction in the drivelines (sliding cable contacts), and the motor drivers have a somewhat large step function from the "no-current" to "minimum current" states.  <span class="anchor" id="line-4"></span><span class="anchor" id="line-5"></span><p class="line874">As a result, the currently provided driver only looks at the position components of the incoming messages. Note that if you want to grip something tightly, you can just put the desired joint angles "inside" the object, which will just cause the PD controllers in the fingers to continually deliver torque. <span class="anchor" id="line-6"></span><span class="anchor" id="line-7"></span><p class="line874">It is quite possible to add functionality to the driver which could deliver raw torques from ROS messages to the finger motors. However, due to the dynamics of the system and the difficulty of providing kHz-level messaging from the host PC through the hand frame to the fingers, we suggest against this strategy and instead suggest just putting the desired joint targets "inside" the object to be grasped, as listed above. However, we can reconsider this if that strategy proves ineffective. <span class="anchor" id="line-8"></span><span class="anchor" id="bottom"></span></div>
+</div>
+<hr>
+2022-03-17 10:26
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<title>SandiaHand/Tutorials/SingleHandDriverBringup</title>
+<link rel="stylesheet" type="text/css" media="all" charset="utf-8" href="modernized/css/common.css">
+<link rel="stylesheet" type="text/css" media="screen" charset="utf-8" href="modernized/css/screen.css">
+<link rel="stylesheet" type="text/css" media="print" charset="utf-8" href="modernized/css/print.css">
+<style type="text/css">
+ul.pagetitle{
+  display: inline;
+  margin: 0;
+  padding: 0;
+  font-size: 1.5em;
+}
+li.pagetitle{
+  display: inline;
+  margin: 0;
+}
+td.noborder {
+  border: 0;
+}
+</style>
+</head>
+<body>
+<table>
+<tr>
+<td class="noborder">
+<img src="logo.png">
+</td>
+<td class="noborder">
+<ul class="pagetitle">
+<li class="pagetitle"><a class="backlink">SandiaHand/Tutorials/SingleHandDriverBringup</a>
+</ul>
+<br><br>
+[<a href="LanguageSetup.html">LanguageSetup</a>]&nbsp;[<a href="TitleIndex.html">TitleIndex</a>]&nbsp;[<a href="WordIndex.html">WordIndex</a>]&nbsp;
+</td>
+</tr>
+</table>
+<hr>
+<div id="page">
+<div dir="ltr" id="content" lang="en"><span class="anchor" id="top"></span>
+<span class="anchor" id="line-1-2"></span><p class="line867">
+<h1 id="Single_Hand_Driver_Bringup">Single Hand Driver Bringup</h1>
+<span class="anchor" id="line-2"></span><span class="anchor" id="line-3"></span><span class="anchor" id="line-4"></span><p class="line862">First, ensure that the hand is manually backdriven (gently! slowly! act as if it's a real hand! be nice!) to the position shown in the <a href="./SandiaHand(2f)HardwareBringup(2f)Homing.html">homing procedure page</a>. The finger links should be perfectly inline with the shiny aluminum caps at the base of each finger module. It usually takes a few gentle back-and-forth motions on each joint to do this. Due to the coupling of the joints, it is easiest to start with the abduction/adduction joint (the first and smallest one) on each finger, center that joint, then move to the next link, center it, and finally center the last link (distal-most, the one with the fingernail). <span class="anchor" id="line-5"></span><span class="anchor" id="line-6"></span><p class="line867"><strong>The hand firmware requires that its controlling computer has an IP address (or virtual address) of 10.66.171.20. This can be done any number of ways; on Debian/Ubuntu it is straightforward to add static addresses to the /etc/network/interfaces file.</strong> <span class="anchor" id="line-7"></span><span class="anchor" id="line-8"></span><p class="line862">If 24 VDC power is not yet applied to the hand, do it now. Note that power to the <em>hand frame</em> does not necessarily mean that the finger sockets are powered; that is a separate step that is accomplished during the startup of the ROS driver. The hand frame requires about 30 seconds to proceed through all the steps of its bootloaders. Once the hand is booted, you should be able to ping 10.66.171.22 for a left hand and 10.66.171.23 for a right hand. Expected ping times are around 100 to 120 microseconds if the controlling computer is directly connected to the hand. Adding switches, etc., will naturally increase that somewhat. If the hand does not respond to ping after it has fully powered up (which takes 20 to 45 seconds, depending on how rapidly (or if) the bootloader gets responses from the host), network troubleshooting is required before proceeding. In particular, the hand must be able to get ARP responses from a machine at 10.66.171.20, either through direct ethernet connection or through ethernet switch(es). <span class="anchor" id="line-9"></span><span class="anchor" id="line-10"></span><p class="line862">Once the hand frame can be pinged and the fingers are in their home positions, we are ready to power it up and start the ROS driver. First, ensure that a <tt>&nbsp;roscore&nbsp;</tt> is running and that the ROS_MASTER_URI environment variable is pointing to it. In this tutorial, only one hand will be used, and it will run in the global namespace. A future tutorial will describe operation of both hands (which by necessity will put each hand in its own namespace to avoid conflicting topic, service, and parameter names). <span class="anchor" id="line-11"></span><span class="anchor" id="line-12"></span><p class="line874">For a left hand: <span class="anchor" id="line-13"></span><span class="anchor" id="line-14"></span><p class="line867"><span class="anchor" id="line-15"></span><span class="anchor" id="line-16"></span><pre><span class="anchor" id="line-1"></span>rosrun sandia_hand_driver sandia_hand_node _ip:=10.66.171.22</pre><span class="anchor" id="line-17"></span><span class="anchor" id="line-18"></span><p class="line874">Or, for a right hand: <span class="anchor" id="line-19"></span><span class="anchor" id="line-20"></span><p class="line867"><span class="anchor" id="line-21"></span><span class="anchor" id="line-22"></span><pre><span class="anchor" id="line-1-1"></span>rosrun sandia_hand_driver sandia_hand_node _ip:=10.66.171.23</pre><span class="anchor" id="line-23"></span><span class="anchor" id="line-24"></span><p class="line862">A stream of messages will be printed to the console as each finger socket is powered up and tested. The finger socket first powers up to a low voltage ( 9V ) and communications is attempted with the finger. If that succeeds, the socket is powered to the full 24 VDC. If they all succeed, the motor controllers are enabled and data begins streaming to/from ROS. Leave the terminal running <tt>&nbsp;sandia_hand_node&nbsp;</tt> open and start a new terminal for the rest of the tutorial. Be sure to source <tt>&nbsp;~/sandia-hand-ws/devel/setup.bash&nbsp;</tt> in all new terminals. It will make life more pleasant if you create a bash alias for this. <span class="anchor" id="line-25"></span><span class="anchor" id="line-26"></span><p class="line862">Whenever you need/want to power down the hand, press Ctrl-C in the terminal running <tt>&nbsp;sandia_hand_node&nbsp;</tt> (or the terminal of its launch script), or use <tt>&nbsp;rosnode&nbsp;kill&nbsp;sandia_hand_driver&nbsp;</tt>. During a graceful shutdown of the ROS driver, the hand will power down all of its finger sockets. <span class="anchor" id="line-27"></span><span class="anchor" id="bottom"></span></div>
+</div>
+<hr>
+2022-03-17 10:26
+</body>
+</html>

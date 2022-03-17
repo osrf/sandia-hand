@@ -1,0 +1,60 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<title>SandiaHand/Tutorials/Prerequisites</title>
+<link rel="stylesheet" type="text/css" media="all" charset="utf-8" href="modernized/css/common.css">
+<link rel="stylesheet" type="text/css" media="screen" charset="utf-8" href="modernized/css/screen.css">
+<link rel="stylesheet" type="text/css" media="print" charset="utf-8" href="modernized/css/print.css">
+<style type="text/css">
+ul.pagetitle{
+  display: inline;
+  margin: 0;
+  padding: 0;
+  font-size: 1.5em;
+}
+li.pagetitle{
+  display: inline;
+  margin: 0;
+}
+td.noborder {
+  border: 0;
+}
+</style>
+</head>
+<body>
+<table>
+<tr>
+<td class="noborder">
+<img src="logo.png">
+</td>
+<td class="noborder">
+<ul class="pagetitle">
+<li class="pagetitle"><a class="backlink">SandiaHand/Tutorials/Prerequisites</a>
+</ul>
+<br><br>
+[<a href="LanguageSetup.html">LanguageSetup</a>]&nbsp;[<a href="TitleIndex.html">TitleIndex</a>]&nbsp;[<a href="WordIndex.html">WordIndex</a>]&nbsp;
+</td>
+</tr>
+</table>
+<hr>
+<div id="page">
+<div dir="ltr" id="content" lang="en"><span class="anchor" id="top"></span>
+<span class="anchor" id="line-1-1"></span><p class="line867">
+<h1 id="Prerequisites">Prerequisites</h1>
+<span class="anchor" id="line-2-1"></span><span class="anchor" id="line-3-1"></span><p class="line874">This tutorial assumes that you are starting with a fresh Ubuntu 12.04 LTS installation (it was done with a clean-slate VM). Most likely, your machine will already have many of these items already installed. <span class="anchor" id="line-4-1"></span><span class="anchor" id="line-5-1"></span><p class="line867">
+<h2 id="Install_ROS_Hydro">Install ROS Hydro</h2>
+<span class="anchor" id="line-6-1"></span><span class="anchor" id="line-7-1"></span><p class="line862">Full instructions are <a class="http" href="http://wiki.ros.org/hydro/Installation/Ubuntu">here</a>. Here is the super-condensed version for Ubuntu 12.04 LTS: <span class="anchor" id="line-8-1"></span><span class="anchor" id="line-9-1"></span><p class="line867"><span class="anchor" id="line-10"></span><span class="anchor" id="line-11"></span><span class="anchor" id="line-12"></span><span class="anchor" id="line-13"></span><span class="anchor" id="line-14"></span><span class="anchor" id="line-15"></span><span class="anchor" id="line-16"></span><span class="anchor" id="line-17"></span><span class="anchor" id="line-18"></span><span class="anchor" id="line-19"></span><pre><span class="anchor" id="line-1"></span>sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu precise main" &gt; /etc/apt/sources.list.d/ros-latest.list'
+<span class="anchor" id="line-2"></span>wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
+<span class="anchor" id="line-3"></span>sudo apt-get update
+<span class="anchor" id="line-4"></span>sudo apt-get install ros-hydro-desktop-full
+<span class="anchor" id="line-5"></span>sudo rosdep init
+<span class="anchor" id="line-6"></span>rosdep update
+<span class="anchor" id="line-7"></span>echo "source /opt/ros/hydro/setup.bash" &gt;&gt; ~/.bashrc
+<span class="anchor" id="line-8"></span>source ~/.bashrc
+<span class="anchor" id="line-9"></span>sudo apt-get install python-rosinstall</pre><span class="anchor" id="line-20"></span><span class="anchor" id="bottom"></span></div>
+</div>
+<hr>
+2022-03-17 10:26
+</body>
+</html>

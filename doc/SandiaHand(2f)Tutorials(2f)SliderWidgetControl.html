@@ -1,0 +1,48 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<title>SandiaHand/Tutorials/SliderWidgetControl</title>
+<link rel="stylesheet" type="text/css" media="all" charset="utf-8" href="modernized/css/common.css">
+<link rel="stylesheet" type="text/css" media="screen" charset="utf-8" href="modernized/css/screen.css">
+<link rel="stylesheet" type="text/css" media="print" charset="utf-8" href="modernized/css/print.css">
+<style type="text/css">
+ul.pagetitle{
+  display: inline;
+  margin: 0;
+  padding: 0;
+  font-size: 1.5em;
+}
+li.pagetitle{
+  display: inline;
+  margin: 0;
+}
+td.noborder {
+  border: 0;
+}
+</style>
+</head>
+<body>
+<table>
+<tr>
+<td class="noborder">
+<img src="logo.png">
+</td>
+<td class="noborder">
+<ul class="pagetitle">
+<li class="pagetitle"><a class="backlink">SandiaHand/Tutorials/SliderWidgetControl</a>
+</ul>
+<br><br>
+[<a href="LanguageSetup.html">LanguageSetup</a>]&nbsp;[<a href="TitleIndex.html">TitleIndex</a>]&nbsp;[<a href="WordIndex.html">WordIndex</a>]&nbsp;
+</td>
+</tr>
+</table>
+<hr>
+<div id="page">
+<div dir="ltr" id="content" lang="en"><span class="anchor" id="top"></span>
+<span class="anchor" id="line-1-2"></span><p class="line874">This assumes that you have gone through the previous tutorials and everything has worked thus far. <span class="anchor" id="line-2"></span><span class="anchor" id="line-3"></span><p class="line862">It also assumes that <tt>&nbsp;sandia_hand_node&nbsp;</tt> is still running in its own terminal, and the <tt>&nbsp;simple_grasp.py&nbsp;</tt> service is also still running in its own terminal. <span class="anchor" id="line-4"></span><span class="anchor" id="line-5"></span><p class="line862">Get a new terminal and be sure to source <tt>&nbsp;~/sandia-hand-ws/devel/setup.bash&nbsp;</tt> <span class="anchor" id="line-6"></span><span class="anchor" id="line-7"></span><p class="line862">Then, purchase a <a class="http" href="http://www.amazon.com/Korg-nanoKONTROL2-Slim-Line-Control-Surface/dp/B004M8UZS8/ref=sr_1_1?ie=UTF8&amp;qid=1393626274&amp;sr=8-1&amp;keywords=korg+nanokontrol2">Korg nanoKONTROL2</a> and plug it in. <span class="anchor" id="line-8"></span><span class="anchor" id="line-9"></span><p class="line862">Since the Korg widget comes up as a MIDI controller in Ubuntu, this demo will use the <a class="nonexistent" href="./PyGame.html">PyGame</a> MIDI library to talk to it. First, we'll need to install this library: <span class="anchor" id="line-10"></span><span class="anchor" id="line-11"></span><p class="line867"><span class="anchor" id="line-12"></span><span class="anchor" id="line-13"></span><pre><span class="anchor" id="line-1"></span>sudo apt-get install python-pygame</pre><span class="anchor" id="line-14"></span><span class="anchor" id="line-15"></span><p class="line874">Now we can run the demo: <span class="anchor" id="line-16"></span><span class="anchor" id="line-17"></span><p class="line867"><span class="anchor" id="line-18"></span><span class="anchor" id="line-19"></span><pre><span class="anchor" id="line-1-1"></span>rosrun sandia_hand_teleop simple_grasp_nanokontrol2.py</pre><span class="anchor" id="line-20"></span><span class="anchor" id="line-21"></span><p class="line874">First, press the button labeled "cylinder" (the "rewind" button on the USB slider widget). Then, you can slide the first slider up and down, and it will go through a cylindrical grasp. Repeat for "sphere" (spherical grasp = the stop button) and "prism" (prismatic grasp = the stop button). You can also push the "play" and "record" button for other static gestures. <span class="anchor" id="line-22"></span><span class="anchor" id="bottom"></span></div>
+</div>
+<hr>
+2022-03-17 10:26
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<title>SandiaHand/HardwareBringup/Homing</title>
+<link rel="stylesheet" type="text/css" media="all" charset="utf-8" href="modernized/css/common.css">
+<link rel="stylesheet" type="text/css" media="screen" charset="utf-8" href="modernized/css/screen.css">
+<link rel="stylesheet" type="text/css" media="print" charset="utf-8" href="modernized/css/print.css">
+<style type="text/css">
+ul.pagetitle{
+  display: inline;
+  margin: 0;
+  padding: 0;
+  font-size: 1.5em;
+}
+li.pagetitle{
+  display: inline;
+  margin: 0;
+}
+td.noborder {
+  border: 0;
+}
+</style>
+</head>
+<body>
+<table>
+<tr>
+<td class="noborder">
+<img src="logo.png">
+</td>
+<td class="noborder">
+<ul class="pagetitle">
+<li class="pagetitle"><a class="backlink">SandiaHand/HardwareBringup/Homing</a>
+</ul>
+<br><br>
+[<a href="LanguageSetup.html">LanguageSetup</a>]&nbsp;[<a href="TitleIndex.html">TitleIndex</a>]&nbsp;[<a href="WordIndex.html">WordIndex</a>]&nbsp;
+</td>
+</tr>
+</table>
+<hr>
+<div id="page">
+<div dir="ltr" id="content" lang="en"><span class="anchor" id="top"></span>
+<span class="anchor" id="line-1"></span><span class="anchor" id="line-2"></span><p class="line867">
+<h1 id="Homing_Sequence">Homing Sequence</h1>
+<span class="anchor" id="line-3"></span><span class="anchor" id="line-4"></span><p class="line862">The fingers must start in their "home" or "fully-outstretched" position before power-up. At time of writing, the recommended method for homing the hand is to manually (and gently!) move the fingers into their home position with all fingers powered off. Note that due to the intrinsic properties of the low-cost planetary gear reductions used in the fingers, sometimes they will bind when backdriven. This can almost always be resolved by working the finger forwards and backwards a bit around the joint that feels stuck. <strong>Never</strong> push with extreme force against a finger that feels stuck, as it may lead to extreme badness. <span class="anchor" id="line-5"></span><span class="anchor" id="line-6"></span><p class="line874">The finger links should be perfectly inline with the shiny aluminum caps at the base of each finger module. It usually takes a few gentle back-and-forth motions on each joint to do this. Due to the coupling of the joints, it is easiest to start with the abduction/adduction joint (the first and smallest one) on each finger, center that joint, then move to the next link, center it, and finally center the last link (distal-most, the one with the fingernail). <span class="anchor" id="line-7"></span><span class="anchor" id="line-8"></span><p class="line862">More concisely: before you start the Sandia Hand ROS driver, you <strong>must always</strong> verify that the fingers are in the home position shown in the following photo: <span class="anchor" id="line-9"></span><span class="anchor" id="line-10"></span><p class="line867"><img alt="SandiaHandsHome.jpg" class="attachment" src="attachments/SandiaHand(2f)HardwareBringup(2f)Homing/SandiaHandsHome.jpg" title="SandiaHandsHome.jpg" width="300" /> <span class="anchor" id="line-11"></span><span class="anchor" id="line-12"></span><p class="line862">During the ROS driver startup, the finger sockets power on, and the position of the fingers at this power-on instant is assumed to be that shown in the previous photo. <em><strong>Any deviation from this position will produce unexpected and potentially harmful behavior as the fingers can and will crash into each other unless they start up in the position shown above.</strong></em> This is because the soft-stops running in the finger microcontrollers are only relative to the finger's internal estimate of their position, and this internal estimate is derived from integrating the motor positions as they depart from their position at power-up, which is assumed to be the (0,0,0) joint angles of a fully-outstretched finger. <span class="anchor" id="line-13"></span><span class="anchor" id="line-14"></span><p class="line862">Note that the fingers <strong>must</strong> be in their home position <strong>every time</strong> the ROS driver is started. This is because when the ROS driver is shut down gracefully, the finger sockets are powered down. To reiterate: <em>every time</em> the ROS driver is started, the finger microcontrollers expect to be in the home position. <span class="anchor" id="line-15"></span><span class="anchor" id="bottom"></span></div>
+</div>
+<hr>
+2022-03-17 10:26
+</body>
+</html>
